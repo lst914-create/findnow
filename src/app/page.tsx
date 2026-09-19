@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
 interface Apartment {
@@ -39,7 +40,7 @@ const INITIAL_MOCK_APARTMENTS: Apartment[] = [
     traffic_score: 92,
     nature_score: 78,
     tags: ["초품아", "학군대표", "역세권", "대단지"],
-    image_url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+    image_url: "/images/apts/daechi.png",
     station: "대치역(3호선)",
     station_dist: "240m (도보 3분)",
   },
@@ -58,7 +59,7 @@ const INITIAL_MOCK_APARTMENTS: Apartment[] = [
     traffic_score: 98,
     nature_score: 85,
     tags: ["역세권", "대단지", "한강조망", "커뮤니티"],
-    image_url: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80",
+    image_url: "/images/apts/banpo.png",
     station: "사평역(9호선)",
     station_dist: "180m (도보 2분)",
   },
@@ -77,7 +78,7 @@ const INITIAL_MOCK_APARTMENTS: Apartment[] = [
     traffic_score: 95,
     nature_score: 82,
     tags: ["신축", "역세권", "직주근접", "대단지"],
-    image_url: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
+    image_url: "/images/apts/mapo.png",
     station: "이대역(2호선)",
     station_dist: "350m (도보 5분)",
   },
@@ -96,7 +97,7 @@ const INITIAL_MOCK_APARTMENTS: Apartment[] = [
     traffic_score: 93,
     nature_score: 80,
     tags: ["대단지", "초품아", "역세권", "신축"],
-    image_url: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+    image_url: "/images/apts/helio.png",
     station: "송파역(8호선)",
     station_dist: "150m (도보 2분)",
   },
@@ -115,7 +116,7 @@ const INITIAL_MOCK_APARTMENTS: Apartment[] = [
     traffic_score: 99,
     nature_score: 90,
     tags: ["판교역세권", "직주근접", "공원인접", "학군굿"],
-    image_url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
+    image_url: "/images/apts/pangyo.png",
     station: "판교역(신분당선)",
     station_dist: "200m (도보 3분)",
   },
@@ -134,7 +135,7 @@ const INITIAL_MOCK_APARTMENTS: Apartment[] = [
     traffic_score: 89,
     nature_score: 88,
     tags: ["GTX호재", "신축", "대공원", "대단지"],
-    image_url: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80",
+    image_url: "/images/apts/kintex.png",
     station: "킨텍스역(GTX-A)",
     station_dist: "300m (도보 4분)",
   },
@@ -532,9 +533,10 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {apartments.map((apt) => (
-              <div
+              <Link
+                href={`/apt/${apt.id}`}
                 key={apt.id}
-                className="group relative bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand-500/10 transition-all duration-300 flex flex-col"
+                className="group relative bg-white rounded-2xl border border-gray-200/80 overflow-hidden shadow-sm hover:shadow-xl hover:shadow-brand-500/10 hover:-translate-y-1 transition-all duration-300 flex flex-col"
               >
                 <div className="h-1.5 bg-gradient-to-r from-brand-400 via-brand-500 to-accent-400" />
 
@@ -602,7 +604,7 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

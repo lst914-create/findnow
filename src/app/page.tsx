@@ -38,7 +38,6 @@ export default function Home() {
   const [selectedTag, setSelectedTag] = useState("");
   const [modalApt, setModalApt] = useState<Apartment | null>(null);
 
-  // Supabase에서 아파트 목록 가져오기
   const fetchApartments = async (keyword = "", tag = "") => {
     setLoading(true);
     let query = supabase.from("apartments").select("*");
@@ -65,7 +64,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchApartments();
+    const initFetch = async () => {
+      await fetchApartments();
+    };
+    initFetch();
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {

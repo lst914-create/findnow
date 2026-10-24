@@ -21,26 +21,40 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "찾아줘 — 내가 찾는 부동산 정보, 한 곳에서",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://findnow-five.vercel.app"),
+  title: {
+    default: "찾아줘 — 전국 아파트 실거래가·재개발 지도·청약 캘린더",
+    template: "%s | 찾아줘",
+  },
   description:
-    "서울·경기 아파트 검색, 실거래가 비교, 재개발·분양 정보까지. 조건을 입력하면 찾아줘가 바로 찾아드립니다.",
+    "전국 22,000+ 아파트 실거래가 비교 및 전월세 시세, 전국 재개발 구역 단계별 분석, 청약홈 분양 캘린더를 한 곳에서 직관적으로 찾아보세요.",
   keywords: [
     "부동산",
-    "아파트 검색",
-    "실거래가",
-    "재개발",
-    "분양",
-    "서울 아파트",
-    "경기 아파트",
+    "아파트 실거래가",
+    "아파트 시세",
+    "재개발 구역",
+    "정비사업",
+    "청약 캘린더",
+    "분양 정보",
+    "부동산 계산기",
+    "초품아 아파트",
     "찾아줘",
   ],
+  authors: [{ name: "찾아줘 (FindNow)" }],
   openGraph: {
+    title: "찾아줘 — 전국 아파트 실거래가·재개발 지도·청약 캘린더",
+    description:
+      "전국 22,000+ 아파트 실거래가 비교 및 전월세 시세, 전국 재개발 구역 단계별 분석, 청약홈 분양 캘린더를 한 곳에서 확인하세요.",
+    url: "https://findnow-five.vercel.app",
+    siteName: "찾아줘",
+    locale: "ko_KR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
     title: "찾아줘 — 내가 찾는 부동산 정보, 한 곳에서",
     description:
-      "서울·경기 아파트 검색, 실거래가 비교, 재개발·분양 정보까지. 조건을 입력하면 찾아줘가 바로 찾아드립니다.",
-    type: "website",
-    locale: "ko_KR",
-    siteName: "찾아줘",
+      "전국 아파트 실거래가 비교, 전국 재개발 지도, 분양 캘린더를 한눈에.",
   },
   appleWebApp: {
     capable: true,

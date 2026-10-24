@@ -1,0 +1,102 @@
+{
+  "posts": [
+    {
+      "id": "post-apt-1",
+      "targetType": "apt",
+      "targetId": "1",
+      "targetName": "개포현대1차",
+      "category": "apt",
+      "categoryLabel": "아파트 찾기",
+      "subBadge": "실거주후기",
+      "title": "개포현대1차 3년 실거주 솔직 후기 (양재천 산책로와 학군)",
+      "content": "개포현대1차 3년차 거주 중입니다. 양재천 바로 앞이라 아침저녁 러닝하기에 이만한 곳이 없습니다. 개일초, 구룡중, 개포고 도보 통학 안심존이고 대치동 학원가 라이딩도 10분 컷입니다. 연식 대비 주차 관리도 매우 모범적으로 되고 있습니다.",
+      "author": "개포양재천러",
+      "authorBadge": "입주민",
+      "createdAt": "1시간 전",
+      "views": 412,
+      "likes": 28,
+      "tags": ["개포현대1차", "양재천", "대치동학원가", "실거주"],
+      "comments": [
+        {
+          "id": "c-apt-1-1",
+          "author": "개포매수관심",
+          "badge": "예비매수자",
+          "content": "양재천 산책로 연결 통로가 단지에서 바로 연결되나요? 아이들 통학길 횡단보도 안전도 궁금합니다.",
+          "createdAt": "40분 전",
+          "likes": 5
+        },
+        {
+          "id": "c-apt-1-2",
+          "author": "개포현대주민",
+          "badge": "입주민",
+          "content": "네, 단지 후문 쪽으로 나가면 신호등 하나 건너 바로 양재천 진입로 나옵니다. 아이들 등하교길도 녹색어머니회 지도 잘 되어 있어서 안전해요.",
+          "createdAt": "15분 전",
+          "likes": 8
+        }
+      ],
+      "poll": {
+        "id": "poll-apt-1",
+        "question": "개포현대1차 실거주 만족도 추천하시나요?",
+        "options": [
+          { "id": "opt-1", "text": "추천해요 👍 (양재천·학군 만족)", "votes": 34 },
+          { "id": "opt-2", "text": "아쉬워요 🤔 (구축 연식 감안)", "votes": 4 }
+        ],
+        "totalVotes": 38
+      }
+    },
+    {
+      "id": "post-redev-29",
+      "targetType": "redev",
+      "targetId": "29",
+      "targetName": "장위14구역",
+      "category": "redev",
+      "categoryLabel": "재개발·정비",
+      "subBadge": "조합소식",
+      "title": "장위14구역 건축심의 통과 이후 사업시행인가 총회 동향 공유",
+      "content": "장위14구역 조합원입니다. SK에코플랜트와 HDC현대산업개발 컨소시엄으로 2,846세대 대단지 설계안이 건축심의를 통과하고, 현재 사업시행인가 신청 준비가 순항 중입니다. 구역 내 오동근린공원 숲세권 설계와 상가 조합원 분양가 협의도 원만하게 마무리되고 있네요.",
+      "author": "장위14조합원",
+      "authorBadge": "조합원",
+      "createdAt": "2시간 전",
+      "views": 650,
+      "likes": 47,
+      "tags": ["장위14구역", "장위뉴타운", "건축심의", "사업시행인가"],
+      "comments": [
+        {
+          "id": "c-redev-29-1",
+          "author": "성북임장러",
+          "badge": "임장러",
+          "content": "장위뉴타운 중에서 북서울꿈의숲 인접한 입지라 완공되면 대장 단지 중 하나가 될 것 같네요. 초기투자금 매물 호가 얼마선인가요?",
+          "createdAt": "1시간 전",
+          "likes": 7
+        }
+      ],
+      "poll": {
+        "id": "poll-redev-29",
+        "question": "현재 장위14구역 프리미엄 수준 투자 의견은?",
+        "options": [
+          { "id": "opt-1", "text": "저평가 매수 기회 🚀", "votes": 52 },
+          { "id": "opt-2", "text": "관망 및 타이밍 조율 ⏳", "votes": 16 }
+        ],
+        "totalVotes": 68
+      }
+    },
+    {
+      "id": "post-redev-28",
+      "targetType": "redev",
+      "targetId": "28",
+      "targetName": "이문4구역",
+      "category": "redev",
+      "categoryLabel": "재개발·정비",
+      "subBadge": "조합소식",
+      "title": "이문4구역 사업시행인가 완료 후 시공사(롯데·현대건설) 특화설계 현황",
+      "content": "이문휘경뉴타운의 마지막 퍼즐인 이문4구역 3,628세대 현장입니다. 중랑천 수변공원 연결 특화와 외대앞역 초역세권 입지로 일반분양 비율 42% 수준이라 사업성이 매우 우수합니다.",
+      "author": "이문대장",
+      "authorBadge": "조합원",
+      "createdAt": "4시간 전",
+      "views": 820,
+      "likes": 53,
+      "tags": ["이문4구역", "이문휘경뉴타운", "사업시행인가", "중랑천"],
+      "comments": []
+    }
+  ]
+}

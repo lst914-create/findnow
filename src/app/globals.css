@@ -230,3 +230,168 @@ body {
   box-shadow: 0 0 0 3px oklch(0.58 0.19 250 / 0.2),
     0 8px 32px oklch(0.58 0.19 250 / 0.12);
 }
+
+/* ========================================
+   Mobile Optimization
+   ======================================== */
+
+/* Safe area insets for iPhone notch/home-bar */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* Touch target minimum size 44×44px */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Prevent text size adjustment on orientation change */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth momentum scrolling on iOS */
+.scroll-smooth-ios {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Tap highlight color removal */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Bottom navigation bar */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: oklch(1 0 0 / 0.95);
+  backdrop-filter: blur(16px) saturate(1.8);
+  border-top: 1px solid oklch(0.94 0.005 250);
+  padding-bottom: var(--safe-bottom);
+  box-shadow: 0 -4px 24px oklch(0.25 0.02 250 / 0.08);
+}
+
+/* Mobile page bottom padding (for bottom nav) */
+.pb-mobile-nav {
+  padding-bottom: calc(64px + var(--safe-bottom));
+}
+
+/* Mobile card swipe scroll */
+.horizontal-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+.horizontal-scroll::-webkit-scrollbar { display: none; }
+.horizontal-scroll > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* Mobile search bar fixed state */
+@media (max-width: 639px) {
+  .mobile-search-sticky {
+    position: sticky;
+    top: 56px;
+    z-index: 40;
+    background: oklch(1 0 0 / 0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid oklch(0.94 0.005 250);
+    padding: 8px 16px;
+    margin: 0 -16px;
+  }
+
+  /* Larger font in inputs to prevent iOS zoom (must be >= 16px) */
+  input[type="text"],
+  input[type="search"],
+  input[type="email"],
+  input[type="tel"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+
+  /* Card full-width on mobile */
+  .mobile-full-card {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+}
+
+/* Pill tag scrollable row (mobile only) */
+@media (max-width: 639px) {
+  .tag-scroll-row {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 0 8px;
+  }
+  .tag-scroll-row::-webkit-scrollbar { display: none; }
+  .tag-scroll-row > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+}
+@media (min-width: 640px) {
+  .tag-scroll-row {
+    display: none !important;
+  }
+}
+
+/* Floating action button */
+.fab {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(72px + var(--safe-bottom));
+  z-index: 45;
+  width: 52px;
+  height: 52px;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, oklch(0.58 0.19 250), oklch(0.50 0.20 250));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 20px oklch(0.58 0.19 250 / 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.fab:active {
+  transform: scale(0.93);
+  box-shadow: 0 2px 10px oklch(0.58 0.19 250 / 0.3);
+}
+
+/* Map height adjustment on mobile */
+@media (max-width: 639px) {
+  .map-section-mobile {
+    height: 280px !important;
+  }
+}
+
+/* Stats strip horizontal scroll on mobile */
+.stats-strip {
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.stats-strip::-webkit-scrollbar { display: none; }
+

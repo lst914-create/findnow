@@ -1,0 +1,2011 @@
+[
+  {
+    "id": "junghwa-1",
+    "name": "중화1구역 (리버센SK뷰롯데캐슬)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2023.10.15",
+    "region": "서울",
+    "district": "중랑구",
+    "address": "서울특별시 중랑구 중화동 331-1 일대",
+    "lat": 37.5995,
+    "lng": 127.0782,
+    "totalUnits": 1055,
+    "ownersCount": 420,
+    "generalUnits": 501,
+    "rentalUnits": 134,
+    "generalRatio": 47,
+    "builder": "SK에코플랜트 · 롯데건설",
+    "zoneAreaM2": 51230,
+    "far": 299,
+    "bcr": 22,
+    "maxFloor": 35,
+    "totalBuildings": 8,
+    "recentTradePriceDisplay": "9.8억",
+    "avgLandPricePerPyeongManwon": 6200,
+    "askCount": 18,
+    "minPriceDisplay": "8.9억",
+    "minInvestmentDisplay": "5.8억",
+    "estimatedPremiumDisplay": "3.5억~4.2억",
+    "nearestStation": "중화역 (7호선) 도보 3분",
+    "walkMinutes": 3,
+    "polygon": [
+      {
+        "lat": 37.602,
+        "lng": 127.0757
+      },
+      {
+        "lat": 37.602,
+        "lng": 127.0807
+      },
+      {
+        "lat": 37.597,
+        "lng": 127.0807
+      },
+      {
+        "lat": 37.597,
+        "lng": 127.0757
+      }
+    ]
+  },
+  {
+    "id": "junghwa-2",
+    "name": "중화2구역",
+    "type": "재개발",
+    "status": "조합설립인가",
+    "statusDate": "2023.08.12",
+    "region": "서울",
+    "district": "중랑구",
+    "address": "서울특별시 중랑구 중화동 329-38 일대",
+    "lat": 37.6028,
+    "lng": 127.0762,
+    "totalUnits": 1580,
+    "ownersCount": 780,
+    "generalUnits": 580,
+    "rentalUnits": 220,
+    "generalRatio": 37,
+    "builder": "포스코이앤씨 유력",
+    "zoneAreaM2": 82500,
+    "far": 275,
+    "bcr": 21,
+    "maxFloor": 35,
+    "totalBuildings": 12,
+    "recentTradePriceDisplay": "6.5억",
+    "avgLandPricePerPyeongManwon": 5400,
+    "askCount": 34,
+    "minPriceDisplay": "5.9억",
+    "minInvestmentDisplay": "3.8억",
+    "estimatedPremiumDisplay": "2.5억~3.2억",
+    "nearestStation": "중화역 (7호선) 도보 5분",
+    "walkMinutes": 5,
+    "polygon": [
+      {
+        "lat": 37.6053,
+        "lng": 127.0737
+      },
+      {
+        "lat": 37.6053,
+        "lng": 127.0787
+      },
+      {
+        "lat": 37.6003,
+        "lng": 127.0787
+      },
+      {
+        "lat": 37.6003,
+        "lng": 127.0737
+      }
+    ]
+  },
+  {
+    "id": "junghwa-moa-1",
+    "name": "중화동 모아타운 1구역",
+    "type": "모아타운",
+    "status": "조합설립인가",
+    "statusDate": "2024.01.20",
+    "region": "서울",
+    "district": "중랑구",
+    "address": "서울특별시 중랑구 중화동 329-10 일대",
+    "lat": 37.6045,
+    "lng": 127.0792,
+    "totalUnits": 980,
+    "ownersCount": 460,
+    "generalUnits": 380,
+    "rentalUnits": 140,
+    "generalRatio": 39,
+    "builder": "HDC현대산업개발",
+    "zoneAreaM2": 45000,
+    "far": 250,
+    "bcr": 23,
+    "maxFloor": 25,
+    "totalBuildings": 7,
+    "recentTradePriceDisplay": "5.2억",
+    "avgLandPricePerPyeongManwon": 4800,
+    "askCount": 26,
+    "minPriceDisplay": "4.8억",
+    "minInvestmentDisplay": "2.9억",
+    "estimatedPremiumDisplay": "1.8억~2.4억",
+    "nearestStation": "중화역 (7호선) 도보 6분",
+    "walkMinutes": 6,
+    "polygon": [
+      {
+        "lat": 37.607,
+        "lng": 127.0767
+      },
+      {
+        "lat": 37.607,
+        "lng": 127.0817
+      },
+      {
+        "lat": 37.602,
+        "lng": 127.0817
+      },
+      {
+        "lat": 37.602,
+        "lng": 127.0767
+      }
+    ]
+  },
+  {
+    "id": "sangbong-7",
+    "name": "상봉7구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2023.11.08",
+    "region": "서울",
+    "district": "중랑구",
+    "address": "서울특별시 중랑구 상봉동 88 일대",
+    "lat": 37.5975,
+    "lng": 127.0845,
+    "totalUnits": 840,
+    "ownersCount": 310,
+    "generalUnits": 410,
+    "rentalUnits": 120,
+    "generalRatio": 49,
+    "builder": "현대엔지니어링 (힐스테이트)",
+    "zoneAreaM2": 38500,
+    "far": 295,
+    "bcr": 24,
+    "maxFloor": 38,
+    "totalBuildings": 5,
+    "recentTradePriceDisplay": "7.8억",
+    "avgLandPricePerPyeongManwon": 5900,
+    "askCount": 21,
+    "minPriceDisplay": "7.2억",
+    "minInvestmentDisplay": "4.5억",
+    "estimatedPremiumDisplay": "2.8억~3.5억",
+    "nearestStation": "상봉역 (7호선·경의중앙·GTX-B) 도보 4분",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.6,
+        "lng": 127.082
+      },
+      {
+        "lat": 37.6,
+        "lng": 127.087
+      },
+      {
+        "lat": 37.595,
+        "lng": 127.087
+      },
+      {
+        "lat": 37.595,
+        "lng": 127.082
+      }
+    ]
+  },
+  {
+    "id": "sangbong-9",
+    "name": "상봉9구역 (상봉터미널 복합개발)",
+    "type": "도시정비형",
+    "status": "건축심의",
+    "statusDate": "2024.03.22",
+    "region": "서울",
+    "district": "중랑구",
+    "address": "서울특별시 중랑구 상봉동 83-1 일대",
+    "lat": 37.5955,
+    "lng": 127.0885,
+    "totalUnits": 1999,
+    "ownersCount": 120,
+    "generalUnits": 1620,
+    "rentalUnits": 259,
+    "generalRatio": 81,
+    "builder": "포스코이앤씨 (더샵 랜드마크)",
+    "zoneAreaM2": 78000,
+    "far": 599,
+    "bcr": 48,
+    "maxFloor": 49,
+    "totalBuildings": 5,
+    "recentTradePriceDisplay": "11.5억",
+    "avgLandPricePerPyeongManwon": 7200,
+    "askCount": 15,
+    "minPriceDisplay": "10.2억",
+    "minInvestmentDisplay": "6.8억",
+    "estimatedPremiumDisplay": "4.5억~5.5억",
+    "nearestStation": "상봉역·망우역 초역세권",
+    "walkMinutes": 2,
+    "polygon": [
+      {
+        "lat": 37.598,
+        "lng": 127.086
+      },
+      {
+        "lat": 37.598,
+        "lng": 127.091
+      },
+      {
+        "lat": 37.593,
+        "lng": 127.091
+      },
+      {
+        "lat": 37.593,
+        "lng": 127.086
+      }
+    ]
+  },
+  {
+    "id": "myeonmok-moa-1",
+    "name": "면목본동 모아타운 1·2구역",
+    "type": "모아타운",
+    "status": "조합설립인가",
+    "statusDate": "2024.02.15",
+    "region": "서울",
+    "district": "중랑구",
+    "address": "서울특별시 중랑구 면목동 297-28 일대",
+    "lat": 37.5885,
+    "lng": 127.0875,
+    "totalUnits": 1850,
+    "ownersCount": 890,
+    "generalUnits": 720,
+    "rentalUnits": 240,
+    "generalRatio": 39,
+    "builder": "DL건설 (e편한세상)",
+    "zoneAreaM2": 92000,
+    "far": 250,
+    "bcr": 22,
+    "maxFloor": 28,
+    "totalBuildings": 14,
+    "recentTradePriceDisplay": "5.6억",
+    "avgLandPricePerPyeongManwon": 4600,
+    "askCount": 42,
+    "minPriceDisplay": "4.9억",
+    "minInvestmentDisplay": "2.8억",
+    "estimatedPremiumDisplay": "1.9억~2.6억",
+    "nearestStation": "면목역 (7호선) 도보 6분",
+    "walkMinutes": 6,
+    "polygon": [
+      {
+        "lat": 37.591,
+        "lng": 127.085
+      },
+      {
+        "lat": 37.591,
+        "lng": 127.09
+      },
+      {
+        "lat": 37.586,
+        "lng": 127.09
+      },
+      {
+        "lat": 37.586,
+        "lng": 127.085
+      }
+    ]
+  },
+  {
+    "id": "myeonmok-7",
+    "name": "면목7구역",
+    "type": "신속통합기획",
+    "status": "조합설립인가",
+    "statusDate": "2024.04.10",
+    "region": "서울",
+    "district": "중랑구",
+    "address": "서울특별시 중랑구 면목동 55-14 일대",
+    "lat": 37.5785,
+    "lng": 127.086,
+    "totalUnits": 1447,
+    "ownersCount": 650,
+    "generalUnits": 620,
+    "rentalUnits": 177,
+    "generalRatio": 43,
+    "builder": "GS건설 (자이)",
+    "zoneAreaM2": 72000,
+    "far": 270,
+    "bcr": 21,
+    "maxFloor": 35,
+    "totalBuildings": 10,
+    "recentTradePriceDisplay": "6.2억",
+    "avgLandPricePerPyeongManwon": 4900,
+    "askCount": 28,
+    "minPriceDisplay": "5.5억",
+    "minInvestmentDisplay": "3.2억",
+    "estimatedPremiumDisplay": "2.2억~2.9억",
+    "nearestStation": "사가정역 (7호선) 도보 5분",
+    "walkMinutes": 5,
+    "polygon": [
+      {
+        "lat": 37.581,
+        "lng": 127.0835
+      },
+      {
+        "lat": 37.581,
+        "lng": 127.0885
+      },
+      {
+        "lat": 37.576,
+        "lng": 127.0885
+      },
+      {
+        "lat": 37.576,
+        "lng": 127.0835
+      }
+    ]
+  },
+  {
+    "id": "imun-1",
+    "name": "이문1구역 (래미안 라그란데)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2023.08.25",
+    "region": "서울",
+    "district": "동대문구",
+    "address": "서울특별시 동대문구 이문동 257-42 일대",
+    "lat": 37.5985,
+    "lng": 127.062,
+    "totalUnits": 3069,
+    "ownersCount": 1520,
+    "generalUnits": 920,
+    "rentalUnits": 629,
+    "generalRatio": 30,
+    "builder": "삼성물산 (래미안 라그란데)",
+    "zoneAreaM2": 145000,
+    "far": 247,
+    "bcr": 19,
+    "maxFloor": 27,
+    "totalBuildings": 39,
+    "recentTradePriceDisplay": "11.2억",
+    "avgLandPricePerPyeongManwon": 7800,
+    "askCount": 36,
+    "minPriceDisplay": "10.4억",
+    "minInvestmentDisplay": "7.1억",
+    "estimatedPremiumDisplay": "4.8억~5.5억",
+    "nearestStation": "외대앞역 (1호선) 도보 4분",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.601,
+        "lng": 127.0595
+      },
+      {
+        "lat": 37.601,
+        "lng": 127.0645
+      },
+      {
+        "lat": 37.596,
+        "lng": 127.0645
+      },
+      {
+        "lat": 37.596,
+        "lng": 127.0595
+      }
+    ]
+  },
+  {
+    "id": "imun-3",
+    "name": "이문3구역 (이문 아이파크자이)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2023.10.20",
+    "region": "서울",
+    "district": "동대문구",
+    "address": "서울특별시 동대문구 이문동 149-8 일대",
+    "lat": 37.596,
+    "lng": 127.0655,
+    "totalUnits": 4321,
+    "ownersCount": 2280,
+    "generalUnits": 1483,
+    "rentalUnits": 558,
+    "generalRatio": 34,
+    "builder": "HDC현대산업개발 · GS건설",
+    "zoneAreaM2": 158000,
+    "far": 440,
+    "bcr": 25,
+    "maxFloor": 41,
+    "totalBuildings": 25,
+    "recentTradePriceDisplay": "12.8억",
+    "avgLandPricePerPyeongManwon": 8400,
+    "askCount": 52,
+    "minPriceDisplay": "11.6억",
+    "minInvestmentDisplay": "8.2억",
+    "estimatedPremiumDisplay": "5.2억~6.2억",
+    "nearestStation": "외대앞역 (1호선) 도보 1분",
+    "walkMinutes": 1,
+    "polygon": [
+      {
+        "lat": 37.5985,
+        "lng": 127.063
+      },
+      {
+        "lat": 37.5985,
+        "lng": 127.068
+      },
+      {
+        "lat": 37.5935,
+        "lng": 127.068
+      },
+      {
+        "lat": 37.5935,
+        "lng": 127.063
+      }
+    ]
+  },
+  {
+    "id": "imun-4",
+    "name": "이문4구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2023.02.16",
+    "region": "서울",
+    "district": "동대문구",
+    "address": "서울특별시 동대문구 이문동 86-1 일대",
+    "lat": 37.5995,
+    "lng": 127.0685,
+    "totalUnits": 3628,
+    "ownersCount": 1480,
+    "generalUnits": 1540,
+    "rentalUnits": 608,
+    "generalRatio": 42,
+    "builder": "롯데건설 · 현대건설 컨소시엄",
+    "zoneAreaM2": 149856,
+    "far": 317,
+    "bcr": 22,
+    "maxFloor": 40,
+    "totalBuildings": 22,
+    "recentTradePriceDisplay": "8.9억",
+    "avgLandPricePerPyeongManwon": 6900,
+    "askCount": 45,
+    "minPriceDisplay": "8.1억",
+    "minInvestmentDisplay": "5.4억",
+    "estimatedPremiumDisplay": "3.6억~4.4억",
+    "nearestStation": "신이문역 (1호선) 도보 3분",
+    "walkMinutes": 3,
+    "polygon": [
+      {
+        "lat": 37.602,
+        "lng": 127.066
+      },
+      {
+        "lat": 37.602,
+        "lng": 127.071
+      },
+      {
+        "lat": 37.597,
+        "lng": 127.071
+      },
+      {
+        "lat": 37.597,
+        "lng": 127.066
+      }
+    ]
+  },
+  {
+    "id": "hwigyeong-3",
+    "name": "휘경3구역 (휘경자이 디센시아)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2023.04.10",
+    "region": "서울",
+    "district": "동대문구",
+    "address": "서울특별시 동대문구 휘경동 172 일대",
+    "lat": 37.5915,
+    "lng": 127.0695,
+    "totalUnits": 1806,
+    "ownersCount": 790,
+    "generalUnits": 710,
+    "rentalUnits": 306,
+    "generalRatio": 39,
+    "builder": "GS건설 (휘경자이)",
+    "zoneAreaM2": 64500,
+    "far": 299,
+    "bcr": 20,
+    "maxFloor": 35,
+    "totalBuildings": 14,
+    "recentTradePriceDisplay": "10.5억",
+    "avgLandPricePerPyeongManwon": 7400,
+    "askCount": 29,
+    "minPriceDisplay": "9.8억",
+    "minInvestmentDisplay": "6.5억",
+    "estimatedPremiumDisplay": "4.2억~5.0억",
+    "nearestStation": "회기역 · 외대앞역 더블역세권",
+    "walkMinutes": 3,
+    "polygon": [
+      {
+        "lat": 37.594,
+        "lng": 127.067
+      },
+      {
+        "lat": 37.594,
+        "lng": 127.072
+      },
+      {
+        "lat": 37.589,
+        "lng": 127.072
+      },
+      {
+        "lat": 37.589,
+        "lng": 127.067
+      }
+    ]
+  },
+  {
+    "id": "jeonnong-8",
+    "name": "전농8구역",
+    "type": "재개발",
+    "status": "건축심의",
+    "statusDate": "2024.03.14",
+    "region": "서울",
+    "district": "동대문구",
+    "address": "서울특별시 동대문구 전농동 204 일대",
+    "lat": 37.5835,
+    "lng": 127.0625,
+    "totalUnits": 1750,
+    "ownersCount": 680,
+    "generalUnits": 790,
+    "rentalUnits": 280,
+    "generalRatio": 45,
+    "builder": "롯데건설 (롯데캐슬 르베르)",
+    "zoneAreaM2": 93700,
+    "far": 280,
+    "bcr": 21,
+    "maxFloor": 32,
+    "totalBuildings": 15,
+    "recentTradePriceDisplay": "8.2억",
+    "avgLandPricePerPyeongManwon": 6400,
+    "askCount": 38,
+    "minPriceDisplay": "7.5억",
+    "minInvestmentDisplay": "4.9억",
+    "estimatedPremiumDisplay": "3.2억~3.9억",
+    "nearestStation": "청량리역 도보 8분",
+    "walkMinutes": 8,
+    "polygon": [
+      {
+        "lat": 37.586,
+        "lng": 127.06
+      },
+      {
+        "lat": 37.586,
+        "lng": 127.065
+      },
+      {
+        "lat": 37.581,
+        "lng": 127.065
+      },
+      {
+        "lat": 37.581,
+        "lng": 127.06
+      }
+    ]
+  },
+  {
+    "id": "cheongnyangni-6",
+    "name": "청량리6구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2024.02.20",
+    "region": "서울",
+    "district": "동대문구",
+    "address": "서울특별시 동대문구 청량리동 205 일대",
+    "lat": 37.589,
+    "lng": 127.0485,
+    "totalUnits": 1493,
+    "ownersCount": 680,
+    "generalUnits": 580,
+    "rentalUnits": 233,
+    "generalRatio": 39,
+    "builder": "GS건설",
+    "zoneAreaM2": 83000,
+    "far": 260,
+    "bcr": 21,
+    "maxFloor": 28,
+    "totalBuildings": 16,
+    "recentTradePriceDisplay": "8.6억",
+    "avgLandPricePerPyeongManwon": 6700,
+    "askCount": 32,
+    "minPriceDisplay": "7.9억",
+    "minInvestmentDisplay": "5.1억",
+    "estimatedPremiumDisplay": "3.5억~4.3억",
+    "nearestStation": "청량리역 도보 7분",
+    "walkMinutes": 7,
+    "polygon": [
+      {
+        "lat": 37.5915,
+        "lng": 127.046
+      },
+      {
+        "lat": 37.5915,
+        "lng": 127.051
+      },
+      {
+        "lat": 37.5865,
+        "lng": 127.051
+      },
+      {
+        "lat": 37.5865,
+        "lng": 127.046
+      }
+    ]
+  },
+  {
+    "id": "hannam-3",
+    "name": "한남3구역 (디에이치 한남)",
+    "type": "재개발",
+    "status": "이주철거",
+    "statusDate": "2023.10.30",
+    "region": "서울",
+    "district": "용산구",
+    "address": "서울특별시 용산구 한남동 686 일대",
+    "lat": 37.5305,
+    "lng": 127.0015,
+    "totalUnits": 5816,
+    "ownersCount": 3880,
+    "generalUnits": 1060,
+    "rentalUnits": 876,
+    "generalRatio": 18,
+    "builder": "현대건설 (디에이치 한남)",
+    "zoneAreaM2": 386398,
+    "far": 232,
+    "bcr": 42,
+    "maxFloor": 22,
+    "totalBuildings": 197,
+    "recentTradePriceDisplay": "23.5억",
+    "avgLandPricePerPyeongManwon": 16500,
+    "askCount": 84,
+    "minPriceDisplay": "19.5억",
+    "minInvestmentDisplay": "15.2억",
+    "estimatedPremiumDisplay": "9.5억~12억",
+    "nearestStation": "이태원역 (6호선) · 한남역 (경의중앙)",
+    "walkMinutes": 6,
+    "polygon": [
+      {
+        "lat": 37.5345,
+        "lng": 126.9975
+      },
+      {
+        "lat": 37.5345,
+        "lng": 127.0055
+      },
+      {
+        "lat": 37.5265,
+        "lng": 127.0055
+      },
+      {
+        "lat": 37.5265,
+        "lng": 126.9975
+      }
+    ]
+  },
+  {
+    "id": "hannam-4",
+    "name": "한남4구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2024.02.28",
+    "region": "서울",
+    "district": "용산구",
+    "address": "서울특별시 용산구 보광동 360 일대",
+    "lat": 37.5275,
+    "lng": 127.0055,
+    "totalUnits": 2331,
+    "ownersCount": 1160,
+    "generalUnits": 820,
+    "rentalUnits": 351,
+    "generalRatio": 35,
+    "builder": "시공사 선정 중 (삼성물산 vs 현대건설)",
+    "zoneAreaM2": 160258,
+    "far": 226,
+    "bcr": 31,
+    "maxFloor": 22,
+    "totalBuildings": 51,
+    "recentTradePriceDisplay": "17.8억",
+    "avgLandPricePerPyeongManwon": 15800,
+    "askCount": 42,
+    "minPriceDisplay": "15.5억",
+    "minInvestmentDisplay": "12.1억",
+    "estimatedPremiumDisplay": "7.8억~9.5억",
+    "nearestStation": "서빙고역 · 한남역 수변",
+    "walkMinutes": 7,
+    "polygon": [
+      {
+        "lat": 37.5305,
+        "lng": 127.0025
+      },
+      {
+        "lat": 37.5305,
+        "lng": 127.0085
+      },
+      {
+        "lat": 37.5245,
+        "lng": 127.0085
+      },
+      {
+        "lat": 37.5245,
+        "lng": 127.0025
+      }
+    ]
+  },
+  {
+    "id": "hannam-2",
+    "name": "한남2구역",
+    "type": "재개발",
+    "status": "관리처분인가",
+    "statusDate": "2023.06.15",
+    "region": "서울",
+    "district": "용산구",
+    "address": "서울특별시 용산구 보광동 272-3 일대",
+    "lat": 37.534,
+    "lng": 126.9965,
+    "totalUnits": 1537,
+    "ownersCount": 908,
+    "generalUnits": 391,
+    "rentalUnits": 238,
+    "generalRatio": 25,
+    "builder": "대우건설 (한남써밋)",
+    "zoneAreaM2": 115000,
+    "far": 195,
+    "bcr": 32,
+    "maxFloor": 14,
+    "totalBuildings": 30,
+    "recentTradePriceDisplay": "16.5억",
+    "avgLandPricePerPyeongManwon": 14900,
+    "askCount": 38,
+    "minPriceDisplay": "14.8억",
+    "minInvestmentDisplay": "11.5억",
+    "estimatedPremiumDisplay": "6.8억~8.2억",
+    "nearestStation": "이태원역 도보 4분",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.5365,
+        "lng": 126.994
+      },
+      {
+        "lat": 37.5365,
+        "lng": 126.999
+      },
+      {
+        "lat": 37.5315,
+        "lng": 126.999
+      },
+      {
+        "lat": 37.5315,
+        "lng": 126.994
+      }
+    ]
+  },
+  {
+    "id": "seongsu-1",
+    "name": "성수전략정비구역 1지구",
+    "type": "재개발",
+    "status": "조합설립인가",
+    "statusDate": "2023.09.20",
+    "region": "서울",
+    "district": "성동구",
+    "address": "서울특별시 성동구 성수동1가 72-10 일대",
+    "lat": 37.5365,
+    "lng": 127.0465,
+    "totalUnits": 3019,
+    "ownersCount": 1420,
+    "generalUnits": 1050,
+    "rentalUnits": 549,
+    "generalRatio": 35,
+    "builder": "최고 70층 초고층 한강변 랜드마크",
+    "zoneAreaM2": 194398,
+    "far": 314,
+    "bcr": 19,
+    "maxFloor": 70,
+    "totalBuildings": 18,
+    "recentTradePriceDisplay": "24.5억",
+    "avgLandPricePerPyeongManwon": 19800,
+    "askCount": 46,
+    "minPriceDisplay": "21.0억",
+    "minInvestmentDisplay": "16.8억",
+    "estimatedPremiumDisplay": "11억~14억",
+    "nearestStation": "서울숲역 (수인분당선) · 뚝섬역",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.54,
+        "lng": 127.043
+      },
+      {
+        "lat": 37.54,
+        "lng": 127.05
+      },
+      {
+        "lat": 37.533,
+        "lng": 127.05
+      },
+      {
+        "lat": 37.533,
+        "lng": 127.043
+      }
+    ]
+  },
+  {
+    "id": "seongsu-2",
+    "name": "성수전략정비구역 2지구",
+    "type": "재개발",
+    "status": "조합설립인가",
+    "statusDate": "2023.11.15",
+    "region": "서울",
+    "district": "성동구",
+    "address": "서울특별시 성동구 성수동2가 506 일대",
+    "lat": 37.535,
+    "lng": 127.0525,
+    "totalUnits": 1907,
+    "ownersCount": 1110,
+    "generalUnits": 480,
+    "rentalUnits": 317,
+    "generalRatio": 25,
+    "builder": "최고 70층 초고층 재개발",
+    "zoneAreaM2": 131980,
+    "far": 310,
+    "bcr": 19,
+    "maxFloor": 70,
+    "totalBuildings": 12,
+    "recentTradePriceDisplay": "19.5억",
+    "avgLandPricePerPyeongManwon": 18500,
+    "askCount": 35,
+    "minPriceDisplay": "17.2억",
+    "minInvestmentDisplay": "13.5억",
+    "estimatedPremiumDisplay": "9.5억~11.5억",
+    "nearestStation": "성수역 (2호선) 도보 7분",
+    "walkMinutes": 7,
+    "polygon": [
+      {
+        "lat": 37.538,
+        "lng": 127.0495
+      },
+      {
+        "lat": 37.538,
+        "lng": 127.0555
+      },
+      {
+        "lat": 37.532,
+        "lng": 127.0555
+      },
+      {
+        "lat": 37.532,
+        "lng": 127.0495
+      }
+    ]
+  },
+  {
+    "id": "noryangjin-1",
+    "name": "노량진1구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2024.03.10",
+    "region": "서울",
+    "district": "동작구",
+    "address": "서울특별시 동작구 노량진동 278-2 일대",
+    "lat": 37.5125,
+    "lng": 126.9425,
+    "totalUnits": 2992,
+    "ownersCount": 1020,
+    "generalUnits": 1440,
+    "rentalUnits": 532,
+    "generalRatio": 48,
+    "builder": "포스코이앤씨 (오티에르 노량진)",
+    "zoneAreaM2": 132132,
+    "far": 265,
+    "bcr": 20,
+    "maxFloor": 33,
+    "totalBuildings": 28,
+    "recentTradePriceDisplay": "13.5억",
+    "avgLandPricePerPyeongManwon": 9800,
+    "askCount": 48,
+    "minPriceDisplay": "11.8억",
+    "minInvestmentDisplay": "8.5억",
+    "estimatedPremiumDisplay": "5.5억~6.8억",
+    "nearestStation": "노량진역 (1·9호선 급행) 도보 4분",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.516,
+        "lng": 126.939
+      },
+      {
+        "lat": 37.516,
+        "lng": 126.946
+      },
+      {
+        "lat": 37.509,
+        "lng": 126.946
+      },
+      {
+        "lat": 37.509,
+        "lng": 126.939
+      }
+    ]
+  },
+  {
+    "id": "noryangjin-3",
+    "name": "노량진3구역",
+    "type": "재개발",
+    "status": "관리처분인가",
+    "statusDate": "2023.12.05",
+    "region": "서울",
+    "district": "동작구",
+    "address": "서울특별시 동작구 노량진동 232-19 일대",
+    "lat": 37.5105,
+    "lng": 126.9465,
+    "totalUnits": 1012,
+    "ownersCount": 580,
+    "generalUnits": 260,
+    "rentalUnits": 172,
+    "generalRatio": 26,
+    "builder": "포스코이앤씨",
+    "zoneAreaM2": 73000,
+    "far": 255,
+    "bcr": 21,
+    "maxFloor": 30,
+    "totalBuildings": 16,
+    "recentTradePriceDisplay": "12.2억",
+    "avgLandPricePerPyeongManwon": 9200,
+    "askCount": 26,
+    "minPriceDisplay": "11.0억",
+    "minInvestmentDisplay": "7.9억",
+    "estimatedPremiumDisplay": "4.8억~5.8억",
+    "nearestStation": "노량진역 도보 5분",
+    "walkMinutes": 5,
+    "polygon": [
+      {
+        "lat": 37.513,
+        "lng": 126.944
+      },
+      {
+        "lat": 37.513,
+        "lng": 126.949
+      },
+      {
+        "lat": 37.508,
+        "lng": 126.949
+      },
+      {
+        "lat": 37.508,
+        "lng": 126.944
+      }
+    ]
+  },
+  {
+    "id": "heukseok-9",
+    "name": "흑석9구역 (디에이치 켄트로나인)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2024.01.15",
+    "region": "서울",
+    "district": "동작구",
+    "address": "서울특별시 동작구 흑석동 90 일대",
+    "lat": 37.5065,
+    "lng": 126.9635,
+    "totalUnits": 1536,
+    "ownersCount": 710,
+    "generalUnits": 560,
+    "rentalUnits": 266,
+    "generalRatio": 36,
+    "builder": "현대건설 (디에이치)",
+    "zoneAreaM2": 94000,
+    "far": 255,
+    "bcr": 19,
+    "maxFloor": 25,
+    "totalBuildings": 21,
+    "recentTradePriceDisplay": "16.8억",
+    "avgLandPricePerPyeongManwon": 12500,
+    "askCount": 31,
+    "minPriceDisplay": "15.0억",
+    "minInvestmentDisplay": "11.2억",
+    "estimatedPremiumDisplay": "7.2억~8.5억",
+    "nearestStation": "흑석역 (9호선) 도보 4분",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.5095,
+        "lng": 126.9605
+      },
+      {
+        "lat": 37.5095,
+        "lng": 126.9665
+      },
+      {
+        "lat": 37.5035,
+        "lng": 126.9665
+      },
+      {
+        "lat": 37.5035,
+        "lng": 126.9605
+      }
+    ]
+  },
+  {
+    "id": "bukahyeon-2",
+    "name": "북아현2구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2023.03.16",
+    "region": "서울",
+    "district": "서대문구",
+    "address": "서울특별시 서대문구 북아현동 520 일대",
+    "lat": 37.5615,
+    "lng": 126.9545,
+    "totalUnits": 2320,
+    "ownersCount": 1280,
+    "generalUnits": 640,
+    "rentalUnits": 400,
+    "generalRatio": 28,
+    "builder": "삼성물산 · DL이앤씨",
+    "zoneAreaM2": 124230,
+    "far": 260,
+    "bcr": 22,
+    "maxFloor": 29,
+    "totalBuildings": 28,
+    "recentTradePriceDisplay": "12.5억",
+    "avgLandPricePerPyeongManwon": 9400,
+    "askCount": 39,
+    "minPriceDisplay": "11.2억",
+    "minInvestmentDisplay": "8.1억",
+    "estimatedPremiumDisplay": "5.4억~6.5억",
+    "nearestStation": "아현역 (2호선) · 충정로역 (2·5호선)",
+    "walkMinutes": 3,
+    "polygon": [
+      {
+        "lat": 37.5645,
+        "lng": 126.9515
+      },
+      {
+        "lat": 37.5645,
+        "lng": 126.9575
+      },
+      {
+        "lat": 37.5585,
+        "lng": 126.9575
+      },
+      {
+        "lat": 37.5585,
+        "lng": 126.9515
+      }
+    ]
+  },
+  {
+    "id": "galhyeon-1",
+    "name": "갈현1구역 (북한산 시그니처)",
+    "type": "재개발",
+    "status": "이주철거",
+    "statusDate": "2023.09.10",
+    "region": "서울",
+    "district": "은평구",
+    "address": "서울특별시 은평구 갈현동 300 일대",
+    "lat": 37.6215,
+    "lng": 126.9145,
+    "totalUnits": 4116,
+    "ownersCount": 2670,
+    "generalUnits": 820,
+    "rentalUnits": 626,
+    "generalRatio": 20,
+    "builder": "롯데건설 (북한산 시그니처 롯데캐슬)",
+    "zoneAreaM2": 238850,
+    "far": 230,
+    "bcr": 23,
+    "maxFloor": 22,
+    "totalBuildings": 32,
+    "recentTradePriceDisplay": "8.4억",
+    "avgLandPricePerPyeongManwon": 5800,
+    "askCount": 58,
+    "minPriceDisplay": "7.6억",
+    "minInvestmentDisplay": "4.9억",
+    "estimatedPremiumDisplay": "3.2억~3.9억",
+    "nearestStation": "연신내역 (3·6호선 · GTX-A) 도보 8분",
+    "walkMinutes": 8,
+    "polygon": [
+      {
+        "lat": 37.626,
+        "lng": 126.91
+      },
+      {
+        "lat": 37.626,
+        "lng": 126.919
+      },
+      {
+        "lat": 37.617,
+        "lng": 126.919
+      },
+      {
+        "lat": 37.617,
+        "lng": 126.91
+      }
+    ]
+  },
+  {
+    "id": "yeouido-sibeom",
+    "name": "여의도 시범아파트",
+    "type": "신속통합기획",
+    "status": "사업시행인가",
+    "statusDate": "2023.10.12",
+    "region": "서울",
+    "district": "영등포구",
+    "address": "서울특별시 영등포구 여의도동 50 일대",
+    "lat": 37.521,
+    "lng": 126.936,
+    "totalUnits": 2472,
+    "ownersCount": 1584,
+    "generalUnits": 680,
+    "rentalUnits": 208,
+    "generalRatio": 27,
+    "builder": "현대건설 (디에이치 여의도)",
+    "zoneAreaM2": 109000,
+    "far": 399,
+    "bcr": 28,
+    "maxFloor": 65,
+    "totalBuildings": 10,
+    "recentTradePriceDisplay": "28.5억",
+    "avgLandPricePerPyeongManwon": 18500,
+    "askCount": 41,
+    "minPriceDisplay": "25.0억",
+    "minInvestmentDisplay": "20.5억",
+    "estimatedPremiumDisplay": "12억~15억",
+    "nearestStation": "여의나루역 (5호선) 도보 4분 · 한강공원 직결",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.524,
+        "lng": 126.933
+      },
+      {
+        "lat": 37.524,
+        "lng": 126.939
+      },
+      {
+        "lat": 37.518,
+        "lng": 126.939
+      },
+      {
+        "lat": 37.518,
+        "lng": 126.933
+      }
+    ]
+  },
+  {
+    "id": "apgujeong-3",
+    "name": "압구정3구역 (현대1~7, 10, 13, 14차)",
+    "type": "신속통합기획",
+    "status": "조합설립인가",
+    "statusDate": "2023.12.10",
+    "region": "서울",
+    "district": "강남구",
+    "address": "서울특별시 강남구 압구정동 369 일대",
+    "lat": 37.5315,
+    "lng": 127.0285,
+    "totalUnits": 5800,
+    "ownersCount": 4065,
+    "generalUnits": 1200,
+    "rentalUnits": 535,
+    "generalRatio": 21,
+    "builder": "희림컨소시엄 · 최고 70층 초고층 한강변 랜드마크",
+    "zoneAreaM2": 360000,
+    "far": 300,
+    "bcr": 18,
+    "maxFloor": 70,
+    "totalBuildings": 32,
+    "recentTradePriceDisplay": "48.5억",
+    "avgLandPricePerPyeongManwon": 28500,
+    "askCount": 65,
+    "minPriceDisplay": "42.0억",
+    "minInvestmentDisplay": "35.0억",
+    "estimatedPremiumDisplay": "20억~25억",
+    "nearestStation": "압구정역 (3호선) 초역세권",
+    "walkMinutes": 3,
+    "polygon": [
+      {
+        "lat": 37.5365,
+        "lng": 127.0235
+      },
+      {
+        "lat": 37.5365,
+        "lng": 127.0335
+      },
+      {
+        "lat": 37.5265,
+        "lng": 127.0335
+      },
+      {
+        "lat": 37.5265,
+        "lng": 127.0235
+      }
+    ]
+  },
+  {
+    "id": "enma-apt",
+    "name": "대치 은마아파트",
+    "type": "재건축",
+    "status": "조합설립인가",
+    "statusDate": "2023.09.26",
+    "region": "서울",
+    "district": "강남구",
+    "address": "서울특별시 강남구 대치동 316 일대",
+    "lat": 37.4975,
+    "lng": 127.0665,
+    "totalUnits": 5778,
+    "ownersCount": 4424,
+    "generalUnits": 754,
+    "rentalUnits": 600,
+    "generalRatio": 13,
+    "builder": "GS건설 · HDC현대산업개발 컨소시엄",
+    "zoneAreaM2": 243552,
+    "far": 299,
+    "bcr": 19,
+    "maxFloor": 35,
+    "totalBuildings": 33,
+    "recentTradePriceDisplay": "27.5억",
+    "avgLandPricePerPyeongManwon": 17200,
+    "askCount": 88,
+    "minPriceDisplay": "24.5억",
+    "minInvestmentDisplay": "19.8억",
+    "estimatedPremiumDisplay": "10억~13억",
+    "nearestStation": "대치역 (3호선) 초역세권 · 학원가 중심",
+    "walkMinutes": 1,
+    "polygon": [
+      {
+        "lat": 37.5015,
+        "lng": 127.0625
+      },
+      {
+        "lat": 37.5015,
+        "lng": 127.0705
+      },
+      {
+        "lat": 37.4935,
+        "lng": 127.0705
+      },
+      {
+        "lat": 37.4935,
+        "lng": 127.0625
+      }
+    ]
+  },
+  {
+    "id": "banpo-124",
+    "name": "반포주공1단지 (1·2·4주구 디에이치 클래스트)",
+    "type": "재건축",
+    "status": "착공",
+    "statusDate": "2024.03.28",
+    "region": "서울",
+    "district": "서초구",
+    "address": "서울특별시 서초구 반포동 810 일대",
+    "lat": 37.5065,
+    "lng": 126.9885,
+    "totalUnits": 5002,
+    "ownersCount": 2290,
+    "generalUnits": 2150,
+    "rentalUnits": 562,
+    "generalRatio": 43,
+    "builder": "현대건설 (디에이치 클래스트)",
+    "zoneAreaM2": 370000,
+    "far": 299,
+    "bcr": 20,
+    "maxFloor": 35,
+    "totalBuildings": 50,
+    "recentTradePriceDisplay": "55.0억",
+    "avgLandPricePerPyeongManwon": 32000,
+    "askCount": 32,
+    "minPriceDisplay": "48.0억",
+    "minInvestmentDisplay": "42.0억",
+    "estimatedPremiumDisplay": "25억~30억",
+    "nearestStation": "구반포역 (9호선) · 동작역 더블역세권",
+    "walkMinutes": 2,
+    "polygon": [
+      {
+        "lat": 37.511,
+        "lng": 126.984
+      },
+      {
+        "lat": 37.511,
+        "lng": 126.993
+      },
+      {
+        "lat": 37.502,
+        "lng": 126.993
+      },
+      {
+        "lat": 37.502,
+        "lng": 126.984
+      }
+    ]
+  },
+  {
+    "id": "jamsil-5",
+    "name": "잠실주공5단지",
+    "type": "재건축",
+    "status": "사업시행인가",
+    "statusDate": "2024.02.10",
+    "region": "서울",
+    "district": "송파구",
+    "address": "서울특별시 송파구 잠실동 27 일대",
+    "lat": 37.5145,
+    "lng": 127.0985,
+    "totalUnits": 6815,
+    "ownersCount": 3930,
+    "generalUnits": 2100,
+    "rentalUnits": 785,
+    "generalRatio": 31,
+    "builder": "GS건설 · 현대건설 · HDC현산",
+    "zoneAreaM2": 358000,
+    "far": 299,
+    "bcr": 18,
+    "maxFloor": 70,
+    "totalBuildings": 28,
+    "recentTradePriceDisplay": "31.5억",
+    "avgLandPricePerPyeongManwon": 19500,
+    "askCount": 72,
+    "minPriceDisplay": "28.5억",
+    "minInvestmentDisplay": "23.5억",
+    "estimatedPremiumDisplay": "13억~16억",
+    "nearestStation": "잠실역 (2·8호선) 초역세권",
+    "walkMinutes": 1,
+    "polygon": [
+      {
+        "lat": 37.519,
+        "lng": 127.094
+      },
+      {
+        "lat": 37.519,
+        "lng": 127.103
+      },
+      {
+        "lat": 37.51,
+        "lng": 127.103
+      },
+      {
+        "lat": 37.51,
+        "lng": 127.094
+      }
+    ]
+  },
+  {
+    "id": "gwangmyeong-11",
+    "name": "광명11구역",
+    "type": "재개발",
+    "status": "이주철거",
+    "statusDate": "2023.07.20",
+    "region": "경기",
+    "district": "광명시",
+    "address": "경기도 광명시 광명4동 158-403 일대",
+    "lat": 37.4785,
+    "lng": 126.8585,
+    "totalUnits": 4291,
+    "ownersCount": 3270,
+    "generalUnits": 680,
+    "rentalUnits": 341,
+    "generalRatio": 16,
+    "builder": "현대건설 · HDC현대산업개발",
+    "zoneAreaM2": 198000,
+    "far": 270,
+    "bcr": 19,
+    "maxFloor": 42,
+    "totalBuildings": 25,
+    "recentTradePriceDisplay": "8.5억",
+    "avgLandPricePerPyeongManwon": 5200,
+    "askCount": 55,
+    "minPriceDisplay": "7.7억",
+    "minInvestmentDisplay": "4.8억",
+    "estimatedPremiumDisplay": "3.2억~4.0억",
+    "nearestStation": "광명사거리역 (7호선) 초역세권",
+    "walkMinutes": 2,
+    "polygon": [
+      {
+        "lat": 37.482,
+        "lng": 126.855
+      },
+      {
+        "lat": 37.482,
+        "lng": 126.862
+      },
+      {
+        "lat": 37.475,
+        "lng": 126.862
+      },
+      {
+        "lat": 37.475,
+        "lng": 126.855
+      }
+    ]
+  },
+  {
+    "id": "gwangmyeong-12",
+    "name": "광명12구역",
+    "type": "재개발",
+    "status": "관리처분인가",
+    "statusDate": "2023.11.15",
+    "region": "경기",
+    "district": "광명시",
+    "address": "경기도 광명시 철산동 472-267 일대",
+    "lat": 37.4735,
+    "lng": 126.8665,
+    "totalUnits": 2097,
+    "ownersCount": 1180,
+    "generalUnits": 720,
+    "rentalUnits": 197,
+    "generalRatio": 34,
+    "builder": "GS건설 (철산 센트럴 자이)",
+    "zoneAreaM2": 98000,
+    "far": 265,
+    "bcr": 20,
+    "maxFloor": 29,
+    "totalBuildings": 19,
+    "recentTradePriceDisplay": "9.2억",
+    "avgLandPricePerPyeongManwon": 5600,
+    "askCount": 36,
+    "minPriceDisplay": "8.4억",
+    "minInvestmentDisplay": "5.5억",
+    "estimatedPremiumDisplay": "3.8억~4.6억",
+    "nearestStation": "철산역 (7호선) 도보 4분",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.4763,
+        "lng": 126.8637
+      },
+      {
+        "lat": 37.4763,
+        "lng": 126.8693
+      },
+      {
+        "lat": 37.4707,
+        "lng": 126.8693
+      },
+      {
+        "lat": 37.4707,
+        "lng": 126.8637
+      }
+    ]
+  },
+  {
+    "id": "seongnam-sanseong",
+    "name": "성남 산성구역 (산성역 헤리스톤)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2024.02.10",
+    "region": "경기",
+    "district": "성남시 수정구",
+    "address": "경기도 성남시 수정구 산성동 1336 일대",
+    "lat": 37.4565,
+    "lng": 127.1515,
+    "totalUnits": 3487,
+    "ownersCount": 1720,
+    "generalUnits": 1224,
+    "rentalUnits": 543,
+    "generalRatio": 35,
+    "builder": "대우건설 · GS건설 · SK에코플랜트",
+    "zoneAreaM2": 152000,
+    "far": 264,
+    "bcr": 20,
+    "maxFloor": 29,
+    "totalBuildings": 45,
+    "recentTradePriceDisplay": "10.8억",
+    "avgLandPricePerPyeongManwon": 6800,
+    "askCount": 42,
+    "minPriceDisplay": "9.9억",
+    "minInvestmentDisplay": "6.8억",
+    "estimatedPremiumDisplay": "4.2억~5.1억",
+    "nearestStation": "산성역 (8호선) 초역세권",
+    "walkMinutes": 2,
+    "polygon": [
+      {
+        "lat": 37.46,
+        "lng": 127.148
+      },
+      {
+        "lat": 37.46,
+        "lng": 127.155
+      },
+      {
+        "lat": 37.453,
+        "lng": 127.155
+      },
+      {
+        "lat": 37.453,
+        "lng": 127.148
+      }
+    ]
+  },
+  {
+    "id": "seongnam-sujin-1",
+    "name": "성남 수진1구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2023.12.20",
+    "region": "경기",
+    "district": "성남시 수정구",
+    "address": "경기도 성남시 수정구 수진동 963 일대",
+    "lat": 37.4425,
+    "lng": 127.1365,
+    "totalUnits": 5668,
+    "ownersCount": 2680,
+    "generalUnits": 2150,
+    "rentalUnits": 838,
+    "generalRatio": 38,
+    "builder": "대우건설 컨소시엄",
+    "zoneAreaM2": 261828,
+    "far": 265,
+    "bcr": 21,
+    "maxFloor": 15,
+    "totalBuildings": 56,
+    "recentTradePriceDisplay": "7.9억",
+    "avgLandPricePerPyeongManwon": 5100,
+    "askCount": 62,
+    "minPriceDisplay": "7.1억",
+    "minInvestmentDisplay": "4.2억",
+    "estimatedPremiumDisplay": "2.8억~3.6억",
+    "nearestStation": "모란역 (8호선·수인분당) · 수진역 더블역세권",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 37.447,
+        "lng": 127.132
+      },
+      {
+        "lat": 37.447,
+        "lng": 127.141
+      },
+      {
+        "lat": 37.438,
+        "lng": 127.141
+      },
+      {
+        "lat": 37.438,
+        "lng": 127.132
+      }
+    ]
+  },
+  {
+    "id": "incheon-bupyeong-4",
+    "name": "부평4구역 (부평역 해링턴플레이스)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2023.05.15",
+    "region": "인천",
+    "district": "부평구",
+    "address": "인천광역시 부평구 부평동 665 일대",
+    "lat": 37.4945,
+    "lng": 126.7265,
+    "totalUnits": 1909,
+    "ownersCount": 780,
+    "generalUnits": 960,
+    "rentalUnits": 169,
+    "generalRatio": 50,
+    "builder": "효성중공업 · 진흥기업",
+    "zoneAreaM2": 80000,
+    "far": 285,
+    "bcr": 21,
+    "maxFloor": 45,
+    "totalBuildings": 13,
+    "recentTradePriceDisplay": "6.8억",
+    "avgLandPricePerPyeongManwon": 4100,
+    "askCount": 28,
+    "minPriceDisplay": "6.2억",
+    "minInvestmentDisplay": "3.7억",
+    "estimatedPremiumDisplay": "2.1억~2.8억",
+    "nearestStation": "부평역 (1호선·인천1호선·GTX-B) 도보 5분",
+    "walkMinutes": 5,
+    "polygon": [
+      {
+        "lat": 37.4975,
+        "lng": 126.7235
+      },
+      {
+        "lat": 37.4975,
+        "lng": 126.7295
+      },
+      {
+        "lat": 37.4915,
+        "lng": 126.7295
+      },
+      {
+        "lat": 37.4915,
+        "lng": 126.7235
+      }
+    ]
+  },
+  {
+    "id": "busan-samik-beach",
+    "name": "남천2구역 (삼익비치 재건축)",
+    "type": "재건축",
+    "status": "사업시행인가",
+    "statusDate": "2023.09.28",
+    "region": "부산",
+    "district": "수영구",
+    "address": "부산광역시 수영구 남천동 148-4 일대",
+    "lat": 35.1415,
+    "lng": 129.1155,
+    "totalUnits": 3200,
+    "ownersCount": 3060,
+    "generalUnits": 140,
+    "rentalUnits": 0,
+    "generalRatio": 4,
+    "builder": "GS건설 (그랑자이 더 비치)",
+    "zoneAreaM2": 251000,
+    "far": 295,
+    "bcr": 18,
+    "maxFloor": 60,
+    "totalBuildings": 12,
+    "recentTradePriceDisplay": "15.8억",
+    "avgLandPricePerPyeongManwon": 11500,
+    "askCount": 68,
+    "minPriceDisplay": "13.9억",
+    "minInvestmentDisplay": "11.2억",
+    "estimatedPremiumDisplay": "6.5억~8.2억",
+    "nearestStation": "남천역 (부산2호선) · 광안대교 영구오션뷰",
+    "walkMinutes": 8,
+    "polygon": [
+      {
+        "lat": 35.1455,
+        "lng": 129.1115
+      },
+      {
+        "lat": 35.1455,
+        "lng": 129.1195
+      },
+      {
+        "lat": 35.1375,
+        "lng": 129.1195
+      },
+      {
+        "lat": 35.1375,
+        "lng": 129.1115
+      }
+    ]
+  },
+  {
+    "id": "busan-udong-3",
+    "name": "해운대 우동3구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2024.01.18",
+    "region": "부산",
+    "district": "해운대구",
+    "address": "부산광역시 해운대구 우동 229 일대",
+    "lat": 35.1635,
+    "lng": 129.1585,
+    "totalUnits": 2503,
+    "ownersCount": 1040,
+    "generalUnits": 1300,
+    "rentalUnits": 163,
+    "generalRatio": 52,
+    "builder": "현대건설 (디에이치 아델리아)",
+    "zoneAreaM2": 160000,
+    "far": 280,
+    "bcr": 19,
+    "maxFloor": 39,
+    "totalBuildings": 24,
+    "recentTradePriceDisplay": "11.5억",
+    "avgLandPricePerPyeongManwon": 8400,
+    "askCount": 42,
+    "minPriceDisplay": "10.2억",
+    "minInvestmentDisplay": "7.1억",
+    "estimatedPremiumDisplay": "4.5억~5.5억",
+    "nearestStation": "해운대역 (부산2호선) 도보 4분",
+    "walkMinutes": 4,
+    "polygon": [
+      {
+        "lat": 35.167,
+        "lng": 129.155
+      },
+      {
+        "lat": 35.167,
+        "lng": 129.162
+      },
+      {
+        "lat": 35.16,
+        "lng": 129.162
+      },
+      {
+        "lat": 35.16,
+        "lng": 129.155
+      }
+    ]
+  },
+  {
+    "id": "busan-daeyeon-3",
+    "name": "대연3구역 (디아이엘)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2023.06.20",
+    "region": "부산",
+    "district": "남구",
+    "address": "부산광역시 남구 대연동 1619 일대",
+    "lat": 35.1325,
+    "lng": 129.0915,
+    "totalUnits": 4488,
+    "ownersCount": 1850,
+    "generalUnits": 2382,
+    "rentalUnits": 256,
+    "generalRatio": 53,
+    "builder": "롯데건설 · HDC현대산업개발",
+    "zoneAreaM2": 248000,
+    "far": 268,
+    "bcr": 16,
+    "maxFloor": 36,
+    "totalBuildings": 28,
+    "recentTradePriceDisplay": "8.5억",
+    "avgLandPricePerPyeongManwon": 5900,
+    "askCount": 58,
+    "minPriceDisplay": "7.7억",
+    "minInvestmentDisplay": "4.9억",
+    "estimatedPremiumDisplay": "3.2억~4.1억",
+    "nearestStation": "못골역 (부산2호선) 초역세권",
+    "walkMinutes": 2,
+    "polygon": [
+      {
+        "lat": 35.137,
+        "lng": 129.087
+      },
+      {
+        "lat": 35.137,
+        "lng": 129.096
+      },
+      {
+        "lat": 35.128,
+        "lng": 129.096
+      },
+      {
+        "lat": 35.128,
+        "lng": 129.087
+      }
+    ]
+  },
+  {
+    "id": "daegu-beomeo-woobang",
+    "name": "수성구 범어우방1차 재건축",
+    "type": "재건축",
+    "status": "사업시행인가",
+    "statusDate": "2023.11.20",
+    "region": "대구",
+    "district": "수성구",
+    "address": "대구광역시 수성구 범어동 86-1 일대",
+    "lat": 35.8565,
+    "lng": 128.6285,
+    "totalUnits": 1350,
+    "ownersCount": 680,
+    "generalUnits": 550,
+    "rentalUnits": 120,
+    "generalRatio": 41,
+    "builder": "현대건설 (디에이치)",
+    "zoneAreaM2": 74000,
+    "far": 280,
+    "bcr": 19,
+    "maxFloor": 35,
+    "totalBuildings": 10,
+    "recentTradePriceDisplay": "11.2억",
+    "avgLandPricePerPyeongManwon": 7900,
+    "askCount": 32,
+    "minPriceDisplay": "10.0억",
+    "minInvestmentDisplay": "7.2억",
+    "estimatedPremiumDisplay": "4.2억~5.0억",
+    "nearestStation": "범어역 (대구2호선) 도보 5분 · 수성학군 중심",
+    "walkMinutes": 5,
+    "polygon": [
+      {
+        "lat": 35.8595,
+        "lng": 128.6255
+      },
+      {
+        "lat": 35.8595,
+        "lng": 128.6315
+      },
+      {
+        "lat": 35.8535,
+        "lng": 128.6315
+      },
+      {
+        "lat": 35.8535,
+        "lng": 128.6255
+      }
+    ]
+  },
+  {
+    "id": "daejeon-doma-1",
+    "name": "도마·변동1구역 (힐스테이트 가장더퍼스트)",
+    "type": "재개발",
+    "status": "착공",
+    "statusDate": "2024.05.02",
+    "region": "대전",
+    "district": "서구",
+    "address": "대전광역시 서구 가장동 38-1 일대",
+    "lat": 36.3315,
+    "lng": 127.3885,
+    "totalUnits": 1779,
+    "ownersCount": 395,
+    "generalUnits": 1335,
+    "rentalUnits": 99,
+    "generalRatio": 75,
+    "builder": "현대건설 · 현대엔지니어링",
+    "zoneAreaM2": 105500,
+    "far": 260,
+    "bcr": 18,
+    "maxFloor": 38,
+    "totalBuildings": 15,
+    "recentTradePriceDisplay": "5.8억",
+    "avgLandPricePerPyeongManwon": 3600,
+    "askCount": 35,
+    "minPriceDisplay": "5.2억",
+    "minInvestmentDisplay": "2.8억",
+    "estimatedPremiumDisplay": "1.5억~2.1억",
+    "nearestStation": "용문역 (대전1호선) 도보 8분",
+    "walkMinutes": 8,
+    "polygon": [
+      {
+        "lat": 36.3347,
+        "lng": 127.3853
+      },
+      {
+        "lat": 36.3347,
+        "lng": 127.3917
+      },
+      {
+        "lat": 36.3283,
+        "lng": 127.3917
+      },
+      {
+        "lat": 36.3283,
+        "lng": 127.3853
+      }
+    ]
+  },
+  {
+    "id": "daejeon-doma-3",
+    "name": "도마·변동3구역",
+    "type": "재개발",
+    "status": "관리처분인가",
+    "statusDate": "2023.10.15",
+    "region": "대전",
+    "district": "서구",
+    "address": "대전광역시 서구 변동 9-4 일대",
+    "lat": 36.3265,
+    "lng": 127.3825,
+    "totalUnits": 3098,
+    "ownersCount": 820,
+    "generalUnits": 2050,
+    "rentalUnits": 228,
+    "generalRatio": 66,
+    "builder": "포스코이앤씨 · GS건설",
+    "zoneAreaM2": 192000,
+    "far": 265,
+    "bcr": 19,
+    "maxFloor": 38,
+    "totalBuildings": 25,
+    "recentTradePriceDisplay": "5.2억",
+    "avgLandPricePerPyeongManwon": 3400,
+    "askCount": 46,
+    "minPriceDisplay": "4.6억",
+    "minInvestmentDisplay": "2.4억",
+    "estimatedPremiumDisplay": "1.4억~1.9억",
+    "nearestStation": "유등천 수변 인접",
+    "walkMinutes": 7,
+    "polygon": [
+      {
+        "lat": 36.3305,
+        "lng": 127.3785
+      },
+      {
+        "lat": 36.3305,
+        "lng": 127.3865
+      },
+      {
+        "lat": 36.3225,
+        "lng": 127.3865
+      },
+      {
+        "lat": 36.3225,
+        "lng": 127.3785
+      }
+    ]
+  },
+  {
+    "id": "gwangju-sinrim",
+    "name": "광주 신가동구역 (아크로 트라몬트)",
+    "type": "재개발",
+    "status": "관리처분인가",
+    "statusDate": "2023.12.18",
+    "region": "광주",
+    "district": "광산구",
+    "address": "광주광역시 광산구 신가동 842 일대",
+    "lat": 35.1865,
+    "lng": 126.8325,
+    "totalUnits": 4718,
+    "ownersCount": 1920,
+    "generalUnits": 2420,
+    "rentalUnits": 378,
+    "generalRatio": 51,
+    "builder": "DL이앤씨 (아크로) 컨소시엄",
+    "zoneAreaM2": 288000,
+    "far": 240,
+    "bcr": 18,
+    "maxFloor": 29,
+    "totalBuildings": 41,
+    "recentTradePriceDisplay": "6.2억",
+    "avgLandPricePerPyeongManwon": 3800,
+    "askCount": 54,
+    "minPriceDisplay": "5.5억",
+    "minInvestmentDisplay": "3.1억",
+    "estimatedPremiumDisplay": "1.8억~2.4억",
+    "nearestStation": "광주도시철도 2호선 예정지",
+    "walkMinutes": 5,
+    "polygon": [
+      {
+        "lat": 35.1915,
+        "lng": 126.8275
+      },
+      {
+        "lat": 35.1915,
+        "lng": 126.8375
+      },
+      {
+        "lat": 35.1815,
+        "lng": 126.8375
+      },
+      {
+        "lat": 35.1815,
+        "lng": 126.8275
+      }
+    ]
+  },
+  {
+    "id": "ulsan-b-04",
+    "name": "울산 B-04구역",
+    "type": "재개발",
+    "status": "사업시행인가",
+    "statusDate": "2024.01.25",
+    "region": "울산",
+    "district": "중구",
+    "address": "울산광역시 중구 교동 190-4 일대",
+    "lat": 35.5565,
+    "lng": 129.3185,
+    "totalUnits": 4080,
+    "ownersCount": 1540,
+    "generalUnits": 2280,
+    "rentalUnits": 260,
+    "generalRatio": 56,
+    "builder": "삼성물산 · 현대건설 컨소시엄",
+    "zoneAreaM2": 216000,
+    "far": 255,
+    "bcr": 18,
+    "maxFloor": 29,
+    "totalBuildings": 54,
+    "recentTradePriceDisplay": "6.5억",
+    "avgLandPricePerPyeongManwon": 4100,
+    "askCount": 48,
+    "minPriceDisplay": "5.8억",
+    "minInvestmentDisplay": "3.4억",
+    "estimatedPremiumDisplay": "2.1억~2.9억",
+    "nearestStation": "울산 원도심 중심",
+    "walkMinutes": 6,
+    "polygon": [
+      {
+        "lat": 35.561,
+        "lng": 129.314
+      },
+      {
+        "lat": 35.561,
+        "lng": 129.323
+      },
+      {
+        "lat": 35.552,
+        "lng": 129.323
+      },
+      {
+        "lat": 35.552,
+        "lng": 129.314
+      }
+    ]
+  }
+]

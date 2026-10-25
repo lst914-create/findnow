@@ -830,7 +830,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative flex items-center justify-center overflow-x-hidden pt-6 sm:pt-16 pb-4 sm:pb-10">
+      <section className="relative flex items-center justify-center overflow-x-hidden pt-20 sm:pt-28 pb-4 sm:pb-10">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-surface-50 to-accent-50" />
           <div className="absolute top-20 -left-32 w-72 sm:w-96 h-72 sm:h-96 bg-brand-200/30 rounded-full blur-3xl animate-float" />

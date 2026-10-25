@@ -442,25 +442,25 @@ export default function RedevelopmentPage() {
                       </div>
 
                       {/* 세대수 & 일반분양 비율 & 시공사 */}
-                      <div className="text-xs text-slate-600 font-medium flex items-center gap-2 mb-2">
-                        <span>{zone.totalUnits.toLocaleString()}세대</span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-blue-600 font-semibold">
+                      <div className="text-xs text-slate-600 font-medium flex items-center gap-2 mb-2 whitespace-nowrap overflow-hidden">
+                        <span className="shrink-0">{zone.totalUnits.toLocaleString()}세대</span>
+                        <span className="text-slate-300 shrink-0">•</span>
+                        <span className="text-blue-600 font-semibold shrink-0">
                           일반분양 {zone.generalRatio}%
                         </span>
-                        <span className="text-slate-300">•</span>
+                        <span className="text-slate-300 shrink-0">•</span>
                         <span className="text-slate-500 truncate">{zone.builder}</span>
                       </div>
 
                       {/* 핵심 가격 지표 2개 (최근거래 & 대지평당가) */}
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
-                        <div>
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs gap-2">
+                        <div className="shrink-0 whitespace-nowrap">
                           <span className="text-slate-400 block text-[10px]">최근 실거래</span>
                           <strong className="text-slate-900 font-bold text-sm">
                             {zone.recentTradePriceDisplay}
                           </strong>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0 whitespace-nowrap">
                           <span className="text-slate-400 block text-[10px]">대지지분 평당가</span>
                           <strong className="text-blue-600 font-black text-sm">
                             {zone.avgLandPricePerPyeongManwon.toLocaleString()}
@@ -470,11 +470,11 @@ export default function RedevelopmentPage() {
                       </div>
 
                       {/* 투자 메트릭스 요약 (초투 & 매물) */}
-                      <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg">
-                        <span>
+                      <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg whitespace-nowrap">
+                        <span className="shrink-0">
                           초기투자: <strong className="text-slate-800 font-bold">{zone.minInvestmentDisplay}~</strong>
                         </span>
-                        <span>
+                        <span className="shrink-0">
                           매물 <strong className="text-blue-600 font-bold">{zone.askCount}건</strong>
                         </span>
                       </div>
@@ -593,25 +593,25 @@ export default function RedevelopmentPage() {
       </div>
 
       {/* 모바일 화면 하단 [목록 / 지도] 플로팅 토글 바 - 바텀 네비 위에 위치 */}
-      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white rounded-full shadow-2xl px-5 py-2.5 flex items-center gap-4 text-xs font-bold">
+      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 backdrop-blur-md text-white rounded-full shadow-2xl px-5 py-2.5 flex items-center gap-4 text-xs font-bold border border-slate-700/60 whitespace-nowrap shrink-0">
         <button
           onClick={() => setMobileViewMode("list")}
-          className={`flex items-center gap-1.5 ${
-            mobileViewMode === "list" ? "text-blue-400" : "text-slate-400"
+          className={`flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors ${
+            mobileViewMode === "list" ? "text-blue-400 font-extrabold" : "text-slate-400"
           }`}
         >
-          <span>📋</span>
-          <span>목록 보기</span>
+          <span className="shrink-0">📋</span>
+          <span className="whitespace-nowrap">목록 보기</span>
         </button>
-        <span className="text-slate-600">|</span>
+        <span className="text-slate-600 shrink-0">|</span>
         <button
           onClick={() => setMobileViewMode("map")}
-          className={`flex items-center gap-1.5 ${
-            mobileViewMode === "map" ? "text-blue-400" : "text-slate-400"
+          className={`flex items-center gap-1.5 whitespace-nowrap shrink-0 transition-colors ${
+            mobileViewMode === "map" ? "text-blue-400 font-extrabold" : "text-slate-400"
           }`}
         >
-          <span>🗺️</span>
-          <span>지도 보기</span>
+          <span className="shrink-0">🗺️</span>
+          <span className="whitespace-nowrap">지도 보기</span>
         </button>
       </div>
     </div>

@@ -51,7 +51,7 @@ export default function MobileBottomNav() {
                   <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
                 )}
               </div>
-              <span className={`text-[11px] mt-0.5 tracking-tight ${isActive ? "font-bold" : "font-medium"}`}>
+              <span className={`text-[11px] mt-0.5 tracking-tight whitespace-nowrap shrink-0 ${isActive ? "font-bold" : "font-medium"}`}>
                 {item.label}
               </span>
               {isActive && (

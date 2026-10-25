@@ -303,29 +303,31 @@ export default function SubscriptionsPage() {
           </div>
           {/* 뷰 모드 전환 대형 탭 바 (청약 캘린더 vs 공고 목록) */}
           <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
-            <div className="inline-flex p-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15">
+            <div className="inline-flex p-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 max-w-full overflow-x-auto scrollbar-none whitespace-nowrap">
               <button
                 type="button"
                 onClick={() => setViewMode("calendar")}
-                className={`px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer ${
+                className={`px-4 sm:px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
                   viewMode === "calendar"
                     ? "bg-white text-indigo-950 shadow-md scale-[1.02]"
                     : "text-slate-300 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <span>📅 청약 캘린더 (일정 및 통계)</span>
+                <span>📅</span>
+                <span className="whitespace-nowrap">청약 캘린더</span>
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className={`px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer ${
+                className={`px-4 sm:px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-2 cursor-pointer whitespace-nowrap shrink-0 ${
                   viewMode === "list"
                     ? "bg-white text-indigo-950 shadow-md scale-[1.02]"
                     : "text-slate-300 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <span>📋 분양 공고 목록 (카드형)</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-extrabold">
+                <span>📋</span>
+                <span className="whitespace-nowrap">분양 공고 목록</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 font-extrabold shrink-0">
                   {filteredNotices.length}개
                 </span>
               </button>
@@ -541,42 +543,42 @@ export default function SubscriptionsPage() {
 
                   {/* 핵심 청약 일정 타임라인 박스 */}
                   <div className="space-y-1.5 text-xs bg-gradient-to-br from-slate-50 to-indigo-50/30 p-3 rounded-2xl border border-slate-200/80 mb-4">
-                    <div className="flex justify-between items-center text-slate-600">
-                      <span className="text-slate-400">모집공고</span>
-                      <span className="font-semibold text-slate-700">{notice.recruitDate || "-"}</span>
+                    <div className="flex justify-between items-center text-slate-600 gap-2">
+                      <span className="text-slate-400 shrink-0 whitespace-nowrap">모집공고</span>
+                      <span className="font-semibold text-slate-700 text-right ml-auto shrink-0 whitespace-nowrap">{notice.recruitDate || "-"}</span>
                     </div>
 
                     {notice.type === "무순위" ? (
                       /* 무순위/줍줍 전용 일정 */
-                      <div className="flex justify-between items-center text-slate-600">
-                        <span className="text-slate-400">청약접수 (무순위)</span>
-                        <span className="font-bold text-blue-700">{notice.receptStartDate || "-"}</span>
+                      <div className="flex justify-between items-center text-slate-600 gap-2">
+                        <span className="text-slate-400 shrink-0 whitespace-nowrap">청약접수 (무순위)</span>
+                        <span className="font-bold text-blue-700 text-right ml-auto shrink-0 whitespace-nowrap">{notice.receptStartDate || "-"}</span>
                       </div>
                     ) : (
                       /* 일반 아파트 분양 일정 */
                       <>
-                        <div className="flex justify-between items-center text-slate-600">
-                          <span className="text-slate-400">특별공급</span>
-                          <span className={`font-semibold ${notice.specialSupplyStartDate ? "text-indigo-700" : "text-slate-400"}`}>
+                        <div className="flex justify-between items-center text-slate-600 gap-2">
+                          <span className="text-slate-400 shrink-0 whitespace-nowrap">특별공급</span>
+                          <span className={`font-semibold text-right ml-auto shrink-0 whitespace-nowrap ${notice.specialSupplyStartDate ? "text-indigo-700" : "text-slate-400"}`}>
                             {notice.specialSupplyStartDate || "해당없음"}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center text-slate-600">
-                          <span className="text-slate-400">1순위 접수</span>
-                          <span className="font-bold text-blue-700">{notice.rank1Date || notice.receptStartDate || "-"}</span>
+                        <div className="flex justify-between items-center text-slate-600 gap-2">
+                          <span className="text-slate-400 shrink-0 whitespace-nowrap">1순위 접수</span>
+                          <span className="font-bold text-blue-700 text-right ml-auto shrink-0 whitespace-nowrap">{notice.rank1Date || notice.receptStartDate || "-"}</span>
                         </div>
-                        <div className="flex justify-between items-center text-slate-600">
-                          <span className="text-slate-400">2순위 접수</span>
-                          <span className="font-semibold text-indigo-600">
+                        <div className="flex justify-between items-center text-slate-600 gap-2">
+                          <span className="text-slate-400 shrink-0 whitespace-nowrap">2순위 접수</span>
+                          <span className="font-semibold text-indigo-600 text-right ml-auto shrink-0 whitespace-nowrap">
                             {notice.rank2Date || (notice.receptEndDate && notice.receptEndDate !== notice.rank1Date ? notice.receptEndDate : "1순위 마감시 생략")}
                           </span>
                         </div>
                       </>
                     )}
 
-                    <div className="flex justify-between items-center text-slate-600 pt-1 border-t border-slate-200/60">
-                      <span className="text-slate-400">당첨자발표</span>
-                      <span className="font-bold text-slate-900">{notice.winnerAnnounceDate || "-"}</span>
+                    <div className="flex justify-between items-center text-slate-600 pt-1 border-t border-slate-200/60 gap-2">
+                      <span className="text-slate-400 shrink-0 whitespace-nowrap">당첨자발표</span>
+                      <span className="font-bold text-slate-900 text-right ml-auto shrink-0 whitespace-nowrap">{notice.winnerAnnounceDate || "-"}</span>
                     </div>
                   </div>
                 </div>

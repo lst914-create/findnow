@@ -75,7 +75,7 @@ export default function RedevelopmentDetailView({
     const target = document.getElementById(sectionId);
     const container = scrollContainerRef.current;
     if (target && container) {
-      const headerOffset = 135;
+      const headerOffset = 60;
       const targetPosition = target.offsetTop - headerOffset;
       container.scrollTo({
         top: Math.max(0, targetPosition),
@@ -187,43 +187,31 @@ export default function RedevelopmentDetailView({
   return (
     <div className="flex flex-col h-full bg-white border-l border-slate-200 overflow-hidden shadow-2xl">
       {/* ======================================================== */}
-      {/* 1. 상단 고정 헤더: 구역 기본 정보 & 소재지 주소 */}
+      {/* 1. 상단 슬림 고정 헤더: 뱃지 + 구역 이름 + 닫기 버튼 */}
       {/* ======================================================== */}
-      <div className="p-4 sm:p-5 border-b border-slate-100 bg-white sticky top-0 z-20 shadow-sm shrink-0">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+      <div className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-slate-100 bg-white sticky top-0 z-30 shadow-2xs shrink-0">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none whitespace-nowrap mb-1">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0 whitespace-nowrap">
                 {zone.type}
               </span>
-              <span className="text-xs text-slate-500 font-medium">
+              <span className="px-2 py-0.5 rounded-full text-xs text-slate-600 bg-slate-100 font-medium shrink-0 whitespace-nowrap">
                 {zone.region} {zone.district}
               </span>
               {zone.landPermit && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shrink-0 whitespace-nowrap">
                   토지거래허가구역
                 </span>
               )}
-              <button
-                onClick={() => {
-                  setActiveSection("section-source");
-                  const el = document.getElementById("section-source");
-                  el?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors cursor-pointer"
-                title="국토교통부 실거래가 · 지자체 · 건축물대장 데이터 출처 확인"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                출처: 국토교통부·지자체
-              </button>
             </div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight truncate">
               {zone.name}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors shrink-0 cursor-pointer"
             title="닫기"
           >
             <svg
@@ -241,107 +229,110 @@ export default function RedevelopmentDetailView({
             </svg>
           </button>
         </div>
-
-        {/* 🌟 명확하게 잘 보이는 대표 소재지 주소 바 */}
-        <div className="flex items-center justify-between text-xs py-2 px-3 bg-slate-100/80 hover:bg-slate-100 rounded-xl mb-2.5 text-slate-800 font-medium border border-slate-200/80 transition-colors">
-          <div className="flex items-center gap-1.5 truncate">
-            <span className="text-base leading-none">📍</span>
-            <span className="text-slate-500 font-normal">소재지:</span>
-            <span className="font-bold text-slate-900 truncate">
-              {zone.address}
-            </span>
-          </div>
-          <button
-            onClick={handleCopyAddress}
-            className="ml-2 px-2 py-0.5 rounded-md bg-white hover:bg-slate-50 text-[11px] font-semibold text-slate-600 border border-slate-200 shadow-2xs shrink-0 transition-colors"
-            title="주소 복사"
-          >
-            {copiedAddress ? "복사완료 ✓" : "복사"}
-          </button>
-        </div>
-
-        {/* 핵심 메타 라인: 단계, 세대수, 시공사 */}
-        <div className="flex flex-wrap items-center gap-2 text-xs py-2 px-3 bg-slate-50 rounded-xl mb-2 text-slate-700 font-semibold border border-slate-100">
-          <span className="text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md font-bold">
-            {zone.status} ({zone.statusDate})
-          </span>
-          <span className="text-slate-300">│</span>
-          <span>{zone.totalUnits.toLocaleString()}세대</span>
-          <span className="text-slate-300">│</span>
-          <span className="text-slate-600 truncate">시공: {zone.builder}</span>
-        </div>
-
-        {/* 공급 통계 바 (소유자, 일반분양, 임대) */}
-        <div className="flex items-center justify-between text-xs px-3 py-2 bg-blue-50/50 rounded-xl text-slate-700 font-medium border border-blue-100/60 mb-2">
-          <div>
-            <span className="text-slate-500">소유자 </span>
-            <strong className="text-slate-900">{zone.ownersCount.toLocaleString()}명</strong>
-          </div>
-          <span className="text-blue-200">│</span>
-          <div>
-            <span className="text-slate-500">일반분양 </span>
-            <strong className="text-blue-600 font-bold">
-              {zone.generalUnits.toLocaleString()}세대 ({zone.generalRatio}%)
-            </strong>
-          </div>
-          <span className="text-blue-200">│</span>
-          <div>
-            <span className="text-slate-500">임대 </span>
-            <strong className="text-slate-900">{zone.rentalUnits.toLocaleString()}세대</strong>
-          </div>
-        </div>
-
-        {/* 퀵 지표 뱃지 */}
-        <div className="flex items-center gap-2 overflow-x-auto text-xs scrollbar-none pb-0.5">
-          <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold flex items-center gap-1 shrink-0">
-            <span>매물</span>
-            <span className="text-blue-600 font-bold">{zone.askCount}건</span>
-          </div>
-          <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold flex items-center gap-1 shrink-0">
-            <span>초기투자</span>
-            <span className="text-slate-900 font-bold">{zone.minInvestmentDisplay}~</span>
-          </div>
-          <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold flex items-center gap-1 shrink-0">
-            <span>프리미엄(P)</span>
-            <span className="text-purple-600 font-bold">{zone.estimatedPremiumDisplay}</span>
-          </div>
-          {zone.zoneStatus && (
-            <div className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 font-semibold flex items-center gap-1 shrink-0 border border-red-100">
-              <span>노후도</span>
-              <span className="font-bold">{zone.zoneStatus.deteriorationRate}%</span>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* ======================================================== */}
-      {/* 2. 스티키 탭 네비게이션: 클릭 시 해당 섹션으로 스무스 이동 */}
-      {/* ======================================================== */}
-      <div className="flex border-b border-slate-200 bg-white sticky top-[236px] z-10 px-3 overflow-x-auto scrollbar-none text-xs sm:text-sm font-bold shadow-2xs shrink-0">
-        {SECTIONS.map((sec) => (
-          <button
-            key={sec.id}
-            onClick={() => scrollToSection(sec.id)}
-            className={`py-3 px-2.5 shrink-0 border-b-2 transition-all whitespace-nowrap ${
-              activeSection === sec.id
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            {sec.label}
-            {sec.id === "section-trades" && ` (${zone.transactions.length})`}
-            {sec.id === "section-notices" && ` (${zone.notices.length})`}
-          </button>
-        ))}
-      </div>
-
-      {/* ======================================================== */}
-      {/* 3. 롱 스크롤 본문 컨테이너: 모든 섹션이 순서대로 차례차례 노출 */}
+      {/* 2. 롱 스크롤 본문 컨테이너: 정보 확인 영역 극대화 (화면의 80% 이상) */}
       {/* ======================================================== */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto p-5 space-y-10 scroll-smooth"
+        className="flex-1 overflow-y-auto scroll-smooth"
       >
+        {/* 구역 메타 요약 정보 (스크롤 시 자연스럽게 위로 올라감) */}
+        <div className="p-3.5 sm:p-5 bg-white border-b border-slate-100 space-y-2.5">
+          {/* 🌟 명확하게 잘 보이는 대표 소재지 주소 바 */}
+          <div className="flex items-center justify-between text-xs py-2 px-3 bg-slate-100/80 hover:bg-slate-100 rounded-xl text-slate-800 font-medium border border-slate-200/80 transition-colors">
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="text-base leading-none">📍</span>
+              <span className="text-slate-500 font-normal shrink-0">소재지:</span>
+              <span className="font-bold text-slate-900 truncate">
+                {zone.address}
+              </span>
+            </div>
+            <button
+              onClick={handleCopyAddress}
+              className="ml-2 px-2 py-0.5 rounded-md bg-white hover:bg-slate-50 text-[11px] font-semibold text-slate-600 border border-slate-200 shadow-2xs shrink-0 transition-colors cursor-pointer"
+              title="주소 복사"
+            >
+              {copiedAddress ? "복사완료 ✓" : "복사"}
+            </button>
+          </div>
+
+          {/* 핵심 메타 라인: 단계, 세대수, 시공사 */}
+          <div className="flex flex-wrap items-center gap-2 text-xs py-2 px-3 bg-slate-50 rounded-xl text-slate-700 font-semibold border border-slate-100 whitespace-nowrap">
+            <span className="text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-md font-bold shrink-0">
+              {zone.status} ({zone.statusDate})
+            </span>
+            <span className="text-slate-300">│</span>
+            <span className="shrink-0">{zone.totalUnits.toLocaleString()}세대</span>
+            <span className="text-slate-300">│</span>
+            <span className="text-slate-600 truncate">시공: {zone.builder}</span>
+          </div>
+
+          {/* 공급 통계 바 (소유자, 일반분양, 임대) */}
+          <div className="flex items-center justify-between text-xs px-3 py-2 bg-blue-50/50 rounded-xl text-slate-700 font-medium border border-blue-100/60 whitespace-nowrap">
+            <div>
+              <span className="text-slate-500">소유자 </span>
+              <strong className="text-slate-900">{zone.ownersCount.toLocaleString()}명</strong>
+            </div>
+            <span className="text-blue-200">│</span>
+            <div>
+              <span className="text-slate-500">일반분양 </span>
+              <strong className="text-blue-600 font-bold">
+                {zone.generalUnits.toLocaleString()}세대 ({zone.generalRatio}%)
+              </strong>
+            </div>
+            <span className="text-blue-200">│</span>
+            <div>
+              <span className="text-slate-500">임대 </span>
+              <strong className="text-slate-900">{zone.rentalUnits.toLocaleString()}세대</strong>
+            </div>
+          </div>
+
+          {/* 퀵 지표 뱃지 */}
+          <div className="flex items-center gap-2 overflow-x-auto text-xs scrollbar-none pb-0.5 whitespace-nowrap">
+            <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold flex items-center gap-1 shrink-0">
+              <span>매물</span>
+              <span className="text-blue-600 font-bold">{zone.askCount}건</span>
+            </div>
+            <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold flex items-center gap-1 shrink-0">
+              <span>초기투자</span>
+              <span className="text-slate-900 font-bold">{zone.minInvestmentDisplay}~</span>
+            </div>
+            <div className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold flex items-center gap-1 shrink-0">
+              <span>프리미엄(P)</span>
+              <span className="text-purple-600 font-bold">{zone.estimatedPremiumDisplay}</span>
+            </div>
+            {zone.zoneStatus && (
+              <div className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 font-semibold flex items-center gap-1 shrink-0 border border-red-100">
+                <span>노후도</span>
+                <span className="font-bold">{zone.zoneStatus.deteriorationRate}%</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 스티키 탭 네비게이션: 요약 카드를 지나면 최상단에 고정되어 섹션 탐색을 돕습니다 */}
+        <div className="flex border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-20 px-3 overflow-x-auto scrollbar-none text-xs sm:text-sm font-bold shadow-2xs shrink-0 whitespace-nowrap">
+          {SECTIONS.map((sec) => (
+            <button
+              key={sec.id}
+              onClick={() => scrollToSection(sec.id)}
+              className={`py-2.5 sm:py-3 px-2.5 shrink-0 border-b-2 transition-all whitespace-nowrap cursor-pointer ${
+                activeSection === sec.id
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {sec.label}
+              {sec.id === "section-trades" && ` (${zone.transactions.length})`}
+              {sec.id === "section-notices" && ` (${zone.notices.length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* 본문 섹션들 */}
+        <div className="p-4 sm:p-6 space-y-10">
         {/* -------------------------------------------------------- */}
         {/* [섹션 1] 실거래 정보 */}
         {/* -------------------------------------------------------- */}
@@ -1458,6 +1449,7 @@ export default function RedevelopmentDetailView({
         <section id="section-source" className="pt-2">
           <RedevelopmentFooter />
         </section>
+        </div>
       </div>
 
       {/* 간편회원가입 모달 */}

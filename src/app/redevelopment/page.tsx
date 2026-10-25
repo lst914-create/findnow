@@ -579,10 +579,10 @@ export default function RedevelopmentPage() {
           </div>
         )}
 
-        {/* 모바일/태블릿 화면용 하단 팝업 상세 모달 */}
+        {/* 모바일/태블릿 화면용 하단 팝업 상세 모달 - 전체 화면(96dvh) 크기로 시원하게 노출 */}
         {selectedZone && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black/50 flex flex-col justify-end">
-            <div className="bg-white rounded-t-3xl max-h-[85vh] h-[85vh] overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/60 flex flex-col justify-end">
+            <div className="bg-white rounded-t-3xl max-h-[96dvh] h-[96dvh] overflow-hidden flex flex-col shadow-2xl animate-in slide-in-from-bottom duration-200">
               <RedevelopmentDetailView
                 zone={selectedZone}
                 onClose={() => setSelectedZone(null)}

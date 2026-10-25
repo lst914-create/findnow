@@ -128,6 +128,8 @@ export default function AptMap({
   const userOverlayRef = useRef<any>(null);
   const kakaoSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastViewportKeyRef = useRef<string>(""); // 노모지 API 콜 중복 방지
+  const geoResolvedRef = useRef<{ lat: number; lng: number } | null>(null); // geolocation 결과 캐시
+  const [isGeoLoading, setIsGeoLoading] = useState(false); // geolocation 로딩 상태
 
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedApt, setSelectedApt] = useState<AptMarker | null>(null);
@@ -456,49 +458,76 @@ export default function AptMap({
     `;
   };
 
-  /* ── 카카오 지도 초기화 ──────────────────────────────────── */
+  /* ── 카카오 지도 초기화 (geolocation → 지도 순서로 초기화) ──────── */
   useEffect(() => {
     if (typeof window === "undefined" || mapRef.current) return;
 
-    const defaultCenter = center || { lat: 37.4950, lng: 127.0550 };
-    if (!center && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (p) => setUserPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
-        () => setUserPos(defaultCenter)
-      );
-    } else if (!center) {
-      setUserPos(defaultCenter);
-    }
-
+    const fallbackCenter = { lat: 37.4950, lng: 127.0550 };
     let isCancelled = false;
 
-    loadKakaoMap()
-      .then((kakaoMaps) => {
-        if (isCancelled || !containerRef.current || mapRef.current) return;
+    const initMap = (startCenter: { lat: number; lng: number }, isUserLocation: boolean) => {
+      loadKakaoMap()
+        .then((kakaoMaps) => {
+          if (isCancelled || !containerRef.current || mapRef.current) return;
 
-        const initCenter = center
-          ? new kakaoMaps.LatLng(center.lat, center.lng)
-          : (highlightId
+          // 초기 중심: center prop > highlightId 단지 > geolocation/서울 기본
+          const initCenter = center
+            ? new kakaoMaps.LatLng(center.lat, center.lng)
+            : highlightId
               ? new kakaoMaps.LatLng(
-                  APT_MARKERS.find((a) => a.id === highlightId)?.lat ?? 37.4950,
-                  APT_MARKERS.find((a) => a.id === highlightId)?.lng ?? 127.0550
+                  APT_MARKERS.find((a) => a.id === highlightId)?.lat ?? startCenter.lat,
+                  APT_MARKERS.find((a) => a.id === highlightId)?.lng ?? startCenter.lng
                 )
-              : new kakaoMaps.LatLng(37.4950, 127.0550));
+              : new kakaoMaps.LatLng(startCenter.lat, startCenter.lng);
 
-        // 카카오 지도 레벨 (3~5가 서울/단지 탐색에 최적)
-        const initLevel = highlightId ? 3 : 5;
+          const initLevel = highlightId ? 3 : 4;
 
-        const map = new kakaoMaps.Map(containerRef.current, {
-          center: initCenter,
-          level: initLevel,
+          const map = new kakaoMaps.Map(containerRef.current, {
+            center: initCenter,
+            level: initLevel,
+          });
+
+          mapRef.current = map;
+          setIsGeoLoading(false);
+          setIsMapReady(true);
+
+          if (isUserLocation) {
+            setUserPos(startCenter);
+          } else if (!center) {
+            setUserPos(fallbackCenter);
+          }
+        })
+        .catch((err) => {
+          console.error("카카오 지도 초기화 오류:", err);
+          setIsGeoLoading(false);
         });
+    };
 
-        mapRef.current = map;
-        setIsMapReady(true);
-      })
-      .catch((err) => {
-        console.error("카카오 지도 초기화 오류:", err);
-      });
+    if (center || highlightId) {
+      // center prop이나 highlightId가 있으면 바로 초기화
+      initMap(center || fallbackCenter, false);
+    } else if (geoResolvedRef.current) {
+      // 이미 geolocation 결과가 있으면 바로 사용
+      initMap(geoResolvedRef.current, true);
+    } else if (navigator.geolocation) {
+      // geolocation 먼저 시도 → 결과 받은 후 지도 초기화
+      setIsGeoLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (p) => {
+          if (isCancelled) return;
+          const pos = { lat: p.coords.latitude, lng: p.coords.longitude };
+          geoResolvedRef.current = pos;
+          initMap(pos, true);
+        },
+        () => {
+          // 위치 실패 시 서울 기본값으로 초기화
+          if (!isCancelled) initMap(fallbackCenter, false);
+        },
+        { timeout: 5000, maximumAge: 300000 }
+      );
+    } else {
+      initMap(fallbackCenter, false);
+    }
 
     return () => {
       isCancelled = true;
@@ -579,66 +608,86 @@ export default function AptMap({
       }
 
       // 2. 필터 적용
-      let filtered = filterMarkers(inBounds);
-      if (highlightId) {
-        const hlItem = APT_MARKERS.find((a) => a.id === highlightId);
-        if (hlItem && !filtered.some((a) => a.id === highlightId)) {
-          filtered = [hlItem, ...filtered];
-        }
-      }
+      const filtered = filterMarkers(inBounds);
 
-      // 3. 확대 시 화면 내 모든 단지(소규모·나홀로 포함) 100% 전수 노출
-      // 레벨 5 이하(동네·단지 상세 탐색)에서는 최대 350개까지 수용하여 누락 차단
+      // 3. 줌 레벨에 따른 클러스터링
+      // ─ 줌 아웃: 격자 셀당 실거래가 최고 단지 1개만 표시 (지역 대표)
+      // ─ 줌 인 (레벨 4 이하): 화면 내 모든 단지 표시
       const level = map.getLevel();
-      const maxDisplay = level <= 5 ? 350 : level <= 7 ? 220 : 160;
 
       let displayMarkers: AptMarker[] = [];
 
-      if (filtered.length <= maxDisplay) {
-        displayMarkers = filtered;
-      } else {
-        // 지역(동/구 단위)별로 그룹화하여 각 지역의 대표 단지들을 균등하게 추출
-        const regionGroups = new Map<string, AptMarker[]>();
+      const clusterByGrid = (gridSize: number) => {
+        const cellMap = new Map<string, AptMarker>();
         filtered.forEach((apt) => {
-          const key = apt.region || "기타";
-          if (!regionGroups.has(key)) {
-            regionGroups.set(key, []);
+          const cellKey = `${Math.floor(apt.lat / gridSize)},${Math.floor(apt.lng / gridSize)}`;
+          const existing = cellMap.get(cellKey);
+          if (!existing || apt.priceNum > existing.priceNum) {
+            cellMap.set(cellKey, apt);
           }
-          regionGroups.get(key)!.push(apt);
         });
+        return Array.from(cellMap.values());
+      };
 
-        // 각 지역 내에서 세대수/인기순 정렬
-        regionGroups.forEach((list) => {
-          list.sort((a, b) => (b.householdCount || 0) - (a.householdCount || 0));
-        });
+      if (level >= 9) {
+        // ── 레벨 9+ (광역·도 단위, ~50km+): 0.5도(약 55km) 셀당 최고가 1개 ──
+        displayMarkers = clusterByGrid(0.5);
+      } else if (level === 8) {
+        // ── 레벨 8 (광역·시 단위, ~25km): 0.25도(약 28km) 셀당 최고가 1개 ──
+        displayMarkers = clusterByGrid(0.25);
+      } else if (level === 7) {
+        // ── 레벨 7 (구 단위, ~10km): 0.12도(약 13km) 셀당 최고가 1개 ──
+        displayMarkers = clusterByGrid(0.12);
+      } else if (level === 6) {
+        // ── 레벨 6 (동 단위, ~5km): 0.05도(약 5.5km) 셀당 최고가 1개 ──
+        displayMarkers = clusterByGrid(0.05);
+      } else {
+        // ── 레벨 5 이하 (동네/단지 상세): 화면 내 전체 단지 최대 400개 ──
+        const maxDisplay = 400;
+        if (filtered.length <= maxDisplay) {
+          displayMarkers = filtered;
+        } else {
+          // 지역(동/구 단위)별로 그룹화하여 각 지역의 대표 단지들을 균등하게 추출
+          const regionGroups = new Map<string, AptMarker[]>();
+          filtered.forEach((apt) => {
+            const key = apt.region || "기타";
+            if (!regionGroups.has(key)) regionGroups.set(key, []);
+            regionGroups.get(key)!.push(apt);
+          });
+          regionGroups.forEach((list) => list.sort((a, b) => b.priceNum - a.priceNum));
 
-        // 라운드 로빈 방식으로 각 동/구별 대표 단지를 골고루 수집
-        let round = 0;
-        const pickedIds = new Set<string>();
-
-        while (displayMarkers.length < maxDisplay && round < 8) {
-          let addedInThisRound = 0;
-          for (const [, list] of regionGroups) {
-            if (displayMarkers.length >= maxDisplay) break;
-            if (round < list.length) {
-              const item = list[round];
-              if (!pickedIds.has(item.id)) {
-                pickedIds.add(item.id);
-                displayMarkers.push(item);
-                addedInThisRound++;
+          let round = 0;
+          const pickedIds = new Set<string>();
+          while (displayMarkers.length < maxDisplay && round < 8) {
+            let addedInThisRound = 0;
+            for (const [, list] of regionGroups) {
+              if (displayMarkers.length >= maxDisplay) break;
+              if (round < list.length) {
+                const item = list[round];
+                if (!pickedIds.has(item.id)) {
+                  pickedIds.add(item.id);
+                  displayMarkers.push(item);
+                  addedInThisRound++;
+                }
               }
             }
+            if (addedInThisRound === 0) break;
+            round++;
           }
-          if (addedInThisRound === 0) break;
-          round++;
+          if (displayMarkers.length < maxDisplay) {
+            const remaining = filtered
+              .filter((a) => !pickedIds.has(a.id))
+              .sort((a, b) => b.priceNum - a.priceNum);
+            displayMarkers.push(...remaining.slice(0, maxDisplay - displayMarkers.length));
+          }
         }
+      }
 
-        // 남은 슬롯은 전체 대단지 우선 순으로 보충
-        if (displayMarkers.length < maxDisplay) {
-          const remaining = filtered
-            .filter((a) => !pickedIds.has(a.id))
-            .sort((a, b) => (b.householdCount || 0) - (a.householdCount || 0));
-          displayMarkers.push(...remaining.slice(0, maxDisplay - displayMarkers.length));
+      // highlightId 단지는 항상 포함
+      if (highlightId) {
+        const hlItem = APT_MARKERS.find((a) => a.id === highlightId);
+        if (hlItem && !displayMarkers.some((a) => a.id === highlightId)) {
+          displayMarkers = [hlItem, ...displayMarkers];
         }
       }
 
@@ -1375,6 +1424,23 @@ export default function AptMap({
 
         {/* 카카오 지도 컨테이너 */}
         <div ref={containerRef} style={{ height: computedHeight }} className="w-full bg-slate-100 transition-[height] duration-200" />
+
+        {/* geolocation 로딩 중 오버레이 */}
+        {isGeoLoading && (
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[30] rounded-3xl">
+            <div className="bg-white rounded-3xl px-8 py-6 shadow-2xl flex flex-col items-center gap-4">
+              <div className="relative w-14 h-14">
+                <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
+                <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 animate-spin" />
+                <span className="absolute inset-0 flex items-center justify-center text-2xl">📍</span>
+              </div>
+              <div className="text-center">
+                <div className="font-extrabold text-slate-800 text-base">내 위치 찾는 중...</div>
+                <div className="text-slate-500 text-xs mt-1">위치 권한을 허용해주세요</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 선택 단지 팝업 카드 */}
         {selectedApt && (

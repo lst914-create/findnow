@@ -1131,6 +1131,11 @@ export default function Home() {
                         <span className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                           매매
+                          {apt.tags?.includes("실거래인증") ? (
+                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">실거래 인증</span>
+                          ) : (
+                            <span className="text-[10px] font-normal text-slate-500 bg-slate-100 px-1 py-0.5 rounded">동별 시세</span>
+                          )}
                         </span>
                         <span className="text-base font-extrabold text-rose-600">
                           {formatPrice(apt.price_min)} ~ {formatPrice(apt.price_max)}

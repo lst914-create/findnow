@@ -445,7 +445,14 @@ export default function UnifiedSearchResultsView({
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-semibold">매매 실거래가</span>
+                  <span className="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
+                    매매 실거래가
+                    {apt.tags?.includes("실거래인증") ? (
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">실거래 인증</span>
+                    ) : (
+                      <span className="text-[10px] font-normal text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">동별 시세</span>
+                    )}
+                  </span>
                   <span className="text-base font-black text-indigo-700">
                     {formatPrice(apt.price_min)}
                     {apt.price_max && apt.price_max !== apt.price_min

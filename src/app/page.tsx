@@ -617,6 +617,36 @@ export default function Home() {
     return `${price.toLocaleString()}만원`;
   };
 
+  const formatPriceRange = (min: number, max: number) => {
+    if (!min && !max) return "시세 확인중";
+    const minVal = min || max;
+    const maxVal = max || min;
+
+    const formatSingle = (val: number) => {
+      const uk = val / 10000;
+      if (uk >= 1) {
+        return uk % 1 === 0 ? `${Math.floor(uk)}억` : `${uk.toFixed(1)}억`;
+      }
+      return `${Math.round(val).toLocaleString()}만`;
+    };
+
+    if (minVal === maxVal) {
+      return formatSingle(minVal);
+    }
+
+    const minUk = minVal / 10000;
+    const maxUk = maxVal / 10000;
+
+    if (minUk >= 1) {
+      // 억 단위 범위: '33.8억 ~ 34.5억' 형태로 간결하고 정돈되게 표시 (모바일 줄바꿈 원천 방지)
+      const minStr = minUk % 1 === 0 ? `${Math.floor(minUk)}억` : `${minUk.toFixed(1)}억`;
+      const maxStr = maxUk % 1 === 0 ? `${Math.floor(maxUk)}억` : `${maxUk.toFixed(1)}억`;
+      return `${minStr} ~ ${maxStr}`;
+    }
+
+    return `${Math.round(minVal).toLocaleString()}만 ~ ${Math.round(maxVal).toLocaleString()}만`;
+  };
+
   const formatRentMonthly = (apt: Apartment) => {
     const deposit = 5000;
     const rentBaseMin = apt.rent_min || Math.round(apt.price_min * 0.55);
@@ -800,25 +830,20 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-[60vh] sm:min-h-[75vh] flex items-center justify-center overflow-x-hidden pt-14 sm:pt-16">
+      <section className="relative flex items-center justify-center overflow-x-hidden pt-6 sm:pt-16 pb-4 sm:pb-10">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-surface-50 to-accent-50" />
           <div className="absolute top-20 -left-32 w-72 sm:w-96 h-72 sm:h-96 bg-brand-200/30 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-20 -right-32 w-72 sm:w-96 h-72 sm:h-96 bg-accent-200/30 rounded-full blur-3xl animate-float delay-300" />
         </div>
 
-        <div className="relative z-10 w-full max-w-4xl mx-auto px-5 sm:px-6 lg:px-8 text-center py-8 sm:py-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-brand-100/60 border border-brand-200/60 mb-4 sm:mb-6">
-            <span className="w-2 h-2 rounded-full bg-accent-400 animate-pulse" />
-            <span className="text-xs sm:text-sm font-medium text-brand-700">전국 핵심 아파트 실거래 정보 검색</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 sm:mb-8 leading-[1.35] sm:leading-[1.42] lg:leading-[1.45]">
-            <span className="text-surface-900 block">내가 찾는 부동산 정보,</span>
-            <span className="gradient-text block mt-2 sm:mt-3.5 lg:mt-4">한 눈에 직관적으로 비교해줘</span>
+        <div className="relative z-10 w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-3 sm:py-8">
+          <h1 className="text-[17px] min-[360px]:text-[19px] min-[400px]:text-[22px] sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-3 sm:mb-6 leading-snug sm:leading-[1.3]">
+            <span className="text-surface-900 block whitespace-nowrap">내가 찾는 부동산 정보,</span>
+            <span className="gradient-text block mt-1 sm:mt-2.5 whitespace-nowrap">한 눈에 직관적으로 비교해줘</span>
           </h1>
 
-          <p className="text-sm sm:text-lg text-gray-500 max-w-2xl mx-auto mb-6 sm:mb-8 leading-relaxed font-medium break-keep word-break-keep-all">
+          <p className="text-xs sm:text-base text-gray-500 max-w-2xl mx-auto mb-4 sm:mb-8 leading-relaxed font-medium break-keep">
             원하는 지역이나 단지명을 검색하세요.
             <span className="hidden sm:inline"><br /></span>
             <span className="sm:hidden"> </span>
@@ -1126,44 +1151,44 @@ export default function Home() {
                     {/* Price & Primary Specs (매매 + 전월세) */}
                     <div className="bg-surface-50 p-3.5 rounded-xl border border-gray-100 space-y-2">
                       {/* 매매 시세 */}
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                          매매
+                      <div className="flex justify-between items-center gap-2">
+                        <span className="text-xs font-bold text-rose-600 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+                          <span>매매</span>
                           {apt.tags?.includes("실거래인증") ? (
-                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">실거래 인증</span>
+                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">실거래 인증</span>
                           ) : (
-                            <span className="text-[10px] font-normal text-slate-500 bg-slate-100 px-1 py-0.5 rounded">동별 시세</span>
+                            <span className="text-[10px] font-normal text-slate-500 bg-slate-100 px-1 py-0.5 rounded shrink-0 whitespace-nowrap">동별 시세</span>
                           )}
                         </span>
-                        <span className="text-base font-extrabold text-rose-600">
-                          {formatPrice(apt.price_min)} ~ {formatPrice(apt.price_max)}
+                        <span className="text-sm sm:text-base font-extrabold text-rose-600 text-right ml-auto whitespace-nowrap tracking-tight">
+                          {formatPriceRange(apt.price_min, apt.price_max)}
                         </span>
                       </div>
 
                       {/* 전세 시세 */}
-                      <div className="flex justify-between items-center pt-1.5 border-t border-gray-200/50">
-                        <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                          전세
+                      <div className="flex justify-between items-center gap-2 pt-1.5 border-t border-gray-200/50">
+                        <span className="text-xs font-bold text-blue-600 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                          <span>전세</span>
                         </span>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-bold text-blue-700">
-                            {formatPrice(apt.rent_min || Math.round(apt.price_min * 0.55))} ~ {formatPrice(apt.rent_max || Math.round(apt.price_max * 0.58))}
+                        <div className="flex items-center gap-1.5 ml-auto text-right whitespace-nowrap">
+                          <span className="text-xs sm:text-sm font-bold text-blue-700 tracking-tight">
+                            {formatPriceRange(apt.rent_min || Math.round(apt.price_min * 0.55), apt.rent_max || Math.round(apt.price_max * 0.58))}
                           </span>
-                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 shrink-0">
                             {apt.jeonseRatio || Math.round(((apt.rent_min || apt.price_min * 0.55) / apt.price_min) * 100)}%
                           </span>
                         </div>
                       </div>
 
                       {/* 월세 시세 */}
-                      <div className="flex justify-between items-center pt-1.5 border-t border-gray-200/50">
-                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          월세
+                      <div className="flex justify-between items-center gap-2 pt-1.5 border-t border-gray-200/50">
+                        <span className="text-xs font-bold text-emerald-600 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                          <span>월세</span>
                         </span>
-                        <span className="text-xs font-semibold text-emerald-800">
+                        <span className="text-xs font-semibold text-emerald-800 text-right ml-auto whitespace-nowrap tracking-tight">
                           {formatRentMonthly(apt)}
                         </span>
                       </div>

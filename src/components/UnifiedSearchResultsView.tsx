@@ -40,6 +40,35 @@ export default function UnifiedSearchResultsView({
     return `${price.toLocaleString()}만원`;
   };
 
+  const formatPriceRange = (min: number, max: number) => {
+    if (!min && !max) return "시세 확인중";
+    const minVal = min || max;
+    const maxVal = max || min;
+
+    const formatSingle = (val: number) => {
+      const uk = val / 10000;
+      if (uk >= 1) {
+        return uk % 1 === 0 ? `${Math.floor(uk)}억` : `${uk.toFixed(1)}억`;
+      }
+      return `${Math.round(val).toLocaleString()}만`;
+    };
+
+    if (minVal === maxVal) {
+      return formatSingle(minVal);
+    }
+
+    const minUk = minVal / 10000;
+    const maxUk = maxVal / 10000;
+
+    if (minUk >= 1) {
+      const minStr = minUk % 1 === 0 ? `${Math.floor(minUk)}억` : `${minUk.toFixed(1)}억`;
+      const maxStr = maxUk % 1 === 0 ? `${Math.floor(maxUk)}억` : `${maxUk.toFixed(1)}억`;
+      return `${minStr} ~ ${maxStr}`;
+    }
+
+    return `${Math.round(minVal).toLocaleString()}만 ~ ${Math.round(maxVal).toLocaleString()}만`;
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* 1. 상단 종합 검색 결과 헤더 */}
@@ -444,20 +473,17 @@ export default function UnifiedSearchResultsView({
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
-                  <span className="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
+                <div className="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between gap-2">
+                  <span className="text-xs text-slate-400 font-semibold flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                     매매 실거래가
                     {apt.tags?.includes("실거래인증") ? (
-                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">실거래 인증</span>
+                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 shrink-0 whitespace-nowrap">실거래 인증</span>
                     ) : (
-                      <span className="text-[10px] font-normal text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">동별 시세</span>
+                      <span className="text-[10px] font-normal text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded shrink-0 whitespace-nowrap">동별 시세</span>
                     )}
                   </span>
-                  <span className="text-base font-black text-indigo-700">
-                    {formatPrice(apt.price_min)}
-                    {apt.price_max && apt.price_max !== apt.price_min
-                      ? ` ~ ${formatPrice(apt.price_max)}`
-                      : ""}
+                  <span className="text-sm sm:text-base font-black text-indigo-700 text-right ml-auto shrink-0 whitespace-nowrap tracking-tight">
+                    {formatPriceRange(apt.price_min, apt.price_max)}
                   </span>
                 </div>
               </Link>

@@ -116,7 +116,7 @@ const INITIAL_FILTERS: FilterState = {
 
 export default function AptMap({
   highlightId,
-  height = 560,
+  height,
   initialZoom = 14,
   center,
   onVisibleApartmentsChange,
@@ -234,6 +234,30 @@ export default function AptMap({
   const [filters, setFilters] = useState<FilterState>(INITIAL_FILTERS);
   const [activeFilterKey, setActiveFilterKey] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState<boolean>(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // 필터 접힘/펼침 상태에 따른 지도 높이 계산 (접혀있을 때 공간을 지도에 더 넓게 할당)
+  const computedHeight = height
+    ? (isMobile ? (isFiltersExpanded ? 340 : Math.max(height, 460)) : (isFiltersExpanded ? height : height + 60))
+    : (isMobile ? (isFiltersExpanded ? 340 : 480) : (isFiltersExpanded ? 540 : 600));
+
+  // 높이 변화나 필터 토글 시 카카오맵 relayout 재계산
+  useEffect(() => {
+    if (mapRef.current) {
+      const timer = setTimeout(() => {
+        mapRef.current.relayout();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isFiltersExpanded, computedHeight]);
 
   // 필터 초기화
   const handleResetFilters = () => {
@@ -899,90 +923,121 @@ export default function AptMap({
   return (
     <div className="space-y-3 select-none">
       {/* ── 필터 툴바 ────────────────────────────────────────── */}
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-2.5 sm:p-3 space-y-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* 필터 모달 열기 버튼 */}
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-2.5 sm:p-3 space-y-2.5">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+            {/* 필터 모달 열기 버튼 */}
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className={`flex items-center justify-center h-9 px-3 rounded-2xl shadow-sm border transition-all cursor-pointer ${
+                activeFilterCount > 0
+                  ? "bg-indigo-600 text-white border-indigo-700 shadow-indigo-200"
+                  : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
+              }`}
+              title="상세 필터 모달 열기"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              {activeFilterCount > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.2 bg-rose-500 text-white text-[10px] font-black rounded-full">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+
+            {/* 초기화 버튼 */}
+            {activeFilterCount > 0 && (
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center justify-center w-9 h-9 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-all cursor-pointer"
+                title="필터 전체 초기화"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            )}
+
+            {/* 거래 형태 탭 */}
+            <div className="flex bg-slate-100 p-0.5 sm:p-1 rounded-2xl text-xs font-bold border border-slate-200">
+              {(["매매", "전세", "월세"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setFilters({ ...filters, tradeType: t })}
+                  className={`px-2.5 sm:px-3 py-1 rounded-xl transition-all cursor-pointer text-xs ${
+                    filters.tradeType === t ? "bg-indigo-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 조건 필터 접기/펼치기 토글 버튼 */}
           <button
-            onClick={() => setIsModalOpen(true)}
-            className={`flex items-center justify-center h-9 px-3 rounded-2xl shadow-sm border transition-all cursor-pointer ${
-              activeFilterCount > 0
-                ? "bg-indigo-600 text-white border-indigo-700 shadow-indigo-200"
+            onClick={() => {
+              setIsFiltersExpanded((prev) => !prev);
+              if (isFiltersExpanded) setActiveFilterKey(null);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-xs font-bold border transition-all cursor-pointer ml-auto ${
+              isFiltersExpanded || activeFilterCount > 0
+                ? "bg-indigo-50 text-indigo-700 border-indigo-200 shadow-xs"
                 : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
             }`}
-            title="상세 필터 모달 열기"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            <svg className="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            {activeFilterCount > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.2 bg-rose-500 text-white text-[10px] font-black rounded-full">
+            <span>선택항목 {isFiltersExpanded ? "접기 ∧" : "펼치기 ∨"}</span>
+            {activeFilterCount > 0 && !isFiltersExpanded && (
+              <span className="px-1.5 py-0.2 bg-indigo-600 text-white text-[10px] font-black rounded-full">
                 {activeFilterCount}
               </span>
             )}
           </button>
-
-          {/* 초기화 버튼 */}
-          <button
-            onClick={handleResetFilters}
-            className="flex items-center justify-center w-9 h-9 rounded-2xl bg-slate-100 border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-slate-200 transition-all cursor-pointer"
-            title="필터 전체 초기화"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
-
-          {/* 거래 형태 탭 */}
-          <div className="flex bg-slate-100 p-1 rounded-2xl text-xs font-bold border border-slate-200">
-            {(["매매", "전세", "월세"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setFilters({ ...filters, tradeType: t })}
-                className={`px-3 py-1 rounded-xl transition-all cursor-pointer ${
-                  filters.tradeType === t ? "bg-indigo-600 text-white shadow-sm" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-
-          {/* 13개 세부 조건 칩버튼 */}
-          {[
-            { key: "rentalBizRatio", name: "임대사업율" },
-            { key: "jeonseRatio", name: "전세가율" },
-            { key: "gapPrice", name: "갭가격" },
-            { key: "monthlyYield", name: "월세수익률" },
-            { key: "pyeong", name: "평형" },
-            { key: "price", name: "가격" },
-            { key: "household", name: "세대수" },
-            { key: "builtYear", name: "입주년차" },
-            { key: "far", name: "용적률" },
-            { key: "bcr", name: "건폐율" },
-            { key: "parking", name: "주차공간" },
-            { key: "hallType", name: "현관구조" },
-            { key: "heatingType", name: "난방방식" },
-          ].map(({ key }) => {
-            const isSelected = activeFilterKey === key;
-            const isFilterActive = key === "hallType" || key === "heatingType" 
-              ? (filters as any)[key] !== "전체" 
-              : (filters as any)[key] > 0;
-
-            return (
-              <button
-                key={key}
-                onClick={() => setActiveFilterKey(isSelected ? null : key)}
-                className={`px-3.5 py-1.5 rounded-2xl text-xs font-bold border transition-all cursor-pointer ${
-                  isSelected || isFilterActive
-                    ? "bg-indigo-600 text-white border-indigo-700 shadow-md shadow-indigo-200"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                }`}
-              >
-                {getFilterLabel(key as keyof FilterState)}
-              </button>
-            );
-          })}
         </div>
+
+        {/* 13개 세부 조건 칩버튼 (펼쳤을 때만 노출) */}
+        {isFiltersExpanded && (
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-2 border-t border-slate-100 animate-slide-down">
+            {[
+              { key: "rentalBizRatio", name: "임대사업율" },
+              { key: "jeonseRatio", name: "전세가율" },
+              { key: "gapPrice", name: "갭가격" },
+              { key: "monthlyYield", name: "월세수익률" },
+              { key: "pyeong", name: "평형" },
+              { key: "price", name: "가격" },
+              { key: "household", name: "세대수" },
+              { key: "builtYear", name: "입주년차" },
+              { key: "far", name: "용적률" },
+              { key: "bcr", name: "건폐율" },
+              { key: "parking", name: "주차공간" },
+              { key: "hallType", name: "현관구조" },
+              { key: "heatingType", name: "난방방식" },
+            ].map(({ key }) => {
+              const isSelected = activeFilterKey === key;
+              const isFilterActive = key === "hallType" || key === "heatingType" 
+                ? (filters as any)[key] !== "전체" 
+                : (filters as any)[key] > 0;
+
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveFilterKey(isSelected ? null : key)}
+                  className={`px-3 py-1.5 rounded-2xl text-xs font-bold border transition-all cursor-pointer ${
+                    isSelected || isFilterActive
+                      ? "bg-indigo-600 text-white border-indigo-700 shadow-md shadow-indigo-200"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  {getFilterLabel(key as keyof FilterState)}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* 세부 필터 조절 패널 */}
         {activeFilterKey && (
@@ -1319,7 +1374,7 @@ export default function AptMap({
         </div>
 
         {/* 카카오 지도 컨테이너 */}
-        <div ref={containerRef} style={{ height }} className="w-full bg-slate-100" />
+        <div ref={containerRef} style={{ height: computedHeight }} className="w-full bg-slate-100 transition-[height] duration-200" />
 
         {/* 선택 단지 팝업 카드 */}
         {selectedApt && (

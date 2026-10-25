@@ -987,7 +987,6 @@ export default function Home() {
       <section id="map-section" className="py-2 sm:py-4 max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
         <div className="rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-200 shadow-xl">
           <AptMap
-            height={typeof window !== "undefined" && window.innerWidth < 640 ? 300 : 540}
             center={mapCenter}
             onVisibleApartmentsChange={handleViewportApartmentsChange}
           />

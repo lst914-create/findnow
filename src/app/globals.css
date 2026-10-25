@@ -62,6 +62,22 @@
 body {
   background: var(--color-surface-50);
   color: oklch(0.25 0.02 250);
+  /* 모바일 bounce 스크롤 방지 */
+  overscroll-behavior: none;
+}
+
+/* 한국어 줄바꿈 최적화 */
+.break-keep,
+.word-break-keep-all {
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 모바일 지도 전체화면 고정 */
+.map-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
 }
 
 /* ========================================

@@ -399,7 +399,7 @@ export default function RedevelopmentMap({
 
   return (
     <div className="relative w-full h-full bg-slate-100 overflow-hidden font-sans">
-      <div ref={mapContainerRef} className="w-full h-full" />
+      <div ref={mapContainerRef} className="absolute inset-0" style={{ touchAction: 'none' }} />
 
       {/* 로딩 표시 */}
       {!mapLoaded && !mapError && (
@@ -419,9 +419,9 @@ export default function RedevelopmentMap({
       )}
 
       {/* ======================================================== */}
-      {/* 🔴 [좌측 빨간 상자] 마커 모드 토글 (실거래 / 매물 / 경매 / 단지) */}
+      {/* 🔴 [좌측 빨간 상자] 마커 모드 토글 - 모바일에서는 top-auto bottom-32 */}
       {/* ======================================================== */}
-      <div className="absolute top-20 left-4 z-20 flex flex-col bg-white rounded-2xl shadow-xl border border-slate-200/90 p-1.5 gap-1 select-none backdrop-blur-md">
+      <div className="absolute top-auto bottom-28 md:top-20 left-3 md:left-4 z-20 flex flex-col bg-white rounded-xl md:rounded-2xl shadow-xl border border-slate-200/90 p-1 gap-0.5 md:gap-1 select-none backdrop-blur-md">
         <button
           onClick={() => setMarkerMode("trades")}
           className={`flex items-center justify-center px-3 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -482,15 +482,15 @@ export default function RedevelopmentMap({
       {/* ======================================================== */}
       {/* 🔴 [우측 빨간 상자] 지도 레이어 & 분석 도구 세로 컨트롤 바 */}
       {/* ======================================================== */}
-      <div className="absolute top-4 right-4 z-20 flex flex-col gap-2 select-none">
+      <div className="absolute top-3 md:top-4 right-3 md:right-4 z-20 flex flex-col gap-1.5 md:gap-2 select-none">
         {/* 호갱노노 스타일 세련된 플로팅 줌 컨트롤러 */}
-        <div className="flex flex-col bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden">
+        <div className="flex flex-col bg-white/95 backdrop-blur-md rounded-xl md:rounded-2xl shadow-xl border border-slate-200/90 overflow-hidden">
           <button
             onClick={() => {
               if (!kakaoMapInstanceRef.current) return;
               kakaoMapInstanceRef.current.setLevel(kakaoMapInstanceRef.current.getLevel() - 1, { animate: true });
             }}
-            className="w-10 h-9 flex items-center justify-center text-slate-700 hover:bg-slate-100 font-extrabold text-base cursor-pointer border-b border-slate-100 transition-colors"
+            className="w-8 h-8 md:w-10 md:h-9 flex items-center justify-center text-slate-700 hover:bg-slate-100 font-extrabold text-base cursor-pointer border-b border-slate-100 transition-colors"
             title="지도 확대"
           >
             +
@@ -500,14 +500,15 @@ export default function RedevelopmentMap({
               if (!kakaoMapInstanceRef.current) return;
               kakaoMapInstanceRef.current.setLevel(kakaoMapInstanceRef.current.getLevel() + 1, { animate: true });
             }}
-            className="w-10 h-9 flex items-center justify-center text-slate-700 hover:bg-slate-100 font-extrabold text-base cursor-pointer transition-colors"
+            className="w-8 h-8 md:w-10 md:h-9 flex items-center justify-center text-slate-700 hover:bg-slate-100 font-extrabold text-base cursor-pointer transition-colors"
             title="지도 축소"
           >
             −
           </button>
         </div>
 
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-1.5 flex flex-col gap-1 text-[11px] font-bold">
+        {/* 레이어 컨트롤 - 모바일에서는 숨김 */}
+        <div className="hidden md:flex bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-1.5 flex-col gap-1 text-[11px] font-bold">
           {/* 가상구역 (폴리곤) */}
           <button
             onClick={() => setShowVirtualZone((prev) => !prev)}
@@ -626,8 +627,8 @@ export default function RedevelopmentMap({
         </div>
       </div>
 
-      {/* 상단 좌측 단계 범례 */}
-      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+      {/* 상단 좌측 단계 범례 - 모바일에서는 숨김 */}
+      <div className="hidden md:flex absolute top-4 left-4 z-10 flex-col gap-2">
         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/80 px-3.5 py-2 flex items-center gap-2 text-xs">
           <span className="font-bold text-slate-700 mr-1 flex items-center gap-1 text-[11px]">
             <span className="inline-block w-2 h-2 rounded-full bg-blue-600"></span>단계 범례

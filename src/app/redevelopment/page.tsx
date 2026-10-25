@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { REDEVELOPMENT_DATA, RedevelopmentZone } from "@/lib/redevelopment";
@@ -45,6 +45,36 @@ export default function RedevelopmentPage() {
   // 지자체 공공데이터 실시간 동기화 상태
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatusMsg, setSyncStatusMsg] = useState<string | null>(null);
+
+  // 모바일에서 지도 뷰로 전환 시 카카오맵 relayout 강제 트리거
+  useEffect(() => {
+    if (mobileViewMode === "map") {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event("resize"));
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [mobileViewMode]);
+
+  // 모바일 바텀시트가 열렸을 때 body 스크롤 잠금
+  // → 브라우저 주소창/뒤로가기 버튼이 스크롤로 인해 나타났다 사라지는 현상 방지
+  useEffect(() => {
+    const isMobile = window.innerWidth < 1024; // lg 미만 = 모바일/태블릿
+    if (selectedZone && isMobile) {
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.width = "100%";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.width = "";
+    };
+  }, [selectedZone]);
 
   const handleSyncPublicData = async () => {
     setIsSyncing(true);
@@ -118,9 +148,9 @@ export default function RedevelopmentPage() {
   }, [searchQuery, stageFilter, typeFilter, regionFilter, quickMenuFilter]);
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className="flex flex-col h-[100dvh] bg-slate-50 overflow-hidden font-sans">
       {/* 1. 글로벌 헤더 (GNB) */}
-      <header className="h-16 bg-white border-b border-slate-200 px-5 flex items-center justify-between shrink-0 z-30 shadow-sm">
+      <header className="h-14 md:h-16 bg-white border-b border-slate-200 px-3 md:px-5 flex items-center justify-between shrink-0 z-30 shadow-sm">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl">🔍</span>
@@ -188,7 +218,7 @@ export default function RedevelopmentPage() {
           </div>
 
           {/* 통합 구역 검색창 */}
-          <div className="relative w-56 md:w-72">
+          <div className="relative w-40 sm:w-56 md:w-72">
             <input
               type="text"
               placeholder="구역명, 지역, 시공사, 역세권 검색"
@@ -236,10 +266,10 @@ export default function RedevelopmentPage() {
           {/* 접이식 사이드바 컨텐츠 */}
           <div
             className={`h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${
-              isLeftCollapsed ? "w-0 border-r-0" : "w-full md:w-[420px] lg:w-[460px]"
+              isLeftCollapsed ? "w-0 border-r-0" : "w-full md:w-[380px] lg:w-[420px]"
             } ${mobileViewMode === "map" ? "hidden md:flex" : "flex"}`}
           >
-            <div className="w-[420px] lg:w-[460px] flex-1 flex flex-col h-full overflow-hidden">
+            <div className="w-full md:w-[380px] lg:w-[420px] flex-1 flex flex-col h-full overflow-hidden">
               {/* 퀵 카테고리 칩 */}
               <div className="p-3 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-slate-50/50">
                 {QUICK_MENUS.map((menu) => (
@@ -562,8 +592,8 @@ export default function RedevelopmentPage() {
         )}
       </div>
 
-      {/* 모바일 화면 하단 [목록 / 지도] 플로팅 토글 바 */}
-      <div className="md:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white rounded-full shadow-2xl px-5 py-2.5 flex items-center gap-4 text-xs font-bold">
+      {/* 모바일 화면 하단 [목록 / 지도] 플로팅 토글 바 - 바텀 네비 위에 위치 */}
+      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-slate-900 text-white rounded-full shadow-2xl px-5 py-2.5 flex items-center gap-4 text-xs font-bold">
         <button
           onClick={() => setMobileViewMode("list")}
           className={`flex items-center gap-1.5 ${

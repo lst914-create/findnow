@@ -800,14 +800,14 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="relative min-h-[60vh] sm:min-h-[75vh] flex items-center justify-center overflow-hidden pt-14 sm:pt-16">
+      <section className="relative min-h-[60vh] sm:min-h-[75vh] flex items-center justify-center overflow-x-hidden pt-14 sm:pt-16">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-brand-50 via-surface-50 to-accent-50" />
           <div className="absolute top-20 -left-32 w-72 sm:w-96 h-72 sm:h-96 bg-brand-200/30 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-20 -right-32 w-72 sm:w-96 h-72 sm:h-96 bg-accent-200/30 rounded-full blur-3xl animate-float delay-300" />
         </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-8 sm:py-12">
+        <div className="relative z-10 w-full max-w-4xl mx-auto px-5 sm:px-6 lg:px-8 text-center py-8 sm:py-12">
           <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full bg-brand-100/60 border border-brand-200/60 mb-4 sm:mb-6">
             <span className="w-2 h-2 rounded-full bg-accent-400 animate-pulse" />
             <span className="text-xs sm:text-sm font-medium text-brand-700">전국 핵심 아파트 실거래 정보 검색</span>
@@ -818,11 +818,11 @@ export default function Home() {
             <span className="gradient-text block mt-2 sm:mt-3.5 lg:mt-4">한 눈에 직관적으로 비교해줘</span>
           </h1>
 
-          <p className="text-sm sm:text-lg text-gray-500 max-w-2xl mx-auto mb-6 sm:mb-8 leading-relaxed font-medium px-2">
+          <p className="text-sm sm:text-lg text-gray-500 max-w-2xl mx-auto mb-6 sm:mb-8 leading-relaxed font-medium break-keep word-break-keep-all">
             원하는 지역이나 단지명을 검색하세요.
             <span className="hidden sm:inline"><br /></span>
             <span className="sm:hidden"> </span>
-            시세, 세대수, 준공년도, 학군 및 지하철 역세권 점수까지 바로 확인할 수 있습니다.
+            시세, 세대수, 준공년도, 학군 및 역세권 점수까지 확인하세요.
           </p>
 
           {/* Search Input Form */}

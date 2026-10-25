@@ -5,6 +5,13 @@ function normalizeAptName(name: string): string {
   if (!name) return "";
   return name
     .replace(/[\s\-_(),.·]/g, "")
+    // ─── 브랜드명 한글↔영문 통일 (국토부 API vs 마스터 데이터 혼용 대응) ───
+    .replace(/이편한세상|e\-편한세상/gi, "e편한세상")
+    .replace(/자연앤e편한세상|자연&e편한세상/gi, "e편한세상")
+    .replace(/에스케이뷰|sk\s*view/gi, "sk뷰")
+    .replace(/대우\s*푸르지오(?!아)/gi, "푸르지오")
+    .replace(/금호\s*어울림/gi, "금호어울림")
+    // ─── 차수/단지 번호 정규화 ────────────────────────────────────────────
     .replace(/1차|ⅰ|i단지|1단지|Ⅰ/gi, "1")
     .replace(/2차|ⅱ|ii단지|2단지|Ⅱ/gi, "2")
     .replace(/3차|ⅲ|iii단지|3단지|Ⅲ/gi, "3")

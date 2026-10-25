@@ -65,6 +65,8 @@ export default async function Image() {
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div
             style={{
+              display: "flex",
+              flexDirection: "column",
               fontSize: "56px",
               fontWeight: "900",
               lineHeight: "1.25",
@@ -72,8 +74,7 @@ export default async function Image() {
               textShadow: "0 4px 20px rgba(0,0,0,0.5)",
             }}
           >
-            내가 찾는 부동산 정보,
-            <br />
+            <span>내가 찾는 부동산 정보,</span>
             <span
               style={{
                 background: "linear-gradient(90deg, #818cf8 0%, #c084fc 50%, #f472b6 100%)",
@@ -84,7 +85,7 @@ export default async function Image() {
               한 눈에 직관적으로 비교해줘
             </span>
           </div>
-          <div style={{ fontSize: "24px", color: "#cbd5e1", fontWeight: "500", maxWidth: "900px" }}>
+          <div style={{ display: "flex", fontSize: "24px", color: "#cbd5e1", fontWeight: "500", maxWidth: "900px" }}>
             전국 22,000+ 아파트 실거래가·호가부터 전국 재개발 구역 지도, 분양 청약 일정까지
           </div>
         </div>

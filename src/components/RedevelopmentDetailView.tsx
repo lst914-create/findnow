@@ -58,7 +58,7 @@ export default function RedevelopmentDetailView({
       const checkY = containerRect.top + 80; // 스티키 탭바 바로 아래 기준선
 
       for (let i = SECTIONS.length - 1; i >= 0; i--) {
-        const sec = document.getElementById(SECTIONS[i].id);
+        const sec = container.querySelector<HTMLElement>(`#${SECTIONS[i].id}`);
         if (sec) {
           const secRect = sec.getBoundingClientRect();
           if (secRect.top <= checkY) {
@@ -76,21 +76,25 @@ export default function RedevelopmentDetailView({
   // 탭 클릭 시 해당 섹션으로 부드러운 스크롤 이동
   const scrollToSection = (sectionId: string) => {
     setActiveSection(sectionId);
-    const target = document.getElementById(sectionId);
     const container = scrollContainerRef.current;
-    if (target && container) {
-      const containerRect = container.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const stickyTabsHeight = 48; // 상단 스티키 탭 네비게이션 높이 보정
-      // 현재 스크롤 위치 + 타겟 섹션의 뷰포트 상대 위치 - 스티키 탭 높이
-      const targetScrollTop =
-        container.scrollTop + (targetRect.top - containerRect.top) - stickyTabsHeight;
+    if (!container) return;
 
-      container.scrollTo({
-        top: Math.max(0, targetScrollTop),
-        behavior: "smooth",
-      });
-    }
+    // document.getElementById 대신 container 내부에서 검색 (모바일/데스크탑 뷰 동시 마운트 대응)
+    const target = container.querySelector<HTMLElement>(`#${sectionId}`);
+    if (!target) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const stickyTabsHeight = 46; // 상단 스티키 탭 네비게이션 높이 보정
+
+    // 현재 스크롤 위치 + 타겟 섹션의 뷰포트 상대 위치 - 스티키 탭 높이
+    const targetScrollTop =
+      container.scrollTop + (targetRect.top - containerRect.top) - stickyTabsHeight;
+
+    container.scrollTo({
+      top: Math.max(0, targetScrollTop),
+      behavior: "smooth",
+    });
   };
 
   // 주소 복사

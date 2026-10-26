@@ -54,13 +54,17 @@ export default function RedevelopmentDetailView({
     if (!container) return;
 
     const handleScroll = () => {
-      const scrollPosition = container.scrollTop + 140; // 스티키 헤더 높이 보정
+      const containerRect = container.getBoundingClientRect();
+      const checkY = containerRect.top + 80; // 스티키 탭바 바로 아래 기준선
 
       for (let i = SECTIONS.length - 1; i >= 0; i--) {
         const sec = document.getElementById(SECTIONS[i].id);
-        if (sec && sec.offsetTop <= scrollPosition) {
-          setActiveSection(SECTIONS[i].id);
-          break;
+        if (sec) {
+          const secRect = sec.getBoundingClientRect();
+          if (secRect.top <= checkY) {
+            setActiveSection(SECTIONS[i].id);
+            break;
+          }
         }
       }
     };
@@ -75,10 +79,15 @@ export default function RedevelopmentDetailView({
     const target = document.getElementById(sectionId);
     const container = scrollContainerRef.current;
     if (target && container) {
-      const headerOffset = 60;
-      const targetPosition = target.offsetTop - headerOffset;
+      const containerRect = container.getBoundingClientRect();
+      const targetRect = target.getBoundingClientRect();
+      const stickyTabsHeight = 48; // 상단 스티키 탭 네비게이션 높이 보정
+      // 현재 스크롤 위치 + 타겟 섹션의 뷰포트 상대 위치 - 스티키 탭 높이
+      const targetScrollTop =
+        container.scrollTop + (targetRect.top - containerRect.top) - stickyTabsHeight;
+
       container.scrollTo({
-        top: Math.max(0, targetPosition),
+        top: Math.max(0, targetScrollTop),
         behavior: "smooth",
       });
     }

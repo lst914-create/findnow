@@ -103,12 +103,15 @@ export default function RedevelopmentMap({
   useEffect(() => {
     if (!mapLoaded || !mapContainerRef.current || !kakaoMapInstanceRef.current) return;
     const container = mapContainerRef.current;
-    const observer = new ResizeObserver(() => {
+    const handleResize = () => {
       kakaoMapInstanceRef.current?.relayout();
-    });
+    };
+    const observer = new ResizeObserver(handleResize);
     observer.observe(container);
+    window.addEventListener("resize", handleResize);
     return () => {
       observer.disconnect();
+      window.removeEventListener("resize", handleResize);
     };
   }, [mapLoaded]);
 
@@ -390,6 +393,9 @@ export default function RedevelopmentMap({
     if (!selectedZone || !kakaoMapInstanceRef.current || !window.kakao) return;
     const kakaoMaps = window.kakao.maps;
     const map = kakaoMapInstanceRef.current;
+    
+    // 목록에서 선택되어 지도가 방금 활성화된 경우를 위해 relayout 먼저 호출
+    map.relayout();
     const moveLatLon = new kakaoMaps.LatLng(selectedZone.lat, selectedZone.lng);
     map.panTo(moveLatLon);
     if (map.getLevel() > 5) {

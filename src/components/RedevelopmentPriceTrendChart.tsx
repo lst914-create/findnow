@@ -76,23 +76,25 @@ export default function RedevelopmentPriceTrendChart() {
         </div>
       </div>
 
-      {/* 범례 표시 */}
-      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5">
+      {/* 범례 및 단위 표시 (모바일 겹침 방지: 범례와 단위를 깔끔하게 분리) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-[11px] text-slate-500 pt-1">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className="flex items-center gap-1.5 shrink-0">
             <span className="w-3 h-0.5 bg-blue-600 inline-block rounded-full"></span>
             <span className="font-semibold text-slate-700">다세대(평당가)</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <span className="w-3 h-0.5 bg-emerald-500 inline-block rounded-full"></span>
             <span className="font-semibold text-slate-700">단독·다가구</span>
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <span className="w-2.5 h-2 bg-blue-200 inline-block rounded-xs"></span>
             <span className="font-medium text-slate-500">거래량</span>
           </div>
         </div>
-        <span className="text-[10px] text-slate-400">단위: 만원/평, 건수</span>
+        <div className="text-right shrink-0">
+          <span className="text-[10px] text-slate-400">단위: 만원/평, 건수</span>
+        </div>
       </div>
 
       {/* Recharts 복합 그래프 (대지평당가 Line + 거래량 Bar) */}

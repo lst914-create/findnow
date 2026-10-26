@@ -267,9 +267,10 @@ export default function CommunityPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group">
-              <span className="text-2xl font-black bg-linear-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                찾아줘
-              </span>
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/25 group-hover:shadow-brand-500/40 transition-shadow">
+                <span className="text-white text-base sm:text-lg font-bold">F</span>
+              </div>
+              <span className="text-lg sm:text-xl font-bold gradient-text">찾아줘</span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
                 커뮤니티
               </span>

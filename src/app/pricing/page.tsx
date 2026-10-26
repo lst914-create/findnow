@@ -22,10 +22,10 @@ export default function PricingPage() {
         <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group">
-              <span className="text-2xl group-hover:scale-110 transition-transform">🔍</span>
-              <span className="text-xl font-black bg-gradient-to-r from-blue-400 via-indigo-400 to-violet-400 bg-clip-text text-transparent tracking-tight">
-                찾아줘
-              </span>
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/25 group-hover:shadow-brand-500/40 transition-shadow">
+                <span className="text-white text-base sm:text-lg font-bold">F</span>
+              </div>
+              <span className="text-lg sm:text-xl font-bold gradient-text">찾아줘</span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-1 text-sm font-semibold text-slate-300">

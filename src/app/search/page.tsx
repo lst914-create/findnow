@@ -383,12 +383,10 @@ export default function ApartmentSearchPage() {
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-              <span className="text-white text-lg font-bold">F</span>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/25 group-hover:shadow-brand-500/40 transition-shadow">
+              <span className="text-white text-base sm:text-lg font-bold">F</span>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">
-              찾아줘
-            </span>
+            <span className="text-lg sm:text-xl font-bold gradient-text">찾아줘</span>
           </Link>
 
           <div className="flex items-center gap-4 text-sm font-semibold text-slate-600">

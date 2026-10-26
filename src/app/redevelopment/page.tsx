@@ -164,11 +164,11 @@ export default function RedevelopmentPage() {
       {/* 1. 글로벌 헤더 (GNB) */}
       <header className="h-14 md:h-16 bg-white border-b border-slate-200 px-3 md:px-5 flex items-center justify-between shrink-0 z-30 shadow-sm">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">🔍</span>
-            <span className="text-xl font-black bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 bg-clip-text text-transparent tracking-tight">
-              찾아줘
-            </span>
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/25 group-hover:shadow-brand-500/40 transition-shadow">
+              <span className="text-white text-base sm:text-lg font-bold">F</span>
+            </div>
+            <span className="text-lg sm:text-xl font-bold gradient-text">찾아줘</span>
           </Link>
 
           {/* GNB 링크들 */}

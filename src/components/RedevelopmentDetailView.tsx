@@ -44,7 +44,6 @@ export default function RedevelopmentDetailView({
   const [authModalReason, setAuthModalReason] = useState<"more" | "alert">("more");
   const [showAllTransactions, setShowAllTransactions] = useState(false);
   const [isAlertSubscribed, setIsAlertSubscribed] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(true);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -429,22 +428,7 @@ export default function RedevelopmentDetailView({
             </div>
           </div>
 
-          {/* 재개발닷컴 시그니처 보라색 툴팁 */}
-          {showTooltip && (
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs py-2 px-3.5 rounded-xl flex items-center justify-between shadow-md">
-              <span className="font-bold flex items-center gap-1.5">
-                <span>👆</span>
-                <span>눌러서 상세 내역을 확인해보세요</span>
-              </span>
-              <button
-                onClick={() => setShowTooltip(false)}
-                className="text-white/80 hover:text-white text-sm font-bold ml-2"
-                title="닫기"
-              >
-                ✕
-              </button>
-            </div>
-          )}
+
 
           {/* 🌟 [2] 재개발닷컴 스타일 실거래 목록 표 */}
           <div className="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-2xs">
@@ -1290,9 +1274,6 @@ export default function RedevelopmentDetailView({
             <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
               <span>🧮</span> 분담금 및 투자수익률 계산기
             </h3>
-            <span className="text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-              실시간 시뮬레이션
-            </span>
           </div>
           <RedevelopmentInvestmentCalculator zone={zone} />
         </section>

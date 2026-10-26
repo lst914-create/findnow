@@ -79,7 +79,6 @@ export default function RedevelopmentInvestmentCalculator({
       {/* 계산기 헤더 소개 */}
       <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-5 rounded-2xl shadow-md">
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xl">🧮</span>
           <h3 className="text-base font-extrabold tracking-tight">
             {zone.name} 조합원 분담금 & 수익률 계산기
           </h3>

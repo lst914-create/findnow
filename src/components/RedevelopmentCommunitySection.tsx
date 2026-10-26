@@ -244,21 +244,14 @@ export default function RedevelopmentCommunitySection({
   return (
     <section className="space-y-4 pt-6 border-t border-slate-200">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-bold border border-amber-200 mb-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-            <span>구역 고유 실시간 소통방 (구역별 개별 저장)</span>
-          </div>
-          <h3 className="text-base font-black text-slate-900 flex items-center gap-1.5">
-            <span>🔨</span>
-            <span>{zoneName} 조합원 & 투자자 토론</span>
-          </h3>
-        </div>
-
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 pb-1">
+        <h3 className="text-base font-black text-slate-900 flex items-center gap-1.5">
+          <span>🔨</span>
+          <span>{zoneName} 조합원 & 투자자 토론</span>
+        </h3>
         <Link
           href="/community"
-          className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-0.5"
+          className="text-xs font-bold text-indigo-600 hover:text-indigo-800 hover:underline flex items-center gap-0.5 self-start sm:self-auto shrink-0"
         >
           <span>재개발 토론방 전체보기 →</span>
         </Link>

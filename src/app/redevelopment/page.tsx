@@ -207,33 +207,13 @@ export default function RedevelopmentPage() {
           </nav>
         </div>
 
-        {/* 우측 도구모음: 공공데이터 자동 연동 뱃지 & 통합 구역 검색창 */}
+        {/* 우측 도구모음: 통합 구역 검색창 */}
         <div className="flex items-center gap-2">
-          {/* 지자체 공공데이터 자동 연동 상태 뱃지 (매일 새벽 자동 동기화) */}
-          <div
-            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 rounded-xl text-[11px] font-semibold shadow-xs"
-            title="서울시 UPIS 및 지자체 정비사업 고시와 매일 새벽 자동 동기화됩니다."
-          >
-            <span className={`w-2 h-2 rounded-full shrink-0 ${isSyncing ? "bg-amber-500 animate-ping" : "bg-emerald-500 animate-pulse"}`} />
-            <span className="font-bold hidden sm:inline">지자체 고시 연동</span>
-            <span className="text-[10px] text-emerald-600 bg-white/80 px-1.5 py-0.5 rounded-md font-mono border border-emerald-200/60 hidden md:inline">
-              새벽 04:00 자동갱신
-            </span>
-            <button
-              onClick={handleSyncPublicData}
-              disabled={isSyncing}
-              title="지금 즉시 지자체 고시 확인"
-              className="ml-0.5 text-emerald-600 hover:text-emerald-900 transition-transform active:rotate-180 disabled:opacity-50"
-            >
-              {isSyncing ? "..." : "↻"}
-            </button>
-          </div>
-
           {/* 통합 구역 검색창 */}
-          <div className="relative w-40 sm:w-56 md:w-72">
+          <div className="relative w-44 sm:w-56 md:w-72">
             <input
               type="text"
-              placeholder="구역명, 지역, 시공사, 역세권 검색"
+              placeholder="구역명, 지역, 시공사 검색"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-2 text-xs bg-slate-100 focus:bg-white border border-transparent focus:border-blue-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all font-medium"
@@ -274,16 +254,16 @@ export default function RedevelopmentPage() {
       {/* 2. 메인 컨텐츠 영역 (2단 or 3단 스플릿) */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* 좌측 사이드바: 퀵 메뉴, 다중 필터 & 구역 목록 */}
-        <div className="relative shrink-0 z-20 flex">
+        <div className="relative shrink-0 z-20 flex w-full md:w-auto">
           {/* 접이식 사이드바 컨텐츠 */}
           <div
             className={`h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${
               isLeftCollapsed ? "w-0 border-r-0" : "w-full md:w-[380px] lg:w-[420px]"
             } ${mobileViewMode === "map" ? "hidden md:flex" : "flex"}`}
           >
-            <div className="w-full md:w-[380px] lg:w-[420px] flex-1 flex flex-col h-full overflow-hidden">
+            <div className="w-full md:w-[380px] lg:w-[420px] max-w-full flex-1 flex flex-col h-full overflow-hidden">
               {/* 퀵 카테고리 칩 */}
-              <div className="p-3 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-slate-50/50">
+              <div className="p-2.5 sm:p-3 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-slate-50/50">
                 {QUICK_MENUS.map((menu) => (
                   <button
                     key={menu.filter}
@@ -300,20 +280,20 @@ export default function RedevelopmentPage() {
                 ))}
               </div>
 
-              {/* 3대 필터 셀렉터 (단계, 유형, 지역) */}
-              <div className="p-3 border-b border-slate-100 grid grid-cols-3 gap-2 bg-white text-xs">
+              {/* 3대 필터 셀렉터 (단계, 유형, 지역) - 모바일 화면 너비에 100% 맞춰 균등 3분할 */}
+              <div className="p-2.5 sm:p-3 border-b border-slate-100 grid grid-cols-3 gap-1.5 bg-white text-xs w-full min-w-0">
                 {/* 단계 필터 */}
                 <select
                   value={stageFilter}
                   onChange={(e) => setStageFilter(e.target.value)}
-                  className="px-2 py-2 border border-slate-200 rounded-xl bg-slate-50 font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full min-w-0 px-1.5 sm:px-2 py-2 border border-slate-200 rounded-xl bg-slate-50 font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 text-[11px] sm:text-xs truncate cursor-pointer"
                 >
                   <option value="전체">단계: 전체</option>
-                  <option value="정비구역지정">정비구역지정</option>
-                  <option value="조합설립인가">조합설립인가</option>
+                  <option value="정비구역지정">구역지정</option>
+                  <option value="조합설립인가">조합설립</option>
                   <option value="건축심의">건축심의</option>
-                  <option value="사업시행인가">사업시행인가</option>
-                  <option value="관리처분인가">관리처분인가</option>
+                  <option value="사업시행인가">사업시행</option>
+                  <option value="관리처분인가">관리처분</option>
                   <option value="이주철거">이주·철거</option>
                 </select>
 
@@ -321,11 +301,11 @@ export default function RedevelopmentPage() {
                 <select
                   value={typeFilter}
                   onChange={(e) => setTypeFilter(e.target.value)}
-                  className="px-2 py-2 border border-slate-200 rounded-xl bg-slate-50 font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full min-w-0 px-1.5 sm:px-2 py-2 border border-slate-200 rounded-xl bg-slate-50 font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 text-[11px] sm:text-xs truncate cursor-pointer"
                 >
                   <option value="전체">유형: 전체</option>
                   <option value="재개발">재개발</option>
-                  <option value="신속통합기획">신속통합기획</option>
+                  <option value="신속통합기획">신통기획</option>
                   <option value="모아타운">모아타운</option>
                   <option value="재건축">재건축</option>
                 </select>
@@ -334,7 +314,7 @@ export default function RedevelopmentPage() {
                 <select
                   value={regionFilter}
                   onChange={(e) => setRegionFilter(e.target.value)}
-                  className="px-2 py-2 border border-slate-200 rounded-xl bg-slate-50 font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full min-w-0 px-1.5 sm:px-2 py-2 border border-slate-200 rounded-xl bg-slate-50 font-bold text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 text-[11px] sm:text-xs truncate cursor-pointer"
                 >
                   <option value="전체">지역: 전국</option>
                   <optgroup label="서울특별시">

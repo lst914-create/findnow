@@ -408,9 +408,6 @@ export default function ApartmentSearchPage() {
         {/* Title Banner */}
         <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden">
           <div className="relative z-10 space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur rounded-full text-xs font-bold text-indigo-200 border border-white/20">
-              🔍 STEP 3 — 맞춤 조건 검색
-            </div>
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
               원하는 조건의 아파트를 찾아보세요
             </h1>
@@ -441,9 +438,6 @@ export default function ApartmentSearchPage() {
               <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
                 <span className="flex items-center gap-1.5">
                   <span>📍</span> 지역 선택 (시·도 / 시·군·구)
-                </span>
-                <span className="text-[10px] text-indigo-600 font-extrabold bg-indigo-50 px-2 py-0.5 rounded-full">
-                  전국 17개 시·도 지원
                 </span>
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -594,11 +588,10 @@ export default function ApartmentSearchPage() {
 
         {/* ===== 검색 결과 지도 뷰 ===== */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div>
             <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <span>🗺️</span> 조건 검색 단지 실거래가 지도
             </h2>
-            <span className="text-xs text-slate-500">호갱노노 스타일 직관적 뷰</span>
           </div>
           <AptMap
             height={460}

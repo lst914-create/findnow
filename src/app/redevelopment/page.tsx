@@ -24,9 +24,7 @@ const QUICK_MENUS = [
 ];
 
 export default function RedevelopmentPage() {
-  const [selectedZone, setSelectedZone] = useState<RedevelopmentZone | null>(
-    REDEVELOPMENT_DATA[0] // 기본 선택: 장위14구역
-  );
+  const [selectedZone, setSelectedZone] = useState<RedevelopmentZone | null>(null);
 
   // 검색어 및 필터 상태
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,8 +33,22 @@ export default function RedevelopmentPage() {
   const [regionFilter, setRegionFilter] = useState("전체");
   const [quickMenuFilter, setQuickMenuFilter] = useState("all");
 
-  // 모바일 화면용 뷰 모드 토글 (지도 vs 목록)
-  const [mobileViewMode, setMobileViewMode] = useState<"map" | "list">("list");
+  // 모바일 화면용 뷰 모드 토글 (지도 vs 목록) - 기본값: 지도("map")
+  const [mobileViewMode, setMobileViewMode] = useState<"map" | "list">("map");
+
+  // URL 쿼리에 특정 구역 ID가 있으면 해당 구역 선택 (예: 통합검색 등에서 진입 시)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const zoneId = params.get("zone");
+      if (zoneId) {
+        const found = REDEVELOPMENT_DATA.find((z) => z.id === zoneId);
+        if (found) {
+          setSelectedZone(found);
+        }
+      }
+    }
+  }, []);
 
   // 재개발닷컴 스타일 좌/우 패널 접기/펼치기 상태
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);

@@ -427,7 +427,7 @@ export default function RedevelopmentMap({
       {/* ======================================================== */}
       {/* 🔴 [좌측 빨간 상자] 마커 모드 토글 - 모바일에서는 top-auto bottom-32 */}
       {/* ======================================================== */}
-      <div className="absolute top-auto bottom-28 md:top-20 left-3 md:left-4 z-20 flex flex-col bg-white rounded-xl md:rounded-2xl shadow-xl border border-slate-200/90 p-1 gap-0.5 md:gap-1 select-none backdrop-blur-md">
+      <div className="absolute top-auto bottom-28 md:top-20 md:bottom-auto left-3 md:left-4 z-20 flex flex-col bg-white rounded-xl md:rounded-2xl shadow-xl border border-slate-200/90 p-1 gap-0.5 md:gap-1 select-none backdrop-blur-md h-auto">
         <button
           onClick={() => setMarkerMode("trades")}
           className={`flex items-center justify-center px-3 py-2 rounded-xl text-xs font-bold transition-all ${

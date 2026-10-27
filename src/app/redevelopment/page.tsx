@@ -61,10 +61,14 @@ export default function RedevelopmentPage() {
   // 모바일에서 지도 뷰로 전환 시 카카오맵 relayout 강제 트리거
   useEffect(() => {
     if (mobileViewMode === "map") {
-      const timer = setTimeout(() => {
-        window.dispatchEvent(new Event("resize"));
-      }, 100);
-      return () => clearTimeout(timer);
+      const t1 = setTimeout(() => window.dispatchEvent(new Event("resize")), 50);
+      const t2 = setTimeout(() => window.dispatchEvent(new Event("resize")), 200);
+      const t3 = setTimeout(() => window.dispatchEvent(new Event("resize")), 400);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
     }
   }, [mobileViewMode]);
 
@@ -254,12 +258,16 @@ export default function RedevelopmentPage() {
       {/* 2. 메인 컨텐츠 영역 (2단 or 3단 스플릿) */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* 좌측 사이드바: 퀵 메뉴, 다중 필터 & 구역 목록 */}
-        <div className="relative shrink-0 z-20 flex w-full md:w-auto">
+        <div
+          className={`relative shrink-0 z-20 ${
+            mobileViewMode === "map" ? "hidden md:flex" : "flex w-full"
+          } md:w-auto`}
+        >
           {/* 접이식 사이드바 컨텐츠 */}
           <div
             className={`h-full bg-white border-r border-slate-200 flex flex-col transition-all duration-300 ease-in-out overflow-hidden ${
               isLeftCollapsed ? "w-0 border-r-0" : "w-full md:w-[380px] lg:w-[420px]"
-            } ${mobileViewMode === "map" ? "hidden md:flex" : "flex"}`}
+            }`}
           >
             <div className="w-full md:w-[380px] lg:w-[420px] max-w-full flex-1 flex flex-col h-full overflow-hidden">
               {/* 퀵 카테고리 칩 */}
@@ -515,7 +523,7 @@ export default function RedevelopmentPage() {
 
         {/* 중앙: 대형 카카오 지도 영역 */}
         <div
-          className={`flex-1 relative h-full overflow-hidden ${
+          className={`flex-1 relative h-full w-full overflow-hidden ${
             mobileViewMode === "list" ? "hidden md:block" : "block"
           }`}
         >

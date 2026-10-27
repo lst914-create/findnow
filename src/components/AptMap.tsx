@@ -130,6 +130,10 @@ export default function AptMap({
   const lastViewportKeyRef = useRef<string>(""); // 노모지 API 콜 중복 방지
   const geoResolvedRef = useRef<{ lat: number; lng: number } | null>(null); // geolocation 결과 캐시
   const [isGeoLoading, setIsGeoLoading] = useState(false); // geolocation 로딩 상태
+  // 실거래가 캐시: normalizedAptName → 최근 평균 실거래가(만원)
+  const realtimePriceCacheRef = useRef<Map<string, number>>(new Map());
+  const viewportPriceFetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastPriceFetchKeyRef = useRef<string>(""); // 중복 fetch 방지
 
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedApt, setSelectedApt] = useState<AptMarker | null>(null);
@@ -1285,6 +1289,54 @@ export default function AptMap({
               </div>
             )}
 
+            {/* 가격 상한가 슬라이더 및 옵션 */}
+            {activeFilterKey === "price" && (
+              <div className="space-y-3 py-1">
+                <div className="flex justify-between text-xs font-black text-indigo-600">
+                  <span>최대 매매가</span>
+                  <span>{filters.price === 0 ? "전체 (금액 무관)" : `${filters.price / 10000}억 이하`}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={300000}
+                  step={10000}
+                  value={filters.price}
+                  onChange={(e) => setFilters({ ...filters, price: Number(e.target.value) })}
+                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <div className="flex justify-between text-[11px] text-slate-400 font-bold px-0.5">
+                  <span>0억</span>
+                  <span>5억</span>
+                  <span>10억</span>
+                  <span>20억</span>
+                  <span>30억</span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 pt-1">
+                  {[
+                    { label: "전체", val: 0 },
+                    { label: "5억↓", val: 50000 },
+                    { label: "10억↓", val: 100000 },
+                    { label: "15억↓", val: 150000 },
+                    { label: "20억↓", val: 200000 },
+                    { label: "30억↓", val: 300000 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setFilters({ ...filters, price: opt.val })}
+                      className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        filters.price === opt.val
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 세대수 옵션 */}
             {activeFilterKey === "household" && (
               <div className="flex gap-2">
@@ -1306,6 +1358,149 @@ export default function AptMap({
                     {opt.label}
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* 입주년차 (연식) 슬라이더 및 옵션 */}
+            {activeFilterKey === "builtYear" && (
+              <div className="space-y-3 py-1">
+                <div className="flex justify-between text-xs font-black text-indigo-600">
+                  <span>최대 입주년차</span>
+                  <span>{filters.builtYear === 0 ? "전체 (연식 무관)" : `${filters.builtYear}년 이내 (${2026 - filters.builtYear}년 이후 준공)`}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={30}
+                  step={5}
+                  value={filters.builtYear}
+                  onChange={(e) => setFilters({ ...filters, builtYear: Number(e.target.value) })}
+                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <div className="flex justify-between text-[11px] text-slate-400 font-bold px-0.5">
+                  <span>0(무관)</span>
+                  <span>5년</span>
+                  <span>10년</span>
+                  <span>15년</span>
+                  <span>20년</span>
+                  <span>30년</span>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 pt-1">
+                  {[
+                    { label: "전체", val: 0 },
+                    { label: "5년 이내", val: 5 },
+                    { label: "10년 이내", val: 10 },
+                    { label: "15년 이내", val: 15 },
+                    { label: "20년 이내", val: 20 },
+                    { label: "30년 이내", val: 30 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setFilters({ ...filters, builtYear: opt.val })}
+                      className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        filters.builtYear === opt.val
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 용적률 제한 슬라이더 및 옵션 */}
+            {activeFilterKey === "far" && (
+              <div className="space-y-3 py-1">
+                <div className="flex justify-between text-xs font-black text-indigo-600">
+                  <span>용적률 상한</span>
+                  <span>{filters.far === 0 ? "전체 (제한 없음)" : `${filters.far}% 이하`}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={300}
+                  step={20}
+                  value={filters.far}
+                  onChange={(e) => setFilters({ ...filters, far: Number(e.target.value) })}
+                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <div className="flex justify-between text-[11px] text-slate-400 font-bold px-0.5">
+                  <span>0(무관)</span>
+                  <span>160%</span>
+                  <span>200%</span>
+                  <span>250%</span>
+                  <span>300%</span>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 pt-1">
+                  {[
+                    { label: "전체", val: 0 },
+                    { label: "160%↓", val: 160 },
+                    { label: "200%↓", val: 200 },
+                    { label: "250%↓", val: 250 },
+                    { label: "300%↓", val: 300 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setFilters({ ...filters, far: opt.val })}
+                      className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        filters.far === opt.val
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 건폐율 제한 슬라이더 및 옵션 */}
+            {activeFilterKey === "bcr" && (
+              <div className="space-y-3 py-1">
+                <div className="flex justify-between text-xs font-black text-indigo-600">
+                  <span>건폐율 상한</span>
+                  <span>{filters.bcr === 0 ? "전체 (제한 없음)" : `${filters.bcr}% 이하`}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={30}
+                  step={2}
+                  value={filters.bcr}
+                  onChange={(e) => setFilters({ ...filters, bcr: Number(e.target.value) })}
+                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <div className="flex justify-between text-[11px] text-slate-400 font-bold px-0.5">
+                  <span>0(무관)</span>
+                  <span>15%</span>
+                  <span>20%</span>
+                  <span>25%</span>
+                  <span>30%</span>
+                </div>
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 pt-1">
+                  {[
+                    { label: "전체", val: 0 },
+                    { label: "15%↓", val: 15 },
+                    { label: "18%↓", val: 18 },
+                    { label: "20%↓", val: 20 },
+                    { label: "25%↓", val: 25 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => setFilters({ ...filters, bcr: opt.val })}
+                      className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        filters.bcr === opt.val
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 

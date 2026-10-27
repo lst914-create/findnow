@@ -844,9 +844,7 @@ export default function Home() {
           </h1>
 
           <p className="text-xs sm:text-base text-gray-500 max-w-2xl mx-auto mb-4 sm:mb-8 leading-relaxed font-medium break-keep">
-            원하는 지역이나 단지명을 검색하세요.
-            <span className="hidden sm:inline"><br /></span>
-            <span className="sm:hidden"> </span>
+            원하는 지역이나 단지명을 검색하세요.<br />
             시세, 세대수, 준공년도, 학군 및 역세권 점수까지 확인하세요.
           </p>
 

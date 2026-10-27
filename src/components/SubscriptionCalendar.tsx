@@ -555,17 +555,6 @@ export default function SubscriptionCalendar({
               <span>📊 청약통계 {showStatsPanel ? "접기" : "보기"}</span>
             </button>
           </div>
-
-          {/* 청약홈 원문 캘린더 링크 */}
-          <a
-            href="https://www.applyhome.co.kr/ai/aib/selectSubscrptCalenderView.do"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-          >
-            <span>한국부동산원 청약홈 원문 캘린더</span>
-            <span className="text-[10px]">↗</span>
-          </a>
         </div>
 
         {/* 1월 ~ 12월 탭 버튼 바 */}

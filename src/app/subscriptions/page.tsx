@@ -332,11 +332,6 @@ export default function SubscriptionsPage() {
                 </span>
               </button>
             </div>
-
-            <div className="text-xs text-slate-300 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>한국부동산원 청약홈 (ApplyHome) 캘린더와 동일한 일정 분류 적용</span>
-            </div>
           </div>
         </div>
       </section>

@@ -130,10 +130,19 @@ export default function AptMap({
   const lastViewportKeyRef = useRef<string>(""); // 노모지 API 콜 중복 방지
   const geoResolvedRef = useRef<{ lat: number; lng: number } | null>(null); // geolocation 결과 캐시
   const [isGeoLoading, setIsGeoLoading] = useState(false); // geolocation 로딩 상태
-  // 실거래가 캐시: normalizedAptName → 최근 평균 실거래가(만원)
   const realtimePriceCacheRef = useRef<Map<string, number>>(new Map());
+  // 실거래가 상세 캐시: normName → { formatted, dealDate, floor, pyeong, tradeCount }
+  const livePriceDetailCacheRef = useRef<Map<string, {
+    latestPrice: number;
+    formatted: string;
+    dealDate: string;
+    floor: number;
+    pyeong: number;
+    tradeCount: number;
+  }>>(new Map());
   const viewportPriceFetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPriceFetchKeyRef = useRef<string>(""); // 중복 fetch 방지
+  const [livePriceLoaded, setLivePriceLoaded] = useState(false); // 실거래가 로드 완료 트리거
 
   const [userPos, setUserPos] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedApt, setSelectedApt] = useState<AptMarker | null>(null);
@@ -391,17 +400,108 @@ export default function AptMap({
     `;
   };
 
+  /* ── 뷰포트 실거래가 fetch 함수 (법정동 코드 → RTMS API) ────────── */
+  const fetchViewportLivePrices = useRef<(apts: AptMarker[], pyeong: number) => void>(
+    () => {}
+  );
+
+  useEffect(() => {
+    fetchViewportLivePrices.current = async (apts: AptMarker[], pyeong: number) => {
+      if (!apts.length) return;
+
+      // 유니크 region+district 조합 추출 (최대 6개 지역)
+      const regionSet = new Map<string, { region: string; district: string }>();
+      for (const apt of apts) {
+        const parts = apt.region.split(" ");
+        // apt.region 형식: "서울 서초구" 또는 "서울 서초구 방배동"
+        const region = parts.slice(0, 2).join(" ");
+        const district = parts.slice(2).join(" ");
+        const key = `${region}|${district}`;
+        if (!regionSet.has(key)) {
+          regionSet.set(key, { region, district });
+        }
+        if (regionSet.size >= 6) break;
+      }
+
+      const priceFetchKey = `${[...regionSet.keys()].sort().join(",")}|${pyeong}`;
+      if (priceFetchKey === lastPriceFetchKeyRef.current) return;
+      lastPriceFetchKeyRef.current = priceFetchKey;
+
+      try {
+        const res = await fetch("/api/transactions/viewport", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            regions: [...regionSet.values()],
+            pyeong: pyeong,
+            months: 3,
+          }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.priceMap) {
+          Object.entries(data.priceMap as Record<string, number>).forEach(([normName, price]) => {
+            realtimePriceCacheRef.current.set(normName, price);
+          });
+        }
+        if (data.detailsMap) {
+          Object.entries(data.detailsMap as Record<string, any>).forEach(([normName, detail]) => {
+            livePriceDetailCacheRef.current.set(normName, detail as any);
+          });
+        }
+        // 실거래가 로드 완료 → 마커 재렌더링 트리거
+        if (data.totalMatchedApts > 0) {
+          setLivePriceLoaded((v) => !v);
+        }
+      } catch (e) {
+        // 실거래가 fetch 실패 시 마스터 데이터 유지
+        console.warn("[AptMap] Live price fetch failed:", e);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /* ── 호갱노노 스타일 마커 HTML 빌더 ─────────────────── */
   const markerHtml = (apt: AptMarker, isHighlight: boolean) => {
     const isMain = isHighlight;
-    const bgGradient = isMain 
-      ? "linear-gradient(135deg, #e11d48 0%, #be123c 100%)" 
-      : "linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)";
-    const borderColor = isMain ? "#fecdd3" : "#c7d2fe";
 
-    const rent = Math.round((apt.rentNum || apt.priceNum * 0.55) / 10000);
-    const priceLabel = filters.tradeType === "매매" ? apt.avgPrice : `${rent}억`;
+    // 실거래가 캐시 조회: normalizeAptName 패턴 매칭
+    const normName = apt.name
+      .replace(/[\s\-_(),.·]/g, "")
+      .replace(/아파트$/g, "")
+      .replace(/이편한세상|e\-편한세상/gi, "e편한세상")
+      .replace(/에스케이뷰|sk\s*view/gi, "sk뷰")
+      .replace(/대우\s*푸르지오(?!아)/gi, "푸르지오")
+      .replace(/1차|Ⅰ|i단지|1단지/gi, "1")
+      .replace(/2차|Ⅱ|ii단지|2단지/gi, "2")
+      .replace(/3차|Ⅲ|iii단지|3단지/gi, "3")
+      .toLowerCase();
+
+    const liveDetail = livePriceDetailCacheRef.current.get(normName);
+    const hasLive = !!liveDetail;
+
+    // 가격 표시: 실거래가 우선, 없으면 마스터 데이터
+    let priceLabel: string;
+    let pyeongLabel: string;
+    if (filters.tradeType === "매매") {
+      priceLabel = hasLive ? liveDetail!.formatted : apt.avgPrice;
+      pyeongLabel = hasLive ? `${liveDetail!.pyeong}평` : `${apt.pyeong}평`;
+    } else {
+      const rent = Math.round((apt.rentNum || apt.priceNum * 0.55) / 10000);
+      priceLabel = `${rent}억`;
+      pyeongLabel = `${apt.pyeong}평`;
+    }
     const viewers = apt.liveViewers || Math.floor(Math.random() * 80 + 20);
+
+    // 실거래가 있으면 비코 캐릭터 스타일 (녹색 테두리)
+    const bgGradient = isMain
+      ? "linear-gradient(135deg, #e11d48 0%, #be123c 100%)"
+      : hasLive
+        ? "linear-gradient(135deg, #0f766e 0%, #0d5f57 100%)"
+        : "linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)";
+    const borderColor = isMain ? "#fecdd3" : hasLive ? "#5eead4" : "#c7d2fe";
+    const glowStyle = isMain ? "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);" :
+      hasLive ? "box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.35);" : "";
 
     return `
       <div style="
@@ -427,7 +527,10 @@ export default function AptMap({
           align-items: center;
           gap: 3px;
         ">
-          <span style="color:#f43f5e; font-size:9px;">🔥</span> ${viewers}명 보는중
+          ${hasLive
+            ? `<span style="color:#2dd4bf; font-size:9px;">●</span> 실거래 ${liveDetail!.dealDate.slice(2).replace(".", "/")}`
+            : `<span style="color:#f43f5e; font-size:9px;">🔥</span> ${viewers}명 보는중`
+          }
         </div>
 
         <div style="
@@ -441,10 +544,10 @@ export default function AptMap({
           line-height: 1.15;
           text-align: center;
           min-width: 60px;
-          ${isMain ? "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);" : ""}
+          ${glowStyle}
         ">
           <div style="font-size: 10px; font-weight: 600; opacity: 0.9;">
-            ${apt.pyeong}평
+            ${pyeongLabel}
           </div>
           <div style="font-size: ${isMain ? "15px" : "13.5px"}; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
             ${priceLabel}
@@ -455,7 +558,7 @@ export default function AptMap({
           width: 0; height: 0;
           border-left: 7px solid transparent;
           border-right: 7px solid transparent;
-          border-top: 8px solid ${isMain ? "#be123c" : "#3730a3"};
+          border-top: 8px solid ${isMain ? "#be123c" : hasLive ? "#0d5f57" : "#3730a3"};
           margin-top: -1px;
         "></div>
       </div>
@@ -728,19 +831,46 @@ export default function AptMap({
     renderMarkersForViewport();
     const initTimer = setTimeout(renderMarkersForViewport, 200);
 
+    // 뷰포트 변경 시 실거래가 디바운스 fetch (1초 지연)
+    const triggerPriceFetch = () => {
+      if (viewportPriceFetchTimerRef.current) clearTimeout(viewportPriceFetchTimerRef.current);
+      viewportPriceFetchTimerRef.current = setTimeout(() => {
+        if (!mapRef.current) return;
+        const b = mapRef.current.getBounds();
+        if (!b) return;
+        const sw2 = b.getSouthWest();
+        const ne2 = b.getNorthEast();
+        const inView = APT_MARKERS.filter(
+          (a) => a.lat >= sw2.getLat() && a.lat <= ne2.getLat() &&
+                 a.lng >= sw2.getLng() && a.lng <= ne2.getLng()
+        );
+        fetchViewportLivePrices.current(inView, filters.pyeong);
+      }, 1000);
+    };
+
+    // 초기 실행 후 실거래가 즉시 fetch 시도
+    triggerPriceFetch();
+
     // 카카오 지도 이동(dragend, idle) 및 줄(zoom_changed) 이벤트 연동
     kakaoMaps.event.addListener(map, "dragend", renderMarkersForViewport);
     kakaoMaps.event.addListener(map, "zoom_changed", renderMarkersForViewport);
     kakaoMaps.event.addListener(map, "idle", renderMarkersForViewport);
+    kakaoMaps.event.addListener(map, "dragend", triggerPriceFetch);
+    kakaoMaps.event.addListener(map, "zoom_changed", triggerPriceFetch);
+    kakaoMaps.event.addListener(map, "idle", triggerPriceFetch);
 
     return () => {
       clearTimeout(initTimer);
+      if (viewportPriceFetchTimerRef.current) clearTimeout(viewportPriceFetchTimerRef.current);
       kakaoMaps.event.removeListener(map, "dragend", renderMarkersForViewport);
       kakaoMaps.event.removeListener(map, "zoom_changed", renderMarkersForViewport);
       kakaoMaps.event.removeListener(map, "idle", renderMarkersForViewport);
+      kakaoMaps.event.removeListener(map, "dragend", triggerPriceFetch);
+      kakaoMaps.event.removeListener(map, "zoom_changed", triggerPriceFetch);
+      kakaoMaps.event.removeListener(map, "idle", triggerPriceFetch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, isMapReady, highlightId]);
+  }, [filters, isMapReady, highlightId, livePriceLoaded]);
 
   /* ── 카카오 Places API로 누락 단지 실시간 보완 ──────────────── */
   useEffect(() => {

@@ -1,19 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
-import { LAWD_CODES, findLawdCode } from "@/lib/publicDataApi";
+import { findLawdCode } from "@/lib/publicDataApi";
 
 // ─── 서버 인메모리 캐시 (법정동 코드 단위로 전체 데이터 캐싱) ─────────────
+interface TradeInfo {
+  aptName: string;
+  normName: string;
+  amount: number;
+  dealDate: string; // YYYY.MM.DD
+  floor: number;
+  areaSqm: number;
+  pyeong: number;
+}
+
 interface RegionCache {
-  // aptName(정규화) → 최근 평균 실거래가(만원)
-  priceMap: Map<string, number>;
+  trades: TradeInfo[];
   timestamp: number;
 }
-const viewportCache = new Map<string, RegionCache>();
-const CACHE_TTL_MS = 1000 * 60 * 60 * 2; // 2시간
 
-function normalizeAptName(name: string): string {
+const viewportCache = new Map<string, RegionCache>();
+const CACHE_TTL_MS = 1000 * 60 * 30; // 30분 TTL
+
+/**
+ * 국토부 실거래가 신고명칭과 K-apt 마스터 단지명칭 간의 정규화 매칭 엔진
+ */
+export function normalizeAptName(name: string): string {
   if (!name) return "";
   return name
     .replace(/[\s\-_(),.·]/g, "")
+    .replace(/아파트$/g, "")
+    .replace(/금강펜테리움/gi, "펜테리움")
     .replace(/이편한세상|e\-편한세상/gi, "e편한세상")
     .replace(/에스케이뷰|sk\s*view/gi, "sk뷰")
     .replace(/대우\s*푸르지오(?!아)/gi, "푸르지오")
@@ -35,141 +50,207 @@ const getVal = (xml: string, tag: string) => {
 const parseItems = (xmlText: string) =>
   xmlText.match(/<item>[\s\S]*?<\/item>/g) || [];
 
-/**
- * POST /api/transactions/viewport
- * Body: { lawdCodes: string[], months?: number }
- * Response: { priceMap: { [normalizedAptName]: number } }
- *
- * 뷰포트 내 법정동 코드 목록을 받아 해당 지역의 최근 실거래가를
- * 단지명(정규화) → 최근 평균가(만원) 맵으로 반환.
- */
-export async function POST(request: NextRequest) {
-  const body = await request.json().catch(() => ({}));
-  const lawdCodes: string[] = body.lawdCodes || [];
-  const months: number = Math.min(6, Math.max(2, body.months || 3));
-
-  if (!lawdCodes.length) {
-    return NextResponse.json({ priceMap: {} });
+/** 금액을 'XX.X억' 또는 'XXXX만' 형식으로 포맷 */
+function formatPrice(manwon: number): string {
+  const uk = Math.floor(manwon / 10000);
+  const remainder = manwon % 10000;
+  const cheon = Math.floor(remainder / 1000);
+  if (uk > 0) {
+    return cheon > 0 ? `${uk}.${cheon}억` : `${uk}억`;
   }
-
-  const apiKey =
-    process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
-    process.env.DATA_GO_KR_API_KEY ||
-    "w9iCzz0a9bHCdvlFLmOvVtA78NPktsoY3YIcAeQSSMbh%2FKpkxYz0AOokaJxZaO%2BMICURNdUrUpFznmKtumOvOA%3D%3D";
-
-  const now = new Date();
-  const dealYmdList: string[] = [];
-  for (let i = 0; i < months; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    dealYmdList.push(`${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`);
-  }
-
-  // 법정동 코드별로 데이터 수집 (캐시 우선)
-  // aptName(정규화) → 거래금액 배열 (최신 순)
-  const allTrades = new Map<string, number[]>();
-
-  const fetchRegion = async (lawdCode: string) => {
-    const nowTime = Date.now();
-    const cached = viewportCache.get(lawdCode);
-    if (cached && nowTime - cached.timestamp < CACHE_TTL_MS) {
-      // 캐시에서 바로 병합
-      cached.priceMap.forEach((price, name) => {
-        const existing = allTrades.get(name) || [];
-        existing.push(price);
-        allTrades.set(name, existing);
-      });
-      return;
-    }
-
-    // 최근 N개월 병렬 조회
-    const localTradeMap = new Map<string, number[]>();
-    try {
-      const fetchPromises = dealYmdList.map(async (dealYmd) => {
-        const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${apiKey}&LAWD_CD=${lawdCode}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
-        const res = await fetch(url, { next: { revalidate: 3600 } }).catch(() => null);
-        if (!res || !res.ok) return;
-        const xml = await res.text();
-        for (const item of parseItems(xml)) {
-          const itemAptName = getVal(item, "aptNm");
-          const dealAmtStr = getVal(item, "dealAmount").replace(/,/g, "");
-          if (!itemAptName || !dealAmtStr) continue;
-          const normName = normalizeAptName(itemAptName);
-          const amount = parseInt(dealAmtStr, 10);
-          if (!normName || isNaN(amount) || amount <= 0) continue;
-          const arr = localTradeMap.get(normName) || [];
-          arr.push(amount);
-          localTradeMap.set(normName, arr);
-        }
-      });
-      await Promise.all(fetchPromises);
-    } catch {
-      // 조용히 실패
-    }
-
-    // 단지별 평균 계산 후 캐시 저장
-    const priceMap = new Map<string, number>();
-    localTradeMap.forEach((amounts, name) => {
-      const recent = amounts.slice(0, 5);
-      const avg = Math.round(recent.reduce((a, b) => a + b, 0) / recent.length);
-      priceMap.set(name, avg);
-      // allTrades에도 병합
-      const existing = allTrades.get(name) || [];
-      existing.push(avg);
-      allTrades.set(name, existing);
-    });
-
-    viewportCache.set(lawdCode, { priceMap, timestamp: Date.now() });
-  };
-
-  // 최대 5개 법정동 코드까지만 처리 (API 부하 제한)
-  const limitedCodes = lawdCodes.slice(0, 5);
-  await Promise.all(limitedCodes.map(fetchRegion));
-
-  // 최종 결과: normName → 평균가
-  const result: Record<string, number> = {};
-  allTrades.forEach((amounts, name) => {
-    result[name] = Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length);
-  });
-
-  return NextResponse.json(
-    { priceMap: result },
-    {
-      headers: {
-        "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
-      },
-    }
-  );
+  return `${manwon.toLocaleString()}만`;
 }
 
 /**
- * GET /api/transactions/viewport?regions=서울 강남구,서울 서초구&months=3
- * GET 버전도 지원 (쿼리스트링으로 regions 전달)
+ * POST /api/transactions/viewport
+ * Body: {
+ *   lawdCodes?: string[],
+ *   regions?: Array<{ region: string; district: string }>,
+ *   pyeong?: number,
+ *   months?: number
+ * }
+ * regions 배열을 받으면 서버에서 법정동 코드로 자동 변환
  */
-export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const regionsParam = searchParams.get("regions") || "";
-  const months = Math.min(6, Math.max(2, parseInt(searchParams.get("months") || "3", 10)));
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json().catch(() => ({}));
+    let lawdCodes: string[] = body.lawdCodes || [];
+    const pyeongFilter: number = body.pyeong ?? 0; // 0: 전체/30평대우선, 20: 20평대, 30: 30평대, 40: 40평대이상
+    const months: number = Math.min(6, Math.max(2, body.months || 3));
 
-  const regionList = regionsParam.split(",").map((r) => r.trim()).filter(Boolean);
-  if (!regionList.length) {
-    return NextResponse.json({ priceMap: {} });
-  }
-
-  const lawdCodes: string[] = [];
-  for (const region of regionList) {
-    const parts = region.split(" ");
-    const regionStr = parts.slice(0, 2).join(" ");
-    const entry =
-      findLawdCode(regionStr, "") ||
-      LAWD_CODES.find((l) => l.region === regionStr || l.region.includes(regionStr) || regionStr.includes(l.region));
-    if (entry && !lawdCodes.includes(entry.code)) {
-      lawdCodes.push(entry.code);
+    // regions 배열이 주어진 경우 서버에서 법정동 코드로 변환
+    if (body.regions && Array.isArray(body.regions)) {
+      const extra: string[] = [];
+      const seen = new Set<string>(lawdCodes);
+      for (const r of body.regions as Array<{ region: string; district: string }>) {
+        const found = findLawdCode(r.region, r.district);
+        if (found && !seen.has(found.code)) {
+          seen.add(found.code);
+          extra.push(found.code);
+        }
+      }
+      lawdCodes = [...lawdCodes, ...extra];
     }
-  }
 
-  return POST(new NextRequest(request.url, {
-    method: "POST",
-    body: JSON.stringify({ lawdCodes, months }),
-    headers: { "Content-Type": "application/json" },
-  }));
+    if (!lawdCodes.length) {
+      return NextResponse.json({ priceMap: {}, detailsMap: {} });
+    }
+
+    const rawApiKey =
+      process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
+      process.env.DATA_GO_KR_API_KEY ||
+      "w9iCzz0a9bHCdvlFLmOvVtA78NPktsoY3YIcAeQSSMbh%2FKpkxYz0AOokaJxZaO%2BMICURNdUrUpFznmKtumOvOA%3D%3D";
+
+    let apiKey = rawApiKey.trim();
+    try {
+      apiKey = decodeURIComponent(apiKey);
+    } catch {}
+
+    const now = new Date();
+    const dealYmdList: string[] = [];
+    for (let i = 0; i < months; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      dealYmdList.push(`${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }
+
+    const regionTrades: TradeInfo[] = [];
+
+    const fetchRegion = async (lawdCode: string) => {
+      const nowTime = Date.now();
+      const cached = viewportCache.get(lawdCode);
+      if (cached && nowTime - cached.timestamp < CACHE_TTL_MS) {
+        regionTrades.push(...cached.trades);
+        return;
+      }
+
+      const localTrades: TradeInfo[] = [];
+      try {
+        const fetchPromises = dealYmdList.map(async (dealYmd) => {
+          const encodedKey = encodeURIComponent(apiKey);
+          const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdCode}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+          const res = await fetch(url, { next: { revalidate: 1800 } }).catch(() => null);
+          if (!res || !res.ok) return;
+          const xml = await res.text();
+
+          for (const item of parseItems(xml)) {
+            // 취소 거래(해제 사유 발생) 필터링
+            const cancelCheck = getVal(item, "cdealType") || getVal(item, "cancelDealType");
+            if (cancelCheck && cancelCheck.trim() !== "" && cancelCheck.trim() !== "0") {
+              continue;
+            }
+
+            const aptNm = getVal(item, "aptNm");
+            const dealAmtStr = getVal(item, "dealAmount").replace(/,/g, "");
+            const year = getVal(item, "dealYear");
+            const month = getVal(item, "dealMonth").padStart(2, "0");
+            const day = (getVal(item, "dealDay") || "01").padStart(2, "0");
+            const excluUseAr = parseFloat(getVal(item, "excluUseAr")) || 0;
+            const floor = parseInt(getVal(item, "floor"), 10) || 1;
+
+            if (!aptNm || !dealAmtStr) continue;
+
+            const amount = parseInt(dealAmtStr, 10);
+            if (isNaN(amount) || amount <= 0) continue;
+
+            const normName = normalizeAptName(aptNm);
+            const pyeong = Math.round(excluUseAr / 3.30578);
+
+            localTrades.push({
+              aptName: aptNm,
+              normName,
+              amount,
+              dealDate: `${year}.${month}.${day}`,
+              floor,
+              areaSqm: excluUseAr,
+              pyeong,
+            });
+          }
+        });
+
+        await Promise.all(fetchPromises);
+      } catch (err) {
+        console.warn(`[Viewport API] Error fetching lawd ${lawdCode}:`, err);
+      }
+
+      viewportCache.set(lawdCode, { trades: localTrades, timestamp: Date.now() });
+      regionTrades.push(...localTrades);
+    };
+
+    // 최대 5개 법정동 코드까지 병렬 처리
+    const limitedCodes = lawdCodes.slice(0, 5);
+    await Promise.all(limitedCodes.map(fetchRegion));
+
+    // 거래 데이터 정렬: 최신 거래일 우선
+    regionTrades.sort((a, b) => b.dealDate.localeCompare(a.dealDate));
+
+    // 평형 조건 필터링 및 단지별 최신 실거래가 매핑
+    const priceMap: Record<string, number> = {};
+    const detailsMap: Record<
+      string,
+      {
+        latestPrice: number;
+        formatted: string;
+        dealDate: string;
+        floor: number;
+        areaSqm: number;
+        pyeong: number;
+        tradeCount: number;
+      }
+    > = {};
+
+    const tradesByApt = new Map<string, TradeInfo[]>();
+
+    for (const t of regionTrades) {
+      // 평형 필터링
+      if (pyeongFilter === 20) {
+        if (t.areaSqm < 45 || t.areaSqm >= 65) continue;
+      } else if (pyeongFilter === 30) {
+        if (t.areaSqm < 70 || t.areaSqm >= 95) continue;
+      } else if (pyeongFilter === 40) {
+        if (t.areaSqm < 95) continue;
+      }
+      // pyeongFilter === 0 이면 모든 거래 허용 (아래에서 대표 평형 선택)
+
+      const arr = tradesByApt.get(t.normName) || [];
+      arr.push(t);
+      tradesByApt.set(t.normName, arr);
+    }
+
+    tradesByApt.forEach((trades, normName) => {
+      if (!trades.length) return;
+
+      // 최신 거래 (첫 번째)
+      const latest = trades[0];
+      priceMap[normName] = latest.amount;
+      detailsMap[normName] = {
+        latestPrice: latest.amount,
+        formatted: formatPrice(latest.amount),
+        dealDate: latest.dealDate,
+        floor: latest.floor,
+        areaSqm: Math.round(latest.areaSqm * 10) / 10,
+        pyeong: latest.pyeong,
+        tradeCount: trades.length,
+      };
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        totalMatchedApts: Object.keys(priceMap).length,
+        priceMap,
+        detailsMap,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=600, stale-while-revalidate=3600",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("[API /api/transactions/viewport] Error:", error);
+    return NextResponse.json(
+      { success: false, error: "실거래가 수집 중 오류가 발생했습니다." },
+      { status: 500 }
+    );
+  }
 }

@@ -153,16 +153,12 @@ export async function fetchStoresNearby(
     url.searchParams.set("type", "json");
 
     const res = await fetch(url.toString(), { next: { revalidate: 1800 } });
-    if (!res.ok) {
-      console.warn(`[상가정보 API] HTTP ${res.status}: ${res.statusText}`);
-      return [];
-    }
-
-    interface StoreRow {
-      bizesId?: string;
-      bizesNm?: string;
-      brchNm?: string;
-      indsLclsCd?: string;
+    if (res.ok) {
+      interface StoreRow {
+        bizesId?: string;
+        bizesNm?: string;
+        brchNm?: string;
+        indsLclsCd?: string;
       indsLclsNm?: string;
       indsMclsCd?: string;
       indsMclsNm?: string;
@@ -190,42 +186,112 @@ export async function fetchStoresNearby(
     };
 
     const rawItems = json?.body?.items;
-    if (!rawItems) return [];
+    if (rawItems) {
+      const items: StoreRow[] = Array.isArray(rawItems) ? rawItems : [rawItems];
+      const stores: StoreInfo[] = items
+        .filter((item) => item.bizesId)
+        .map((item) => ({
+          storeId: item.bizesId || "",
+          storeName: item.bizesNm || "",
+          branchName: item.brchNm || undefined,
+          categoryMainCode: item.indsLclsCd || "",
+          categoryMainName: item.indsLclsNm || "",
+          categoryMidCode: item.indsMclsCd || "",
+          categoryMidName: item.indsMclsNm || "",
+          categorySubCode: item.indsSclsCd || "",
+          categorySubName: item.indsSclsNm || "",
+          sidoCode: item.sidoCd || "",
+          sidoName: item.sidoNm || "",
+          sigunguCode: item.sggCd || "",
+          sigunguName: item.sggNm || "",
+          dongCode: item.adongCd || undefined,
+          dongName: item.adongNm || undefined,
+          legalDongCode: item.ldongCd || undefined,
+          jibunAddress: item.lnoAdr || undefined,
+          roadAddress: item.rdnAdr || undefined,
+          lat: item.lat ? parseFloat(item.lat) : undefined,
+          lng: item.lon ? parseFloat(item.lon) : undefined,
+          updatedAt: item.lastModTs || undefined,
+        }));
 
-    const items: StoreRow[] = Array.isArray(rawItems) ? rawItems : [rawItems];
-
-    const stores: StoreInfo[] = items
-      .filter((item) => item.bizesId)
-      .map((item) => ({
-        storeId: item.bizesId || "",
-        storeName: item.bizesNm || "",
-        branchName: item.brchNm || undefined,
-        categoryMainCode: item.indsLclsCd || "",
-        categoryMainName: item.indsLclsNm || "",
-        categoryMidCode: item.indsMclsCd || "",
-        categoryMidName: item.indsMclsNm || "",
-        categorySubCode: item.indsSclsCd || "",
-        categorySubName: item.indsSclsNm || "",
-        sidoCode: item.sidoCd || "",
-        sidoName: item.sidoNm || "",
-        sigunguCode: item.sggCd || "",
-        sigunguName: item.sggNm || "",
-        dongCode: item.adongCd || undefined,
-        dongName: item.adongNm || undefined,
-        legalDongCode: item.ldongCd || undefined,
-        jibunAddress: item.lnoAdr || undefined,
-        roadAddress: item.rdnAdr || undefined,
-        lat: item.lat ? parseFloat(item.lat) : undefined,
-        lng: item.lon ? parseFloat(item.lon) : undefined,
-        updatedAt: item.lastModTs || undefined,
-      }));
-
-    storeCache.set(cacheKey, { data: stores, expiry: Date.now() + CACHE_TTL_MS });
-    return stores;
-  } catch (err) {
-    console.error("[상가정보 API] 반경 조회 오류:", err);
-    return [];
+      if (stores.length > 0) {
+        storeCache.set(cacheKey, { data: stores, expiry: Date.now() + CACHE_TTL_MS });
+        return stores;
+      }
+    }
   }
+} catch {
+    // SDSC 실패 시 카카오 로컬 API로 대체
+  }
+
+  // SDSC 미등록 또는 에러 시 카카오 로컬 실시간 API 연동
+  const kakaoKey = (
+    process.env.KAKAO_REST_API_KEY ||
+    process.env.NEXT_PUBLIC_KAKAO_REST_KEY ||
+    "4d7cd3190ca38a795008ebd7cc053820"
+  ).trim();
+
+  try {
+    const kakaoCategories = [
+      { code: "FD6", mainCode: "Q", mainName: "음식" },
+      { code: "CE7", mainCode: "Q", mainName: "음식" },
+      { code: "HP8", mainCode: "L", mainName: "의료" },
+      { code: "PM9", mainCode: "L", mainName: "의료" },
+      { code: "AC5", mainCode: "R", mainName: "학문/교육" },
+      { code: "CS2", mainCode: "D", mainName: "소매" },
+      { code: "MT1", mainCode: "D", mainName: "소매" },
+      { code: "BK9", mainCode: "J", mainName: "부동산/금융" },
+    ];
+
+    const fallbackStores: StoreInfo[] = [];
+    const fetchKakaoCat = async (cat: typeof kakaoCategories[0]) => {
+      try {
+        const kUrl = `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=${cat.code}&x=${lng}&y=${lat}&radius=${radius}&size=15`;
+        const kRes = await fetch(kUrl, {
+          headers: { Authorization: `KakaoAK ${kakaoKey}` },
+          next: { revalidate: 3600 },
+        });
+        if (!kRes.ok) return;
+        const kData = await kRes.json();
+        for (const doc of kData.documents || []) {
+          const dLat = parseFloat(doc.y);
+          const dLng = parseFloat(doc.x);
+          const addrParts = (doc.address_name || "").split(" ");
+          fallbackStores.push({
+            storeId: `kakao-${doc.id}`,
+            storeName: doc.place_name || "",
+            categoryMainCode: cat.mainCode,
+            categoryMainName: cat.mainName,
+            categoryMidCode: `${cat.mainCode}01`,
+            categoryMidName: doc.category_name?.split(">")?.pop()?.trim() || cat.mainName,
+            categorySubCode: `${cat.mainCode}0101`,
+            categorySubName: doc.category_name?.split(">")?.pop()?.trim() || cat.mainName,
+            sidoCode: "11",
+            sidoName: addrParts[0] || "서울특별시",
+            sigunguCode: "11000",
+            sigunguName: addrParts[1] || "",
+            dongName: addrParts[2] || "",
+            jibunAddress: doc.address_name || undefined,
+            roadAddress: doc.road_address_name || undefined,
+            lat: isNaN(dLat) ? undefined : dLat,
+            lng: isNaN(dLng) ? undefined : dLng,
+            updatedAt: new Date().toISOString().slice(0, 10),
+          });
+        }
+      } catch {}
+    };
+
+    await Promise.all(kakaoCategories.map(fetchKakaoCat));
+
+    if (fallbackStores.length > 0) {
+      storeCache.set(cacheKey, { data: fallbackStores, expiry: Date.now() + CACHE_TTL_MS });
+      return fallbackStores;
+    }
+  } catch (err) {
+    console.error("[상가정보 API] 카카오 로컬 연동 오류:", err);
+  }
+
+  return [];
 }
 
 /**

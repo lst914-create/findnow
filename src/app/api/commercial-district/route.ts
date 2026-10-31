@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { APARTMENTS_DATA } from "@/lib/apartments";
 import { makeDataSourceMeta } from "@/types/dataSource";
 import { getCommercialDistrictSummary } from "@/lib/commercialStoreStore";
+import { fetchSdscStoresFromOpenApi } from "@/lib/commercialApi";
 import {
   INDUSTRY_CATEGORY_META,
   type IndustryCategoryCode,
@@ -45,8 +46,8 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // TODO: 소상공인 API 연동
-  // const storeData = await fetchStoresFromSdsc(baseLat, baseLng, radiusM);
+  // 실시간 상권 점포 수집 및 로컬 저장소 색인
+  await fetchSdscStoresFromOpenApi(baseLat, baseLng, radiusM);
 
   // 상가 데이터 저장소에서 반경 내 점포 집계 조회
   const summary = getCommercialDistrictSummary(baseLat, baseLng, radiusM);

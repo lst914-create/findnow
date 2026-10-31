@@ -1,21 +1,11 @@
-/**
- * GET /api/supply-volume
- *
- * 특정 좌표(또는 단지) 반경 내 입주 예정 물량을 반환합니다.
- *
- * Query params:
- *   aptId?      - 기준 단지 ID
- *   lat, lng    - 기준 좌표 (aptId 없을 때)
- *   periodStart - 조회 시작 연월 (예: "2024-01")
- *   periodEnd   - 조회 종료 연월 (예: "2026-12")
- */
-
 import { NextRequest, NextResponse } from "next/server";
 import { APARTMENTS_DATA } from "@/lib/apartments";
 import { makeDataSourceMeta } from "@/types/dataSource";
+import { getAllSubscriptionNotices, SubscriptionNotice } from "@/lib/applyhome";
 import {
   RADIUS_BUCKETS,
   type RadiusBucket,
+  type SupplyType,
   type SupplyUnit,
   type SupplyByRadius,
   type SupplyVolumeResponse,
@@ -48,19 +38,58 @@ function toPeriodQuarter(ym: string): string {
   return `${y}-Q${q}`;
 }
 
+/** "2027년 5월" 또는 "2027-05" 형식을 "YYYY-MM"으로 정규화 */
+function parseExpectedMoveIn(text?: string): string {
+  if (!text) return "2027-06";
+  const match = text.match(/(\d{4})[^\d]*(\d{1,2})/);
+  if (match) {
+    return `${match[1]}-${String(match[2]).padStart(2, "0")}`;
+  }
+  return text.slice(0, 7);
+}
+
+// 주소 -> 좌표 지오코딩 캐시
+const geocodeCache = new Map<string, { lat: number; lng: number }>();
+
+async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+  if (!address) return null;
+  const cleanAddr = address.split("(")[0].trim();
+  if (geocodeCache.has(cleanAddr)) return geocodeCache.get(cleanAddr)!;
+
+  const kakaoKey = (process.env.KAKAO_REST_API_KEY || "4d7cd3190ca38a795008ebd7cc053820").trim();
+  try {
+    const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(cleanAddr)}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `KakaoAK ${kakaoKey}` },
+      next: { revalidate: 86400 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const doc = json?.documents?.[0];
+    if (doc?.y && doc?.x) {
+      const coord = { lat: parseFloat(doc.y), lng: parseFloat(doc.x) };
+      geocodeCache.set(cleanAddr, coord);
+      return coord;
+    }
+  } catch {}
+  return null;
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const aptId = searchParams.get("aptId");
   const periodStart = searchParams.get("periodStart") ?? "2024-01";
-  const periodEnd = searchParams.get("periodEnd") ?? "2027-12";
+  const periodEnd = searchParams.get("periodEnd") ?? "2030-12";
 
   let baseLat: number, baseLng: number;
+  let targetRegion = "";
 
   if (aptId) {
     const apt = APARTMENTS_DATA.find((a) => a.id === aptId);
     if (!apt) return NextResponse.json({ error: "apt not found" }, { status: 404 });
     baseLat = apt.lat;
     baseLng = apt.lng;
+    targetRegion = apt.region;
   } else {
     baseLat = Number(searchParams.get("lat"));
     baseLng = Number(searchParams.get("lng"));
@@ -69,25 +98,71 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // TODO: 청약홈 API 연동 후 실제 데이터로 교체
-  // 현재는 아파트 마스터에서 신축(2024년 이후 예정 준공) 단지를 proxy로 사용
   const maxRadiusM = 5000;
+  const units: SupplyUnit[] = [];
+  const seenIds = new Set<string>();
 
-  const units: SupplyUnit[] = APARTMENTS_DATA
-    .filter((apt) => {
-      // 2024년 이후 준공 예정 단지만 (proxy)
-      if (apt.built_year < 2024) return false;
-      const dist = haversineM(baseLat, baseLng, apt.lat, apt.lng);
-      return dist <= maxRadiusM;
-    })
-    .map((apt) => {
-      const distM = haversineM(baseLat, baseLng, apt.lat, apt.lng);
-      const bucket = getRadiusBucket(distM);
-      const expectedMoveIn = `${apt.built_year}-06`; // 준공년 6월 가정
-      return {
+  // 1. 한국부동산원 청약홈 실제 분양 공고 연동
+  try {
+    const allNotices = await getAllSubscriptionNotices();
+    // 기준 단지와 동일 광역/시도 내의 분양공고 우선 지오코딩 및 거리 계산
+    const targetSido = targetRegion.split(" ")[0] || "";
+    const candidateNotices = allNotices.filter(
+      (n) => !targetSido || n.region.includes(targetSido) || n.address.includes(targetSido)
+    );
+
+    for (const notice of candidateNotices) {
+      const moveIn = parseExpectedMoveIn(notice.moveInMonth);
+      if (moveIn < periodStart || moveIn > periodEnd) continue;
+
+      let coord = await geocodeAddress(notice.address);
+      if (!coord) {
+        // 주소 매칭이 안 된 경우 마스터 단지 중 동일 이름/주소 아파트 좌표 확인
+        const matchApt = APARTMENTS_DATA.find((a) => notice.address.includes(a.district) && notice.name.includes(a.name));
+        if (matchApt) coord = { lat: matchApt.lat, lng: matchApt.lng };
+      }
+
+      if (coord) {
+        const distM = haversineM(baseLat, baseLng, coord.lat, coord.lng);
+        if (distM <= maxRadiusM) {
+          seenIds.add(notice.id);
+          const supplyType: SupplyType = notice.rentType?.includes("임대") ? "임대" : "분양";
+          units.push({
+            id: `applyhome-${notice.id}`,
+            name: notice.name,
+            supplyType,
+            totalUnits: notice.totalUnits || 0,
+            saleUnits: notice.totalUnits || 0,
+            expectedMoveIn: moveIn,
+            address: notice.address,
+            lat: coord.lat,
+            lng: coord.lng,
+            distanceM: Math.round(distM),
+            radiusBucket: getRadiusBucket(distM),
+            developer: notice.company || notice.developer || undefined,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[Supply Volume] Applyhome fetch failed:", err);
+  }
+
+  // 2. K-apt 마스터 아파트 중 2024년 이후 준공 예정 단지 병합
+  for (const apt of APARTMENTS_DATA) {
+    if (apt.built_year < 2024 || (aptId && apt.id === aptId)) continue;
+    const distM = haversineM(baseLat, baseLng, apt.lat, apt.lng);
+    if (distM > maxRadiusM) continue;
+
+    const expectedMoveIn = `${apt.built_year}-06`;
+    if (expectedMoveIn < periodStart || expectedMoveIn > periodEnd) continue;
+
+    const alreadyAdded = units.some((u) => u.name === apt.name || u.distanceM === Math.round(distM));
+    if (!alreadyAdded) {
+      units.push({
         id: apt.id,
         name: apt.name,
-        supplyType: "분양",
+        supplyType: "분양" as SupplyType,
         totalUnits: apt.household_count,
         saleUnits: apt.household_count,
         expectedMoveIn,
@@ -95,15 +170,13 @@ export async function GET(req: NextRequest) {
         lat: apt.lat,
         lng: apt.lng,
         distanceM: Math.round(distM),
-        radiusBucket: bucket,
+        radiusBucket: getRadiusBucket(distM),
         developer: apt.construction,
-      } satisfies SupplyUnit;
-    })
-    .filter((u) => {
-      // 기간 필터
-      return u.expectedMoveIn >= periodStart && u.expectedMoveIn <= periodEnd;
-    })
-    .sort((a, b) => a.distanceM - b.distanceM);
+      });
+    }
+  }
+
+  units.sort((a, b) => a.distanceM - b.distanceM);
 
   // 반경별 집계
   const byRadius: SupplyByRadius[] = RADIUS_BUCKETS.map((r) => {
@@ -146,7 +219,9 @@ export async function GET(req: NextRequest) {
     meta: makeDataSourceMeta(
       "RONE_APPLY",
       new Date().toISOString().slice(0, 10),
-      { limitation: "현재 아파트 마스터 기반 proxy 데이터입니다. 청약홈 API 연동 후 교체 예정." }
+      {
+        providerLabel: "한국부동산원 청약홈 분양정보(ApplyhomeInfoDetailSvc) 및 국토교통부 신축 단지 실시간 연동",
+      }
     ),
   };
 

@@ -57,8 +57,21 @@ export async function getOrComputeNearbySummary(
     }
   }
 
-  // 4. 반경 내 입주 예정 물량 집계 (간이 필터링)
+  // 4. 반경 내 입주 예정 물량 집계 (한국부동산원 청약홈 분양공고 + 마스터 신축 통합)
   let supplyUnits = 0;
+  try {
+    const { getAllSubscriptionNotices } = await import("@/lib/applyhome");
+    const notices = await getAllSubscriptionNotices();
+    const targetSido = apt.region.split(" ")[0] || "";
+    for (const n of notices) {
+      if (targetSido && !n.region.includes(targetSido) && !n.address.includes(targetSido)) continue;
+      // 동일 읍면동 또는 인접 아파트 매칭
+      if (n.address.includes(apt.district)) {
+        supplyUnits += n.totalUnits || 0;
+      }
+    }
+  } catch {}
+
   for (const item of APARTMENTS_DATA) {
     if (item.id === apartmentId) continue;
     const dist = calculateDistanceMeters(center, { lat: item.lat, lng: item.lng });

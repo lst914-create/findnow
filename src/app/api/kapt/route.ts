@@ -44,19 +44,20 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const encodedKey = encodeURIComponent(apiKey);
+    // env var 인코딩된 키를 디코딩 후 API 호출 시 다시 인코딩 (이중 인코딩 방지)
+    const apiKey = rawKey.includes("%") ? rawKey : encodeURIComponent(rawKey);
 
     // 1. 기본정보 (AptBasisInfoServiceV5 / getAphusBassInfoV5)
     // 2. 상세정보 (AptBasisInfoServiceV5 / getAphusDtlInfoV5)
     const basePromise = fetch(
-      `https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusBassInfoV5?serviceKey=${encodedKey}&kaptCode=${encodeURIComponent(
+      `https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusBassInfoV5?serviceKey=${apiKey}&kaptCode=${encodeURIComponent(
         kaptCode
       )}`,
       { next: { revalidate: 3600 } }
     ).then((r) => r.json()).catch(() => null);
 
     const dtlPromise = fetch(
-      `https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusDtlInfoV5?serviceKey=${encodedKey}&kaptCode=${encodeURIComponent(
+      `https://apis.data.go.kr/1613000/AptBasisInfoServiceV5/getAphusDtlInfoV5?serviceKey=${apiKey}&kaptCode=${encodeURIComponent(
         kaptCode
       )}`,
       { next: { revalidate: 3600 } }

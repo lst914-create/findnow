@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { APARTMENTS_DATA, Apartment } from "@/lib/apartments";
 import { loadKakaoMap } from "@/lib/kakaoMapLoader";
+import { normalizeAptName } from "@/lib/normalizeAptName";
 
 export interface AptMarker {
   id: string;
@@ -15,6 +16,9 @@ export interface AptMarker {
   rentNum?: number;       // 만원 단위 (전세)
   avgPrice: string;      // 표시용 (예: "30.5억")
   region: string;
+  rawRegion?: string;    // 원본 시·군·구 (법정동 코드 매핑용)
+  district?: string;     // 읍면동
+  isRealPrice?: boolean; // 국토부 실거래 검증 여부
   builtYear?: number;
   householdCount?: number;
   schoolScore?: number;
@@ -54,6 +58,9 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
     rentNum: rentNum,
     avgPrice: avgPriceStr,
     region: `${apt.region} ${apt.district}`,
+    rawRegion: apt.region,
+    district: apt.district,
+    isRealPrice: (apt as any).isRealPrice ?? false,
     builtYear: apt.built_year,
     householdCount: apt.household_count,
     schoolScore: apt.school_score,
@@ -409,18 +416,16 @@ export default function AptMap({
     fetchViewportLivePrices.current = async (apts: AptMarker[], pyeong: number) => {
       if (!apts.length) return;
 
-      // 유니크 region+district 조합 추출 (최대 6개 지역)
+      // 유니크 region+district 조합 추출 (최대 8개 지역)
       const regionSet = new Map<string, { region: string; district: string }>();
       for (const apt of apts) {
-        const parts = apt.region.split(" ");
-        // apt.region 형식: "서울 서초구" 또는 "서울 서초구 방배동"
-        const region = parts.slice(0, 2).join(" ");
-        const district = parts.slice(2).join(" ");
+        const region = apt.rawRegion || apt.region.split(" ").slice(0, 2).join(" ");
+        const district = apt.district || apt.region.split(" ").slice(2).join(" ");
         const key = `${region}|${district}`;
         if (!regionSet.has(key)) {
           regionSet.set(key, { region, district });
         }
-        if (regionSet.size >= 6) break;
+        if (regionSet.size >= 8) break;
       }
 
       const priceFetchKey = `${[...regionSet.keys()].sort().join(",")}|${pyeong}`;
@@ -434,7 +439,7 @@ export default function AptMap({
           body: JSON.stringify({
             regions: [...regionSet.values()],
             pyeong: pyeong,
-            months: 3,
+            months: 4,
           }),
         });
         if (!res.ok) return;
@@ -465,18 +470,8 @@ export default function AptMap({
   const markerHtml = (apt: AptMarker, isHighlight: boolean) => {
     const isMain = isHighlight;
 
-    // 실거래가 캐시 조회: normalizeAptName 패턴 매칭
-    const normName = apt.name
-      .replace(/[\s\-_(),.·]/g, "")
-      .replace(/아파트$/g, "")
-      .replace(/이편한세상|e\-편한세상/gi, "e편한세상")
-      .replace(/에스케이뷰|sk\s*view/gi, "sk뷰")
-      .replace(/대우\s*푸르지오(?!아)/gi, "푸르지오")
-      .replace(/1차|Ⅰ|i단지|1단지/gi, "1")
-      .replace(/2차|Ⅱ|ii단지|2단지/gi, "2")
-      .replace(/3차|Ⅲ|iii단지|3단지/gi, "3")
-      .toLowerCase();
-
+    // 실거래가 캐시 조회: 표준 normalizeAptName 엔진
+    const normName = normalizeAptName(apt.name);
     const liveDetail = livePriceDetailCacheRef.current.get(normName);
     const hasLive = !!liveDetail;
 
@@ -493,13 +488,15 @@ export default function AptMap({
     }
     const viewers = apt.liveViewers || Math.floor(Math.random() * 80 + 20);
 
-    // 실거래가 있으면 비코 캐릭터 스타일 (녹색 테두리)
+    // 실거래가 있으면 티얼 그린 스타일, 마스터 실거래가는 인디고, 미확인은 슬레이트
     const bgGradient = isMain
       ? "linear-gradient(135deg, #e11d48 0%, #be123c 100%)"
       : hasLive
         ? "linear-gradient(135deg, #0f766e 0%, #0d5f57 100%)"
-        : "linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)";
-    const borderColor = isMain ? "#fecdd3" : hasLive ? "#5eead4" : "#c7d2fe";
+        : apt.isRealPrice
+          ? "linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)"
+          : "linear-gradient(135deg, #475569 0%, #334155 100%)";
+    const borderColor = isMain ? "#fecdd3" : hasLive ? "#5eead4" : apt.isRealPrice ? "#c7d2fe" : "#94a3b8";
     const glowStyle = isMain ? "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);" :
       hasLive ? "box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.35);" : "";
 
@@ -529,7 +526,9 @@ export default function AptMap({
         ">
           ${hasLive
             ? `<span style="color:#2dd4bf; font-size:9px;">●</span> 실거래 ${liveDetail!.dealDate.slice(2).replace(".", "/")}`
-            : `<span style="color:#f43f5e; font-size:9px;">🔥</span> ${viewers}명 보는중`
+            : apt.isRealPrice
+              ? `<span style="color:#818cf8; font-size:9px;">●</span> 최근실거래`
+              : `<span style="color:#f43f5e; font-size:9px;">🔥</span> ${viewers}명 보는중`
           }
         </div>
 

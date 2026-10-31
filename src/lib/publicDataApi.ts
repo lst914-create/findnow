@@ -100,14 +100,14 @@ export const LAWD_CODES: { region: string; code: string; aliases?: string[] }[] 
   { region: "대구 군위군", code: "27720", aliases: ["대구광역시 군위군", "군위군"] },
 
   // ==================== [4] 인천광역시 (10개 구·군) ====================
-  { region: "인천 중구", code: "28110", aliases: ["인천광역시 중구", "영종도", "영종국제도시", "하늘도시"] },
-  { region: "인천 동구", code: "28140", aliases: ["인천광역시 동구", "송림동"] },
+  { region: "인천 중구", code: "28110", aliases: ["인천광역시 중구", "영종도", "영종국제도시", "하늘도시", "영종구", "인천 영종구"] },
+  { region: "인천 동구", code: "28140", aliases: ["인천광역시 동구", "송림동", "제물포구", "인천 제물포구", "제물포"] },
   { region: "인천 미추홀구", code: "28177", aliases: ["인천광역시 미추홀구", "미추홀구", "용현동", "주안동"] },
   { region: "인천 연수구", code: "28185", aliases: ["인천광역시 연수구", "연수구", "송도", "송도국제도시"] },
   { region: "인천 남동구", code: "28200", aliases: ["인천광역시 남동구", "남동구", "구월동", "논현동"] },
   { region: "인천 부평구", code: "28237", aliases: ["인천광역시 부평구", "부평구", "부평동", "삼산동"] },
   { region: "인천 계양구", code: "28245", aliases: ["인천광역시 계양구", "계양구", "작전동"] },
-  { region: "인천 서구", code: "28260", aliases: ["인천광역시 서구", "서구", "청라", "청라국제도시", "검단", "검단신도시", "루원시티"] },
+  { region: "인천 서구", code: "28260", aliases: ["인천광역시 서구", "서구", "청라", "청라국제도시", "검단", "검단신도시", "루원시티", "검단구", "인천 검단구", "서해구", "인천 서해구"] },
   { region: "인천 강화군", code: "28710", aliases: ["인천광역시 강화군", "강화군"] },
   { region: "인천 옹진군", code: "28720", aliases: ["인천광역시 옹진군", "옹진군"] },
 
@@ -375,19 +375,56 @@ export const LAWD_CODES: { region: string; code: string; aliases?: string[] }[] 
 ];
 
 /**
+ * 시와 구가 붙어있는 경우(예: '경기 성남분당구' -> '경기 성남시 분당구') 정규화
+ */
+function normalizeRegionSearch(region: string, district = ""): string {
+  let text = `${region || ""} ${district || ""}`.trim();
+
+  return text
+    .replace(/(성남)(수정구|중원구|분당구)/g, "$1시 $2")
+    .replace(/(수원)(장안구|권선구|팔달구|영통구)/g, "$1시 $2")
+    .replace(/(용인)(처인구|기흥구|수지구)/g, "$1시 $2")
+    .replace(/(안양)(만안구|동안구)/g, "$1시 $2")
+    .replace(/(고양)(덕양구|일산동구|일산서구)/g, "$1시 $2")
+    .replace(/(부천)(원미구|소사구|오정구)/g, "$1시 $2")
+    .replace(/(안산)(상록구|단원구)/g, "$1시 $2")
+    .replace(/(천안)(동남구|서북구)/g, "$1시 $2")
+    .replace(/(청주)(상당구|서원구|흥덕구|청원구)/g, "$1시 $2")
+    .replace(/(포항)(남구|북구)/g, "$1시 $2")
+    .replace(/(창원)(의창구|성산구|마산합포구|마산회원구|진해구)/g, "$1시 $2")
+    .replace(/(전주)(완산구|덕진구)/g, "$1시 $2");
+}
+
+/**
  * 지역명(region) 및 읍면동(district)으로부터 국토교통부 법정동 코드(5자리)를 지능적으로 탐색
+ * - 구(區) 단위 하위 행정구가 있는 시의 경우 통합 시 코드가 아닌 해당 구 단위 코드를 최우선 매칭
  */
 export function findLawdCode(region: string, district = ""): { region: string; code: string } | null {
   if (!region && !district) return null;
 
-  const fullSearch = `${region} ${district}`.trim();
-  const cleanFull = fullSearch.replace(/[\s\-_(),]/g, "");
+  const normalized = normalizeRegionSearch(region, district);
+  const cleanNorm = normalized.replace(/[\s\-_(),]/g, "");
 
   // 1. 완전 일치 (region 이름)
-  const exact = LAWD_CODES.find((l) => l.region === region);
+  const exact = LAWD_CODES.find((l) => l.region === normalized || l.region === region);
   if (exact) return exact;
 
-  // 2. district 포함 매칭 (예: "경기 수원시" + "영통구" -> "경기 수원시 영통구")
+  // 2. 구 단위 우선 매칭: normalized에 특정 '구'가 있으면 구 단위 항목 우선 필터링
+  //    (예: 41130 성남시 전체가 아니라 41135 분당구를 우선 매칭)
+  const hasSpecificGu = /([가-힣]{1,5}구)/.test(normalized);
+  if (hasSpecificGu) {
+    const guMatch = normalized.match(/([가-힣]{1,5}구)/)?.[1];
+    if (guMatch) {
+      const matchedGu = LAWD_CODES.find(
+        (l) =>
+          l.region.endsWith(guMatch) &&
+          (normalized.includes(l.region.split(" ")[0]) || cleanNorm.includes(l.region.replace(/[\s]/g, "")))
+      );
+      if (matchedGu) return matchedGu;
+    }
+  }
+
+  // 3. district 포함 매칭
   if (district) {
     const withDistrict = LAWD_CODES.find(
       (l) =>
@@ -397,22 +434,22 @@ export function findLawdCode(region: string, district = ""): { region: string; c
     if (withDistrict) return withDistrict;
   }
 
-  // 3. 별칭(aliases) 일치 검사
+  // 4. 별칭(aliases) 일치 검사
   const aliasMatch = LAWD_CODES.find((l) =>
     l.aliases?.some((a) => {
       const cleanAlias = a.replace(/[\s\-_(),]/g, "");
-      return cleanFull.includes(cleanAlias) || cleanAlias.includes(cleanFull);
+      return cleanNorm.includes(cleanAlias) || cleanAlias.includes(cleanNorm);
     })
   );
   if (aliasMatch) return aliasMatch;
 
-  // 4. 부분 포함 검사 (가장 긴 매칭 우선)
+  // 5. 부분 포함 검사 (가장 긴 매칭 우선)
   let bestMatch: { region: string; code: string } | null = null;
   let maxScore = 0;
 
   for (const entry of LAWD_CODES) {
     const rParts = entry.region.split(" ");
-    const matches = rParts.filter((p) => fullSearch.includes(p));
+    const matches = rParts.filter((p) => normalized.includes(p));
     if (matches.length >= 2 && matches.length > maxScore) {
       maxScore = matches.length;
       bestMatch = entry;
@@ -421,10 +458,10 @@ export function findLawdCode(region: string, district = ""): { region: string; c
 
   if (bestMatch) return bestMatch;
 
-  // 5. 단일 키워드 (예: "해운대구", "수성구", "유성구", "포항")
+  // 6. 단일 키워드
   for (const entry of LAWD_CODES) {
     const guOrSi = entry.region.split(" ")[1];
-    if (guOrSi && (fullSearch.includes(guOrSi) || guOrSi.includes(fullSearch))) {
+    if (guOrSi && (normalized.includes(guOrSi) || guOrSi.includes(normalized))) {
       return entry;
     }
   }

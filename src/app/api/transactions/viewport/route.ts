@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { findLawdCode } from "@/lib/publicDataApi";
+import { normalizeAptName } from "@/lib/normalizeAptName";
 
 // ─── 서버 인메모리 캐시 (법정동 코드 단위로 전체 데이터 캐싱) ─────────────
 interface TradeInfo {
@@ -19,28 +20,6 @@ interface RegionCache {
 
 const viewportCache = new Map<string, RegionCache>();
 const CACHE_TTL_MS = 1000 * 60 * 30; // 30분 TTL
-
-/**
- * 국토부 실거래가 신고명칭과 K-apt 마스터 단지명칭 간의 정규화 매칭 엔진
- */
-export function normalizeAptName(name: string): string {
-  if (!name) return "";
-  return name
-    .replace(/[\s\-_(),.·]/g, "")
-    .replace(/아파트$/g, "")
-    .replace(/금강펜테리움/gi, "펜테리움")
-    .replace(/이편한세상|e\-편한세상/gi, "e편한세상")
-    .replace(/에스케이뷰|sk\s*view/gi, "sk뷰")
-    .replace(/대우\s*푸르지오(?!아)/gi, "푸르지오")
-    .replace(/금호\s*어울림/gi, "금호어울림")
-    .replace(/1차|ⅰ|i단지|1단지|Ⅰ/gi, "1")
-    .replace(/2차|ⅱ|ii단지|2단지|Ⅱ/gi, "2")
-    .replace(/3차|ⅲ|iii단지|3단지|Ⅲ/gi, "3")
-    .replace(/4차|ⅳ|iv단지|4단지|Ⅳ/gi, "4")
-    .replace(/5차|ⅴ|v단지|5단지|Ⅴ/gi, "5")
-    .replace(/6차|ⅵ|vi단지|6단지|Ⅵ/gi, "6")
-    .toLowerCase();
-}
 
 const getVal = (xml: string, tag: string) => {
   const m = xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));

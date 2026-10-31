@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { DataSourceBadge } from "@/components/DataSourceBadge";
 
 interface Props {
   aptId: string;
@@ -77,14 +76,9 @@ export function NearbyLocationSummaryCard({ aptId, aptName, lat, lng }: Props) {
       {/* 헤더 & 반경 토글 */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-slate-700/60">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-black px-2 py-0.5 rounded bg-blue-500 text-white">
-              입지 통합 브리핑
-            </span>
-            <h3 className="text-base sm:text-lg font-extrabold text-white">
-              {aptName} 반경 {radiusKm}km 핵심 요약
-            </h3>
-          </div>
+          <h3 className="text-base sm:text-lg font-extrabold text-white">
+            {aptName} 반경 {radiusKm}km 핵심 요약
+          </h3>
           <p className="text-xs text-slate-400 mt-1">
             정비사업 계획, 향후 입주 물량, 상권 인프라를 종합 진단합니다.
           </p>
@@ -115,7 +109,6 @@ export function NearbyLocationSummaryCard({ aptId, aptName, lat, lng }: Props) {
               3km (배후 상권·학군)
             </button>
           </div>
-          <DataSourceBadge provider="COMPUTED" />
         </div>
       </div>
 

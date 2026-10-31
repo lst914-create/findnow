@@ -68,52 +68,58 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
       {/* Header */}
       <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-1.5 whitespace-nowrap">
               <span>📦</span> 연도별 입주 예정 물량 분석
             </h3>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
-              {loading ? "집계중" : `총 ${totalUnits.toLocaleString()}세대`}
-            </span>
-            {!loading && totalUnits > 0 && (
-              <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${supplyPressure.bg} ${supplyPressure.color}`}>
-                {supplyPressure.label}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 whitespace-nowrap">
+                {loading ? "집계중" : `총 ${totalUnits.toLocaleString()}세대`}
               </span>
-            )}
+              {!loading && totalUnits > 0 && (
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${supplyPressure.bg} ${supplyPressure.color} whitespace-nowrap`}>
+                  {supplyPressure.label}
+                </span>
+              )}
+            </div>
           </div>
           <p className="text-xs text-slate-400 mt-1">
             {aptName} 주변 아파트 인허가·청약홈 분양 기준 향후 입주 물량과 공급 충격도를 점검합니다.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* 반경 선택 */}
-          <div className="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium">
-            {[1000, 2000, 3000].map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRadius(r)}
-                className={`px-2.5 py-1 rounded-lg transition-colors ${
-                  radius === r
-                    ? "bg-white text-slate-900 font-bold shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {`${r / 1000}km`}
-              </button>
-            ))}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full sm:w-auto">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5">
+            {/* 반경 선택 */}
+            <div className="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium shrink-0">
+              {[1000, 2000, 3000].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRadius(r)}
+                  className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap ${
+                    radius === r
+                      ? "bg-white text-slate-900 font-bold shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {`${r / 1000}km`}
+                </button>
+              ))}
+            </div>
+
+            <Link
+              href="/subscriptions"
+              className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100/70 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
+            >
+              <span>분양·청약 캘린더</span>
+              <span>↗</span>
+            </Link>
           </div>
 
-          <Link
-            href="/subscriptions"
-            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100/70 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1"
-          >
-            <span>분양·청약 캘린더</span>
-            <span>↗</span>
-          </Link>
-
-          <DataSourceBadge provider="RONE_APPLY" meta={data?.meta} />
+          <div className="self-end sm:self-auto shrink-0">
+            <DataSourceBadge provider="RONE_APPLY" meta={data?.meta} />
+          </div>
         </div>
       </div>
 
@@ -194,9 +200,9 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
             {/* 주요 입주 예정 단지 목록 */}
             {units.length > 0 && (
               <div>
-                <h4 className="text-xs font-bold text-slate-600 mb-3 flex items-center justify-between">
-                  <span>주요 입주 예정 단지</span>
-                  <span className="text-slate-400 font-normal">단지명을 클릭하면 상세 정보를 확인하실 수 있습니다.</span>
+                <h4 className="text-xs font-bold text-slate-600 mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <span className="whitespace-nowrap">주요 입주 예정 단지</span>
+                  <span className="text-slate-400 font-normal text-[11px] sm:text-xs">단지명을 클릭하면 상세 정보를 확인하실 수 있습니다.</span>
                 </h4>
                 <div className="space-y-2.5">
                   {units.slice(0, 5).map((p) => (

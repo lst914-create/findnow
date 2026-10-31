@@ -83,36 +83,40 @@ export function CommercialDistrictSection({ aptId, aptName }: Props) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {/* 반경 선택 */}
-          <div className="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium">
-            {[500, 1000, 1500].map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRadius(r)}
-                className={`px-2.5 py-1 rounded-lg transition-colors ${
-                  radius === r
-                    ? "bg-white text-slate-900 font-bold shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {r >= 1000 ? `${r / 1000}km` : `${r}m`}
-              </button>
-            ))}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full sm:w-auto">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5">
+            {/* 반경 선택 */}
+            <div className="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium shrink-0">
+              {[500, 1000, 1500].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRadius(r)}
+                  className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap ${
+                    radius === r
+                      ? "bg-white text-slate-900 font-bold shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {r >= 1000 ? `${r / 1000}km` : `${r}m`}
+                </button>
+              ))}
+            </div>
+
+            <a
+              href={`https://map.kakao.com/?q=${encodeURIComponent(`${aptName} 주변 상가`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100/70 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
+            >
+              <span>상권 지도</span>
+              <span>↗</span>
+            </a>
           </div>
 
-          <a
-            href={`https://map.kakao.com/?q=${encodeURIComponent(`${aptName} 주변 상가`)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100/70 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1"
-          >
-            <span>상권 지도</span>
-            <span>↗</span>
-          </a>
-
-          <DataSourceBadge provider="SDSC_STORE" meta={districtData?.meta} />
+          <div className="self-end sm:self-auto shrink-0">
+            <DataSourceBadge provider="SDSC_STORE" meta={districtData?.meta} />
+          </div>
         </div>
       </div>
 

@@ -167,6 +167,7 @@ export async function POST(request: NextRequest) {
     const detailsMap: Record<
       string,
       {
+        avgPrice?: number;
         latestPrice: number;
         formatted: string;
         dealDate: string;
@@ -198,12 +199,14 @@ export async function POST(request: NextRequest) {
     tradesByApt.forEach((trades, normName) => {
       if (!trades.length) return;
 
-      // 최신 거래 (첫 번째)
+      // 최근 3개월 실거래가 평균 계산
+      const avgAmount = Math.round(trades.reduce((acc, t) => acc + t.amount, 0) / trades.length);
       const latest = trades[0];
-      priceMap[normName] = latest.amount;
+      priceMap[normName] = avgAmount;
       detailsMap[normName] = {
+        avgPrice: avgAmount,
         latestPrice: latest.amount,
-        formatted: formatPrice(latest.amount),
+        formatted: formatPrice(avgAmount),
         dealDate: latest.dealDate,
         floor: latest.floor,
         areaSqm: Math.round(latest.areaSqm * 10) / 10,

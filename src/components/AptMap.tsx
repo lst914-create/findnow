@@ -6,6 +6,16 @@ import { APARTMENTS_DATA, Apartment } from "@/lib/apartments";
 import { loadKakaoMap } from "@/lib/kakaoMapLoader";
 import { normalizeAptName } from "@/lib/normalizeAptName";
 
+function formatPrice(manwon: number): string {
+  const uk = Math.floor(manwon / 10000);
+  const remainder = manwon % 10000;
+  const cheon = Math.floor(remainder / 1000);
+  if (uk > 0) {
+    return cheon > 0 ? `${uk}.${cheon}억` : `${uk}억`;
+  }
+  return `${manwon.toLocaleString()}만`;
+}
+
 export interface AptMarker {
   id: string;
   name: string;
@@ -140,10 +150,12 @@ export default function AptMap({
   const realtimePriceCacheRef = useRef<Map<string, number>>(new Map());
   // 실거래가 상세 캐시: normName → { formatted, dealDate, floor, pyeong, tradeCount }
   const livePriceDetailCacheRef = useRef<Map<string, {
+    avgPrice?: number;
     latestPrice: number;
     formatted: string;
     dealDate: string;
     floor: number;
+    areaSqm?: number;
     pyeong: number;
     tradeCount: number;
   }>>(new Map());
@@ -163,29 +175,80 @@ export default function AptMap({
     isLoading: boolean;
     isRealConnected: boolean;
   } | null>(null);
+
+  // K-apt 단지 정보(세대수, 준공연도) 캐시 및 상태
+  const kaptInfoCacheRef = useRef<Map<string, { householdCount?: number; builtYear?: number }>>(new Map());
+  const [kaptInfo, setKaptInfo] = useState<{ householdCount?: number; builtYear?: number } | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
   const [activeTab, setActiveTab] = useState<"지도" | "주변" | "거리" | "분석">("지도");
   const [currentRegion, setCurrentRegion] = useState<string>("수도권 주요 단지");
   const [visibleCount, setVisibleCount] = useState<number>(0);
 
-  // 선택 단지 국토교통부 실거래가 실시간 연동
+  // 선택 단지 국토교통부 실거래가 실시간 연동 & K-apt 단지 정보(세대수, 준공연도) 연동
   useEffect(() => {
     if (!selectedApt) {
       setRealtimeTx(null);
+      setKaptInfo(null);
       return;
     }
 
+    const normName = normalizeAptName(selectedApt.name);
+    const cachedLive = livePriceDetailCacheRef.current.get(normName);
+
+    // K-apt 코드 추출
+    const match = selectedApt.id?.match(/A\d{6,10}/i);
+    const kaptCode = match ? match[0] : (selectedApt.id?.startsWith("kapt-") ? selectedApt.id.replace("kapt-", "") : null);
+
+    // 1. K-apt 정보 (단지 상세 분석보기와 동일한 실데이터)
+    if (kaptCode) {
+      const cachedKapt = kaptInfoCacheRef.current.get(kaptCode);
+      if (cachedKapt) {
+        setKaptInfo(cachedKapt);
+      } else {
+        fetch(`/api/kapt?kaptCode=${encodeURIComponent(kaptCode)}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((json) => {
+            if (json?.success && json?.data) {
+              const d = json.data;
+              const hCount = d.household_count || selectedApt.householdCount;
+              let bYear = selectedApt.builtYear;
+              if (d.approval_date) {
+                const y = parseInt(d.approval_date.slice(0, 4), 10);
+                if (!isNaN(y) && y > 1960 && y < 2035) {
+                  bYear = y;
+                }
+              }
+              const info = { householdCount: hCount, builtYear: bYear };
+              kaptInfoCacheRef.current.set(kaptCode, info);
+              setKaptInfo(info);
+            }
+          })
+          .catch(() => {});
+      }
+    } else {
+      setKaptInfo({
+        householdCount: selectedApt.householdCount,
+        builtYear: selectedApt.builtYear,
+      });
+    }
+
+    // 2. 실거래가 연동: 지도상 마커 금액(최근 3개월 평균)과 100% 동일하게 즉시 반영
     let isCancelled = false;
-    // 기본 마스터 데이터 값으로 즉시 초기화
+    const initialAvgStr = cachedLive?.formatted || selectedApt.avgPrice;
+    const initialPriceNum = cachedLive?.avgPrice || cachedLive?.latestPrice || selectedApt.priceNum;
+    const ratio = selectedApt.jeonseRatio ?? 56;
+    const initialJeonseNum = Math.round(initialPriceNum * (ratio / 100));
+    const initialGapNum = Math.max(0, initialPriceNum - initialJeonseNum);
+
     setRealtimeTx({
-      avgPriceStr: selectedApt.avgPrice,
-      latestPriceStr: "",
-      latestDateStr: "",
-      dealCount: 0,
-      jeonsePriceStr: `${Math.round((selectedApt.rentNum || selectedApt.priceNum * 0.56) / 10000)}억`,
-      gapPriceStr: `${Math.round((selectedApt.gapPrice || selectedApt.priceNum * 0.44) / 10000)}억`,
-      isLoading: true,
-      isRealConnected: false,
+      avgPriceStr: initialAvgStr,
+      latestPriceStr: cachedLive?.latestPrice ? formatPrice(cachedLive.latestPrice) : "",
+      latestDateStr: cachedLive?.dealDate ? cachedLive.dealDate.slice(2).replace(".", "/") : "",
+      dealCount: cachedLive?.tradeCount || 0,
+      jeonsePriceStr: formatPrice(initialJeonseNum),
+      gapPriceStr: formatPrice(initialGapNum),
+      isLoading: !cachedLive,
+      isRealConnected: !!cachedLive,
     });
 
     const parts = selectedApt.region.split(" ");
@@ -193,7 +256,7 @@ export default function AptMap({
     const districtName = parts.slice(2).join(" ");
 
     fetch(
-      `/api/transactions?region=${encodeURIComponent(regionName)}&district=${encodeURIComponent(districtName)}&aptName=${encodeURIComponent(selectedApt.name)}&months=12`
+      `/api/transactions?region=${encodeURIComponent(regionName)}&district=${encodeURIComponent(districtName)}&aptName=${encodeURIComponent(selectedApt.name)}&months=3`
     )
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -205,30 +268,30 @@ export default function AptMap({
         }
 
         const trades = data.trades;
-        // 최근 최대 5건 실거래 평균
-        const recent = trades.slice(0, Math.min(5, trades.length));
-        const avgNum = Math.round(recent.reduce((acc: number, t: any) => acc + t.dealAmount, 0) / recent.length);
-        const uk = Math.floor(avgNum / 10000);
-        const cheon = Math.floor((avgNum % 10000) / 1000);
-        const avgPriceStr = uk > 0 ? (cheon > 0 ? `${uk}.${cheon}억` : `${uk}.0억`) : `${avgNum.toLocaleString()}만`;
+        // 최근 3개월 실거래 평균
+        const avgNum = Math.round(trades.reduce((acc: number, t: any) => acc + t.dealAmount, 0) / trades.length);
+        const avgPriceStr = formatPrice(avgNum);
 
         const latest = trades[0];
-        const latestUk = Math.floor(latest.dealAmount / 10000);
-        const latestCheon = Math.floor((latest.dealAmount % 10000) / 1000);
-        const latestPriceStr = latestUk > 0 ? (latestCheon > 0 ? `${latestUk}.${latestCheon}억` : `${latestUk}.0억`) : `${latest.dealAmount.toLocaleString()}만`;
+        const latestPriceStr = formatPrice(latest.dealAmount);
         const latestDateStr = `${String(latest.dealYear).slice(2)}.${String(latest.dealMonth).padStart(2, "0")}`;
 
-        const ratio = selectedApt.jeonseRatio ?? 56;
         const jeonseNum = Math.round(avgNum * (ratio / 100));
         const gapNum = Math.max(0, avgNum - jeonseNum);
 
-        const jUk = Math.floor(jeonseNum / 10000);
-        const jCheon = Math.floor((jeonseNum % 10000) / 1000);
-        const jeonsePriceStr = jUk > 0 ? (jCheon > 0 ? `${jUk}.${jCheon}억` : `${jUk}.0억`) : `${jeonseNum.toLocaleString()}만`;
+        const jeonsePriceStr = formatPrice(jeonseNum);
+        const gapPriceStr = formatPrice(gapNum);
 
-        const gUk = Math.floor(gapNum / 10000);
-        const gCheon = Math.floor((gapNum % 10000) / 1000);
-        const gapPriceStr = gUk > 0 ? (gCheon > 0 ? `${gUk}.${gCheon}억` : `${gUk}.0억`) : `${gapNum.toLocaleString()}만`;
+        // 캐시 업데이트
+        livePriceDetailCacheRef.current.set(normName, {
+          avgPrice: avgNum,
+          latestPrice: latest.dealAmount,
+          formatted: avgPriceStr,
+          dealDate: `${latest.dealYear}.${String(latest.dealMonth).padStart(2, "0")}.${String(latest.dealDay || 1).padStart(2, "0")}`,
+          floor: latest.floor || 1,
+          pyeong: cachedLive?.pyeong || (latest.excluUseAr ? Math.round(latest.excluUseAr / 3.30578) : selectedApt.pyeong),
+          tradeCount: trades.length,
+        });
 
         setRealtimeTx({
           avgPriceStr,
@@ -1767,86 +1830,84 @@ export default function AptMap({
         )}
 
         {/* 선택 단지 팝업 카드 */}
-        {selectedApt && (
-          <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-[25] bg-white rounded-3xl shadow-2xl border border-slate-200/90 p-5 sm:w-88 animate-slide-up">
-            <button
-              onClick={() => setSelectedApt(null)}
-              className="absolute top-3.5 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold cursor-pointer leading-none"
-            >
-              ×
-            </button>
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600">
-                <span>📍 {selectedApt.region}</span>
-                <span className="text-slate-300">•</span>
-                <span className="text-rose-500 font-bold">🔥 {selectedApt.liveViewers}명 관심</span>
+        {selectedApt && (() => {
+          const normName = normalizeAptName(selectedApt.name);
+          const live = livePriceDetailCacheRef.current.get(normName);
+          const displayPrice = live?.formatted || realtimeTx?.avgPriceStr || selectedApt.avgPrice;
+          const displayPyeong = live?.pyeong || selectedApt.pyeong;
+          const currentHousehold = kaptInfo?.householdCount ?? (selectedApt.id?.match(/A\d{6,10}/i) ? kaptInfoCacheRef.current.get(selectedApt.id.match(/A\d{6,10}/i)![0])?.householdCount : null) ?? selectedApt.householdCount;
+          const currentBuiltYear = kaptInfo?.builtYear ?? (selectedApt.id?.match(/A\d{6,10}/i) ? kaptInfoCacheRef.current.get(selectedApt.id.match(/A\d{6,10}/i)![0])?.builtYear : null) ?? selectedApt.builtYear;
+
+          return (
+            <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-[25] bg-white rounded-3xl shadow-2xl border border-slate-200/90 p-5 sm:w-88 animate-slide-up">
+              <button
+                onClick={() => setSelectedApt(null)}
+                className="absolute top-3.5 right-4 text-slate-400 hover:text-slate-700 text-xl font-bold cursor-pointer leading-none"
+              >
+                ×
+              </button>
+              {/* 지역 및 관심수: 줄바꿈 없이 한 줄로 깔끔하게 표시 */}
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 mb-1.5 pr-8 whitespace-nowrap overflow-hidden">
+                <span className="truncate">📍 {selectedApt.region}</span>
+                <span className="text-slate-300 shrink-0">•</span>
+                <span className="text-rose-500 font-bold shrink-0">🔥 {selectedApt.liveViewers}명 관심</span>
               </div>
-              {realtimeTx?.isLoading ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 animate-pulse">
-                  <span>🔄</span> 국토부 조회중
+              <div className="text-lg font-extrabold text-slate-900 pr-6 leading-tight mb-2.5 truncate">{selectedApt.name}</div>
+
+              {/* 시세 3종: 매매 평균은 지도상 실거래가(최근 3개월 평균)와 동일하게 일치 */}
+              <div className="grid grid-cols-3 gap-1.5 mb-2.5">
+                <div className="bg-rose-50/80 rounded-2xl p-2.5 border border-rose-100/90 text-center">
+                  <div className="text-[10px] text-rose-500 font-bold mb-0.5">
+                    매매 평균
+                  </div>
+                  <div className="text-base font-black text-rose-700 leading-tight">
+                    {displayPrice}
+                  </div>
+                  <div className="text-[9px] text-rose-400 mt-0.5">
+                    {displayPyeong}평
+                  </div>
+                </div>
+                <div className="bg-blue-50/80 rounded-2xl p-2.5 border border-blue-100/90 text-center">
+                  <div className="text-[10px] text-blue-500 font-bold mb-0.5">전세 시세</div>
+                  <div className="text-base font-black text-blue-700 leading-tight">
+                    {realtimeTx?.jeonsePriceStr || `${Math.round((selectedApt.rentNum || selectedApt.priceNum * 0.56) / 10000)}억`}
+                  </div>
+                  <div className="text-[9px] text-blue-400 mt-0.5">전세가율 {selectedApt.jeonseRatio ?? 56}%</div>
+                </div>
+                <div className="bg-emerald-50/80 rounded-2xl p-2.5 border border-emerald-100/90 text-center">
+                  <div className="text-[10px] text-emerald-600 font-bold mb-0.5">월세 추정</div>
+                  <div className="text-xs font-black text-emerald-800 leading-tight mt-1">
+                    보 {Math.max(1, Math.round(((selectedApt.priceNum || 100000) * 0.1) / 10000))}억
+                  </div>
+                  <div className="text-[9px] text-emerald-600 mt-0.5 font-bold">
+                    월 {Math.round(displayPyeong * 4.5 + 40)}만
+                  </div>
+                </div>
+              </div>
+
+              {/* 갭가격 및 단지 주요 지표 (세대수, 준공연도는 K-apt 실데이터 연동) */}
+              <div className="flex items-center justify-between text-[11px] bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/70 mb-3 text-slate-600">
+                <span>
+                  갭투자{" "}
+                  <b className="text-indigo-600 font-bold">
+                    {realtimeTx?.gapPriceStr || `${Math.round((selectedApt.gapPrice || selectedApt.priceNum * 0.44) / 10000)}억`}
+                  </b>
                 </span>
-              ) : realtimeTx?.isRealConnected ? (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  국토부 실거래 연동
-                </span>
-              ) : null}
-            </div>
-            <div className="text-lg font-extrabold text-slate-900 pr-6 leading-tight mb-2.5">{selectedApt.name}</div>
-
-            {/* 시세 3종 */}
-            <div className="grid grid-cols-3 gap-1.5 mb-2.5">
-              <div className="bg-rose-50/80 rounded-2xl p-2.5 border border-rose-100/90 text-center">
-                <div className="text-[10px] text-rose-500 font-bold mb-0.5">
-                  {realtimeTx?.isRealConnected ? "최근 실거래 평균" : "매매 평균"}
-                </div>
-                <div className="text-base font-black text-rose-700 leading-tight">
-                  {realtimeTx?.avgPriceStr || selectedApt.avgPrice}
-                </div>
-                <div className="text-[9px] text-rose-400 mt-0.5">
-                  {realtimeTx?.latestPriceStr ? `최신 ${realtimeTx.latestPriceStr}` : `${selectedApt.pyeong}평`}
-                </div>
+                <span className="text-slate-300">|</span>
+                <span>{currentHousehold ? `${currentHousehold.toLocaleString()}세대` : "대단지"}</span>
+                <span className="text-slate-300">|</span>
+                <span>{currentBuiltYear ? `${currentBuiltYear}년식` : ""}</span>
               </div>
-              <div className="bg-blue-50/80 rounded-2xl p-2.5 border border-blue-100/90 text-center">
-                <div className="text-[10px] text-blue-500 font-bold mb-0.5">전세 시세</div>
-                <div className="text-base font-black text-blue-700 leading-tight">
-                  {realtimeTx?.jeonsePriceStr || `${Math.round((selectedApt.rentNum || selectedApt.priceNum * 0.56) / 10000)}억`}
-                </div>
-                <div className="text-[9px] text-blue-400 mt-0.5">전세가율 {selectedApt.jeonseRatio ?? 56}%</div>
-              </div>
-              <div className="bg-emerald-50/80 rounded-2xl p-2.5 border border-emerald-100/90 text-center">
-                <div className="text-[10px] text-emerald-600 font-bold mb-0.5">월세 추정</div>
-                <div className="text-xs font-black text-emerald-800 leading-tight mt-1">
-                  보 {Math.max(1, Math.round(((selectedApt.priceNum || 100000) * 0.1) / 10000))}억
-                </div>
-                <div className="text-[9px] text-emerald-600 mt-0.5 font-bold">
-                  월 {Math.round(selectedApt.pyeong * 4.5 + 40)}만
-                </div>
-              </div>
-            </div>
 
-            {/* 갭가격 및 단지 주요 지표 */}
-            <div className="flex items-center justify-between text-[11px] bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/70 mb-3 text-slate-600">
-              <span>
-                갭투자{" "}
-                <b className="text-indigo-600 font-bold">
-                  {realtimeTx?.gapPriceStr || `${Math.round((selectedApt.gapPrice || selectedApt.priceNum * 0.44) / 10000)}억`}
-                </b>
-              </span>
-              <span className="text-slate-300">|</span>
-              <span>{selectedApt.householdCount ? `${selectedApt.householdCount.toLocaleString()}세대` : "대단지"}</span>
-              <span className="text-slate-300">|</span>
-              <span>{selectedApt.builtYear}년식</span>
+              <Link
+                href={`/apt/${selectedApt.id}`}
+                className="block w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-center rounded-2xl text-sm font-bold shadow-md shadow-indigo-200 transition-all cursor-pointer"
+              >
+                단지 상세 분석 보기 →
+              </Link>
             </div>
-
-            <Link
-              href={`/apt/${selectedApt.id}`}
-              className="block w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-center rounded-2xl text-sm font-bold shadow-md shadow-indigo-200 transition-all cursor-pointer"
-            >
-              단지 상세 분석 보기 →
-            </Link>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* 종합 14개 필터 모달 */}

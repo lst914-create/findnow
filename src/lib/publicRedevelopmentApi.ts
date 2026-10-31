@@ -65,7 +65,7 @@ export interface NationalZoneRecord {
   stage: string;
   /** 지정일자 */
   designationDate?: string;
-  /** 총세대수 */
+  /** 예정 세대수 (공급 계획 기준) */
   totalUnits?: number;
   /** 위도 */
   lat?: number;
@@ -75,6 +75,22 @@ export interface NationalZoneRecord {
   areaM2?: number;
   /** 시공사 */
   builder?: string;
+  /** 위치 식별 가능 여부 (좌표 또는 주소 확보 여부) */
+  hasLocation: boolean;
+  /** 도로명 주소 */
+  roadAddress?: string;
+  /** 지번 주소 */
+  jibunAddress?: string;
+  /** 조합명 */
+  unionName?: string;
+  /** 변경 이력 유무 */
+  hasChangeHistory?: boolean;
+  /** 데이터 관리 티어 (전국 연간 베이스라인 vs 지자체 고시 보완) */
+  dataTier?: "BASELINE_ANNUAL" | "PATCHED_LOCAL_GOV";
+  /** 갱신 주기 */
+  lastUpdateCycle?: "ANNUAL" | "REALTIME_PATCH";
+  /** 최종 갱신 출처 */
+  updateSource?: string;
 }
 
 export interface BuildingInfo {
@@ -117,10 +133,9 @@ export class PublicRedevelopmentApiService {
     this.isMockMode = !this.apiKey;
 
     if (this.isMockMode) {
-      console.log(
-        "[PublicRedevelopmentApiService] API 키 미설정 → Mock 모드로 동작합니다.\n" +
-        "실제 데이터 연동을 위해 .env.local에 DATA_GO_KR_API_KEY를 설정하세요.\n" +
-        "API 키 발급: https://www.data.go.kr"
+      console.warn(
+        "[PublicRedevelopmentApiService] 공공데이터포털 API 키(DATA_GO_KR_API_KEY)가 설정되지 않아 실거래가 조회가 비활성화됩니다.\n" +
+        ".env.local에 DATA_GO_KR_API_KEY를 설정하세요."
       );
     } else {
       console.log("[PublicRedevelopmentApiService] 공공데이터포털 API 키 연동 활성화 완료");
@@ -141,11 +156,9 @@ export class PublicRedevelopmentApiService {
   private buildDealYmdList(monthsBack: number): string[] {
     const list: string[] = [];
     const now = new Date();
-    // 공공데이터포털 실거래가는 실시간 최신 월 기준 (시스템 연도가 미래인 환경 대응)
-    const anchorYear = now.getFullYear() > 2024 ? 2024 : now.getFullYear();
-    const anchorMonth = now.getFullYear() > 2024 ? 8 : now.getMonth();
+    // 현재 실제 날짜 기준으로 과거 monthsBack 개월의 년월(YYYYMM) 목록 생성
     for (let i = 0; i < monthsBack; i++) {
-      const d = new Date(anchorYear, anchorMonth - i, 1);
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       list.push(`${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`);
     }
     return list;
@@ -161,8 +174,8 @@ export class PublicRedevelopmentApiService {
     lawdCode: string,
     monthsBack = 12
   ): Promise<RealTradeRecord[]> {
-    if (this.isMockMode) {
-      return this.getMockVillaTrades(lawdCode, monthsBack);
+    if (this.isMockMode || !this.apiKey) {
+      return [];
     }
 
     const results: RealTradeRecord[] = [];
@@ -171,7 +184,7 @@ export class PublicRedevelopmentApiService {
     for (const dealYmd of dealYmdList) {
       try {
         const url = new URL("https://apis.data.go.kr/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade");
-        url.searchParams.set("serviceKey", this.apiKey!);
+        url.searchParams.set("serviceKey", this.apiKey);
         url.searchParams.set("LAWD_CD", lawdCode);
         url.searchParams.set("DEAL_YMD", dealYmd);
         url.searchParams.set("numOfRows", "1000");
@@ -182,7 +195,8 @@ export class PublicRedevelopmentApiService {
 
         const xml = await res.text();
         if (xml.includes("SERVICE_KEY_IS_NOT_REGISTERED") || xml.includes("SERVICE_ACCESS_DENIED")) {
-          return this.getMockVillaTrades(lawdCode, monthsBack);
+          console.error(`[연립다세대 실거래] 공공 API 인증 실패 (${dealYmd}): 서비스 키를 확인하세요.`);
+          break;
         }
         for (const item of this.parseItems(xml)) {
           const dealAmountStr = this.getVal(item, "dealAmount").replace(/,/g, "");
@@ -227,8 +241,8 @@ export class PublicRedevelopmentApiService {
     lawdCode: string,
     monthsBack = 12
   ): Promise<RealTradeRecord[]> {
-    if (this.isMockMode) {
-      return this.getMockSingleHouseTrades(lawdCode, monthsBack);
+    if (this.isMockMode || !this.apiKey) {
+      return [];
     }
 
     const results: RealTradeRecord[] = [];
@@ -237,7 +251,7 @@ export class PublicRedevelopmentApiService {
     for (const dealYmd of dealYmdList) {
       try {
         const url = new URL("https://apis.data.go.kr/1613000/RTMSDataSvcSHTrade/getRTMSDataSvcSHTrade");
-        url.searchParams.set("serviceKey", this.apiKey!);
+        url.searchParams.set("serviceKey", this.apiKey);
         url.searchParams.set("LAWD_CD", lawdCode);
         url.searchParams.set("DEAL_YMD", dealYmd);
         url.searchParams.set("numOfRows", "1000");
@@ -248,7 +262,8 @@ export class PublicRedevelopmentApiService {
 
         const xml = await res.text();
         if (xml.includes("SERVICE_KEY_IS_NOT_REGISTERED") || xml.includes("SERVICE_ACCESS_DENIED")) {
-          return this.getMockSingleHouseTrades(lawdCode, monthsBack);
+          console.error(`[단독다가구 실거래] 공공 API 인증 실패 (${dealYmd}): 서비스 키를 확인하세요.`);
+          break;
         }
         for (const item of this.parseItems(xml)) {
           const dealAmountStr = this.getVal(item, "dealAmount").replace(/,/g, "");
@@ -356,16 +371,17 @@ export class PublicRedevelopmentApiService {
     type?: string;
     stage?: string;
   }): Promise<NationalZoneRecord[]> {
-    if (this.isMockMode) {
-      return this.getMockNationalZones(params);
-    }
-
     const results: NationalZoneRecord[] = [];
+
+    // 서울시 정비사업 Open API (서울 열린데이터광장 HsmpInfo)
+    const seoulApiKey = process.env.SEOUL_OPENAPI_KEY;
+    if (!seoulApiKey) {
+      return [];
+    }
 
     try {
       if (!params.sido || params.sido.includes("서울")) {
-        // 서울시 정비사업 Open API (서울 열린데이터광장)
-        const seoulUrl = `https://openapi.seoul.go.kr:8088/${this.apiKey}/json/HsmpInfo/1/100/${params.sigungu || ""}`;
+        const seoulUrl = `https://openapi.seoul.go.kr:8088/${seoulApiKey}/json/HsmpInfo/1/100/${params.sigungu || ""}`;
         const res = await fetch(seoulUrl, { next: { revalidate: 86400 } });
         if (res.ok) {
           const json = await res.json() as {
@@ -383,6 +399,13 @@ export class PublicRedevelopmentApiService {
           const rows = json?.HsmpInfo?.row || [];
           for (const row of rows) {
             if (params.stage && !row.HSMP_STTS_NM?.includes(params.stage)) continue;
+            const roadAddr = (row as Record<string, string | undefined>).ROAD_NM_ADDR || undefined;
+            const jibunAddr = (row as Record<string, string | undefined>).LNBR_ADDR || undefined;
+            const latRaw = (row as Record<string, string | undefined>).LAT;
+            const lngRaw = (row as Record<string, string | undefined>).LNG;
+            const lat = latRaw ? parseFloat(latRaw) : undefined;
+            const lng = lngRaw ? parseFloat(lngRaw) : undefined;
+            const hasLocation = !!(lat && lng) || !!(roadAddr || jibunAddr);
             results.push({
               name: row.HSMP_NM || "",
               sido: "서울특별시",
@@ -393,6 +416,14 @@ export class PublicRedevelopmentApiService {
               totalUnits: parseInt(row.PLAN_HSHLD_CO || "0", 10) || undefined,
               areaM2: parseFloat(row.HSMP_AR || "0") || undefined,
               builder: row.CNSTR_NM || undefined,
+              hasLocation,
+              lat,
+              lng,
+              roadAddress: roadAddr,
+              jibunAddress: jibunAddr,
+              dataTier: "PATCHED_LOCAL_GOV",
+              lastUpdateCycle: "REALTIME_PATCH",
+              updateSource: "서울시 정비사업 정보몽땅 (HsmpInfo 실시간/수시 보완)",
             });
           }
         }
@@ -417,15 +448,15 @@ export class PublicRedevelopmentApiService {
     bun: string;
     ji?: string;
   }): Promise<BuildingInfo[]> {
-    if (this.isMockMode) {
-      return this.getMockBuildingInfo();
+    if (this.isMockMode || !this.apiKey) {
+      return [];
     }
 
     const results: BuildingInfo[] = [];
 
     try {
       const url = new URL("https://apis.data.go.kr/1613000/BldRgstHubService/getBrTitleInfo");
-      url.searchParams.set("serviceKey", this.apiKey!);
+      url.searchParams.set("serviceKey", this.apiKey);
       url.searchParams.set("sigunguCd", params.sigunguCd);
       url.searchParams.set("bjdongCd", params.bjdongCd);
       url.searchParams.set("platGbCd", params.platGbCd || "0");
@@ -436,7 +467,7 @@ export class PublicRedevelopmentApiService {
       url.searchParams.set("_type", "json");
 
       const res = await fetch(url.toString(), { next: { revalidate: 86400 } });
-      if (!res.ok) return this.getMockBuildingInfo();
+      if (!res.ok) return [];
 
       const json = await res.json() as {
         response?: {
@@ -491,142 +522,6 @@ export class PublicRedevelopmentApiService {
     }
 
     return results;
-  }
-
-  // ==================== Mock 데이터 (API 키 발급 전 개발용) ====================
-
-  private getMockVillaTrades(lawdCode: string, monthsBack: number): RealTradeRecord[] {
-    const priceMap: Record<string, number> = {
-      "11290": 65000, "11170": 180000, "11590": 120000,
-      "11200": 220000, "11410": 115000, "41220": 65000,
-      "11440": 135000, "11305": 72000, "11350": 68000,
-      "11380": 82000, "26110": 42000,
-    };
-
-    const basePrice = priceMap[lawdCode] || 80000;
-    const trades: RealTradeRecord[] = [];
-    const now = new Date();
-    const names = ["청운트윈스빌", "라온팰리스", "토암쉐르빌", "대명빌라", "신흥빌라", "행복빌라"];
-
-    for (let i = 0; i < monthsBack * 3; i++) {
-      const daysAgo = Math.floor(Math.random() * monthsBack * 30);
-      const d = new Date(now.getTime() - daysAgo * 86400000);
-      const variation = (Math.random() - 0.5) * 0.2;
-      const fl = Math.floor(Math.random() * 5) + 1;
-
-      trades.push({
-        date: `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`,
-        houseType: Math.random() > 0.25 ? "다세대" : "연립",
-        builtYear: 1985 + Math.floor(Math.random() * 35),
-        addressDetail: `${names[i % names.length]} ${fl}층`,
-        floor: `${fl}층`,
-        tradePriceManwon: Math.round(basePrice * (1 + variation) / 1000) * 1000,
-        exclusiveAreaM2: 30 + Math.random() * 55,
-      });
-    }
-
-    return trades.sort((a, b) => b.date.localeCompare(a.date));
-  }
-
-  private getMockSingleHouseTrades(lawdCode: string, monthsBack: number): RealTradeRecord[] {
-    const priceMap: Record<string, number> = {
-      "11290": 78000, "11170": 275000, "11590": 130000,
-      "11200": 245000, "41220": 72000,
-    };
-
-    const basePrice = priceMap[lawdCode] || 90000;
-    const trades: RealTradeRecord[] = [];
-    const now = new Date();
-
-    for (let i = 0; i < monthsBack; i++) {
-      const daysAgo = Math.floor(Math.random() * monthsBack * 30);
-      const d = new Date(now.getTime() - daysAgo * 86400000);
-      const variation = (Math.random() - 0.5) * 0.25;
-
-      trades.push({
-        date: `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`,
-        houseType: "단독",
-        builtYear: 1970 + Math.floor(Math.random() * 40),
-        addressDetail: `가동 ${100 + i * 3}-${i + 1}`,
-        tradePriceManwon: Math.round(basePrice * (1 + variation) / 1000) * 1000,
-        exclusiveAreaM2: 60 + Math.random() * 80,
-        landAreaM2: 30 + Math.random() * 40,
-      });
-    }
-
-    return trades.sort((a, b) => b.date.localeCompare(a.date));
-  }
-
-  private getMockNationalZones(params: {
-    sido?: string;
-    sigungu?: string;
-    type?: string;
-    stage?: string;
-  }): NationalZoneRecord[] {
-    const allZones: NationalZoneRecord[] = [
-      { name: "장위14구역", sido: "서울특별시", sigungu: "성북구", type: "재개발", stage: "건축심의", totalUnits: 2846, areaM2: 145000, builder: "SK에코플랜트·HDC현대산업개발", lat: 37.6129, lng: 127.0438 },
-      { name: "장위1구역", sido: "서울특별시", sigungu: "성북구", type: "재개발", stage: "관리처분인가", totalUnits: 1845, areaM2: 82000, builder: "GS건설", lat: 37.6155, lng: 127.0385 },
-      { name: "장위4구역", sido: "서울특별시", sigungu: "성북구", type: "재개발", stage: "착공", totalUnits: 2840, areaM2: 153000, builder: "현대건설", lat: 37.6168, lng: 127.0422 },
-      { name: "장위6구역", sido: "서울특별시", sigungu: "성북구", type: "재개발", stage: "사업시행인가", totalUnits: 1302, areaM2: 69000, lat: 37.6112, lng: 127.0358 },
-      { name: "장위7구역", sido: "서울특별시", sigungu: "성북구", type: "재개발", stage: "건축심의", totalUnits: 1553, areaM2: 75000, lat: 37.6098, lng: 127.0401 },
-      { name: "장위10구역", sido: "서울특별시", sigungu: "성북구", type: "재개발", stage: "이주철거", totalUnits: 2004, areaM2: 94000, lat: 37.6081, lng: 127.0375 },
-      { name: "한남3구역", sido: "서울특별시", sigungu: "용산구", type: "재개발", stage: "이주철거", totalUnits: 5816, areaM2: 386395, builder: "현대건설", lat: 37.5312, lng: 127.0015 },
-      { name: "한남4구역", sido: "서울특별시", sigungu: "용산구", type: "재개발", stage: "사업시행인가", totalUnits: 2331, areaM2: 160258, lat: 37.5278, lng: 127.0062 },
-      { name: "한남5구역", sido: "서울특별시", sigungu: "용산구", type: "재개발", stage: "관리처분인가", totalUnits: 1984, areaM2: 95000, lat: 37.5345, lng: 126.9968 },
-      { name: "노량진1구역", sido: "서울특별시", sigungu: "동작구", type: "재개발", stage: "사업시행인가", totalUnits: 2992, areaM2: 132187, builder: "포스코이앤씨", lat: 37.5115, lng: 126.9452 },
-      { name: "노량진3구역", sido: "서울특별시", sigungu: "동작구", type: "재개발", stage: "관리처분인가", totalUnits: 1803, areaM2: 88000, lat: 37.5132, lng: 126.9408 },
-      { name: "노량진5구역", sido: "서울특별시", sigungu: "동작구", type: "재개발", stage: "조합설립인가", totalUnits: 1456, areaM2: 72000, lat: 37.5148, lng: 126.9485 },
-      { name: "성수전략정비구역1지구", sido: "서울특별시", sigungu: "성동구", type: "재개발", stage: "조합설립인가", totalUnits: 3019, areaM2: 194398, lat: 37.5385, lng: 127.0438 },
-      { name: "아현3구역", sido: "서울특별시", sigungu: "마포구", type: "재개발", stage: "이주철거", totalUnits: 2678, areaM2: 142000, builder: "현대건설", lat: 37.5555, lng: 126.9492 },
-      { name: "북아현2구역", sido: "서울특별시", sigungu: "서대문구", type: "재개발", stage: "사업시행인가", totalUnits: 2320, areaM2: 124294, builder: "삼성물산", lat: 37.5595, lng: 126.9545 },
-      { name: "효창공원앞역북측", sido: "서울특별시", sigungu: "용산구", type: "신속통합기획", stage: "정비구역지정", totalUnits: 1450, areaM2: 78000, lat: 37.5398, lng: 126.9614 },
-      // 경기도
-      { name: "광명11구역", sido: "경기도", sigungu: "광명시", type: "재개발", stage: "이주철거", totalUnits: 4291, areaM2: 198419, builder: "현대건설·HDC현대산업개발", lat: 37.4795, lng: 126.8552 },
-      { name: "광명12구역", sido: "경기도", sigungu: "광명시", type: "재개발", stage: "관리처분인가", totalUnits: 2845, areaM2: 132000, lat: 37.4812, lng: 126.8598 },
-      { name: "수원 팔달3구역", sido: "경기도", sigungu: "수원시", type: "재개발", stage: "사업시행인가", totalUnits: 3256, areaM2: 175000, lat: 37.2765, lng: 127.0145 },
-      { name: "성남 수진1구역", sido: "경기도", sigungu: "성남시", type: "재개발", stage: "이주철거", totalUnits: 4082, areaM2: 218000, builder: "삼성물산", lat: 37.4312, lng: 127.1342 },
-      // 인천
-      { name: "송림4구역", sido: "인천광역시", sigungu: "동구", type: "재개발", stage: "사업시행인가", totalUnits: 1845, areaM2: 98000, lat: 37.4758, lng: 126.6523 },
-      { name: "주안1구역", sido: "인천광역시", sigungu: "미추홀구", type: "재개발", stage: "조합설립인가", totalUnits: 2156, areaM2: 112000, lat: 37.4589, lng: 126.6748 },
-      // 부산
-      { name: "초량2구역", sido: "부산광역시", sigungu: "동구", type: "재개발", stage: "관리처분인가", totalUnits: 1423, areaM2: 72000, lat: 35.1265, lng: 129.0398 },
-      { name: "남구 대연3구역", sido: "부산광역시", sigungu: "남구", type: "재개발", stage: "사업시행인가", totalUnits: 2048, areaM2: 108000, lat: 35.1368, lng: 129.0782 },
-    ];
-
-    return allZones.filter((z) => {
-      if (params.sido && !z.sido.includes(params.sido)) return false;
-      if (params.sigungu && !z.sigungu.includes(params.sigungu)) return false;
-      if (params.type && z.type !== params.type) return false;
-      if (params.stage && z.stage !== params.stage) return false;
-      return true;
-    });
-  }
-
-  private getMockBuildingInfo(): BuildingInfo[] {
-    return [
-      {
-        buildingName: "청운트윈스빌A",
-        builtYear: 2002,
-        totalFloorAreaM2: 488.2,
-        mainPurpose: "다세대주택",
-        structure: "철근콘크리트구조",
-        floors: 5,
-        undergroundFloors: 1,
-        buildingCoverageRatio: 58.4,
-        floorAreaRatio: 198.2,
-      },
-      {
-        buildingName: "라온팰리스",
-        builtYear: 2018,
-        totalFloorAreaM2: 892.5,
-        mainPurpose: "연립주택",
-        structure: "철근콘크리트구조",
-        floors: 6,
-        undergroundFloors: 1,
-        buildingCoverageRatio: 55.2,
-        floorAreaRatio: 245.1,
-      },
-    ];
   }
 }
 

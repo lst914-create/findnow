@@ -1,0 +1,98 @@
+[
+  {
+    "id": "apt-trade",
+    "category": "아파트 매매 실거래가",
+    "sourceName": "국토교통부 실거래가 공개시스템",
+    "provider": "국토교통부",
+    "portalUrl": "https://data.go.kr",
+    "apiEndpoint": "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade",
+    "updateCycle": "실시간 / 거래신고 익일",
+    "usageTerms": "개별 실거래 신고 건별 원시 자료. 표본 가격지수와 임의 합성 금지",
+    "statType": "RAW",
+    "isActive": true
+  },
+  {
+    "id": "apt-rent",
+    "category": "전월세 거래",
+    "sourceName": "국토교통부 전월세 실거래가 공개시스템",
+    "provider": "국토교통부",
+    "portalUrl": "https://data.go.kr",
+    "apiEndpoint": "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent",
+    "updateCycle": "실시간 / 거래신고 익일",
+    "usageTerms": "개별 임대차 계약 원시 자료. 전세가율 및 갱신여부 파악용",
+    "statType": "RAW",
+    "isActive": true
+  },
+  {
+    "id": "kapt-info",
+    "category": "아파트 기본정보",
+    "sourceName": "공동주택 기본정보 서비스 (K-apt)",
+    "provider": "한국부동산원",
+    "portalUrl": "https://data.go.kr",
+    "apiEndpoint": "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5",
+    "updateCycle": "실시간",
+    "usageTerms": "전국 의무관리대상 공동주택 기본 스펙 및 관리정보",
+    "statType": "MASTER",
+    "isActive": true
+  },
+  {
+    "id": "rone-stats",
+    "category": "부동산 시장 통계",
+    "sourceName": "한국부동산원 R-ONE Open API",
+    "provider": "한국부동산원",
+    "portalUrl": "https://reb.or.kr/r-one",
+    "apiEndpoint": "https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do",
+    "updateCycle": "월간 / 주간",
+    "usageTerms": "표본 기반 시장 가격지수(기준시점=100.0) 및 월간 거래량 통계. 개별 실거래가와 혼용 불가",
+    "statType": "INDEX",
+    "isActive": true
+  },
+  {
+    "id": "national-redevelopment",
+    "category": "전국 정비사업",
+    "sourceName": "국토교통부 전국 도시정비사업 통합 데이터",
+    "provider": "국토교통부",
+    "portalUrl": "https://data.go.kr",
+    "apiEndpoint": "https://www.data.go.kr/data/15044691/fileData.do",
+    "updateCycle": "연간 갱신 (전국 기본 목록 베이스라인)",
+    "usageTerms": "전국 정비구역 마스터 베이스라인. 최근 변동 사항은 지자체 고시로 보완",
+    "statType": "MASTER",
+    "isActive": true
+  },
+  {
+    "id": "seoul-redevelopment",
+    "category": "서울 정비사업",
+    "sourceName": "정비사업 정보몽땅 + 서울열린데이터광장",
+    "provider": "서울특별시",
+    "portalUrl": "https://data.seoul.go.kr",
+    "apiEndpoint": "https://openapi.seoul.go.kr:8088/{key}/json/HsmpInfo",
+    "updateCycle": "일별 / 수시",
+    "usageTerms": "서울시 정비사업 추진단계 및 고시·공고 실시간/수시 보완 패치",
+    "statType": "PATCH",
+    "isActive": true
+  },
+  {
+    "id": "store-info",
+    "category": "전국 상가상권",
+    "sourceName": "소상공인시장진흥공단 상가(상권)정보 서비스",
+    "provider": "소상공인시장진흥공단",
+    "portalUrl": "https://data.go.kr",
+    "apiEndpoint": "https://apis.data.go.kr/B553077/api/open/sdsc2",
+    "updateCycle": "분기 / 수시",
+    "usageTerms": "초기 업종 분포 분석용. 점포 데이터만으로 매출액이나 유동인구 추정 금지",
+    "statType": "RAW",
+    "isActive": true
+  },
+  {
+    "id": "geocoding",
+    "category": "지도·주소",
+    "sourceName": "카카오 로컬 REST API + 공공데이터포털 도로명주소",
+    "provider": "카카오 / 행정안전부",
+    "portalUrl": "https://developers.kakao.com",
+    "apiEndpoint": "https://dapi.kakao.com/v2/local",
+    "updateCycle": "실시간",
+    "usageTerms": "주소 정규화 및 WGS84 좌표계 변환",
+    "statType": "MASTER",
+    "isActive": true
+  }
+]

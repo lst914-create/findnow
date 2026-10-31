@@ -24,6 +24,7 @@ const QUICK_MENUS = [
 ];
 
 export default function RedevelopmentPage() {
+  const [zones, setZones] = useState<RedevelopmentZone[]>(REDEVELOPMENT_DATA);
   const [selectedZone, setSelectedZone] = useState<RedevelopmentZone | null>(null);
 
   // 검색어 및 필터 상태
@@ -36,18 +37,46 @@ export default function RedevelopmentPage() {
   // 모바일 화면용 뷰 모드 토글 (지도 vs 목록) - 기본값: 지도("map")
   const [mobileViewMode, setMobileViewMode] = useState<"map" | "list">("map");
 
-  // URL 쿼리에 특정 구역 ID가 있으면 해당 구역 선택 (예: 통합검색 등에서 진입 시)
+  // 저장된 최신 구역 데이터 로드 및 URL 쿼리 파라미터 연동
   useEffect(() => {
+    let isMounted = true;
+
+    // Supabase 영구 저장 오버라이드가 병합된 최신 정비사업 데이터 로드
+    async function fetchStoredZones() {
+      try {
+        const res = await fetch("/api/redevelopment");
+        const json = await res.json();
+        if (isMounted && json.success && Array.isArray(json.zones) && json.zones.length > 0) {
+          setZones(json.zones);
+        }
+      } catch (err) {
+        // 로드 실패 시 정적 마스터 데이터 유지
+      }
+    }
+    fetchStoredZones();
+
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const zoneId = params.get("zone");
+      const stageParam = params.get("stage");
+
+      if (stageParam) {
+        setStageFilter(stageParam);
+      }
+
       if (zoneId) {
-        const found = REDEVELOPMENT_DATA.find((z) => z.id === zoneId);
+        const found =
+          zones.find((z) => z.id === zoneId) ||
+          REDEVELOPMENT_DATA.find((z) => z.id === zoneId);
         if (found) {
           setSelectedZone(found);
         }
       }
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // 재개발닷컴 스타일 좌/우 패널 접기/펼치기 상태
@@ -99,6 +128,9 @@ export default function RedevelopmentPage() {
       const res = await fetch("/api/redevelopment/sync", { method: "POST" });
       const data = await res.json();
       if (data.success) {
+        if (data.updatedZones && Array.isArray(data.updatedZones) && data.updatedZones.length > 0) {
+          setZones(data.updatedZones);
+        }
         setSyncStatusMsg(
           `✅ 서울시 UPIS 및 지자체 최신 고시(${data.result?.totalScanned || 0}건)와 동기화 완료되었습니다.`
         );
@@ -113,9 +145,9 @@ export default function RedevelopmentPage() {
     }
   };
 
-  // 필터링 로직
+  // 필터링 로직 (실제 저장 및 동기화된 구역 데이터 기반)
   const filteredZones = useMemo(() => {
-    return REDEVELOPMENT_DATA.filter((zone) => {
+    return zones.filter((zone) => {
       // 1. 검색어 필터 (구역명, 지역, 시공사, 지하철역)
       if (searchQuery.trim()) {
         const q = searchQuery.trim().toLowerCase();
@@ -161,7 +193,7 @@ export default function RedevelopmentPage() {
 
       return true;
     });
-  }, [searchQuery, stageFilter, typeFilter, regionFilter, quickMenuFilter]);
+  }, [zones, searchQuery, stageFilter, typeFilter, regionFilter, quickMenuFilter]);
 
   return (
     <div className="flex flex-col h-[100dvh] bg-slate-50 overflow-hidden font-sans">

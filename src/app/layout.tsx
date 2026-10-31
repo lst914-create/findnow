@@ -67,6 +67,7 @@ export const metadata: Metadata = {
 };
 
 import MobileBottomNav from "@/components/MobileBottomNav";
+import WatchlistComparePanelWrapper from "@/components/WatchlistComparePanelWrapper";
 
 export default function RootLayout({
   children,
@@ -78,6 +79,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans pb-16 md:pb-0">
         <main className="flex-1 flex flex-col">{children}</main>
         <MobileBottomNav />
+        {/* P2: 관심단지·비교 플로팅 패널 (전 페이지 공통) */}
+        <WatchlistComparePanelWrapper />
       </body>
     </html>
   );

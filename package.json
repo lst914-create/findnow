@@ -12,7 +12,8 @@
     "sync-kapt": "tsx scripts/build-kapt-nationwide.ts",
     "seed-apartments": "tsx scripts/seed-apartments.ts",
     "sync:redevelopment": "node scripts/sync-redevelopment.js",
-    "sync:subscriptions": "tsx scripts/sync-subscriptions.ts"
+    "sync:subscriptions": "tsx scripts/sync-subscriptions.ts",
+    "migrate:architecture": "tsx scripts/migrate-to-recommended-architecture.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",

@@ -378,7 +378,10 @@ export default function RedevelopmentDetailView({
           </div>
 
           {/* 🌟 [1] 재개발닷컴 스타일: 실거래가 추이 그래프를 가장 위에 배치 */}
-          <RedevelopmentPriceTrendChart />
+          <RedevelopmentPriceTrendChart
+            transactions={allMergedTransactions}
+            currentStageName={zone.status}
+          />
 
           {/* 연식별 대지지분 평당가 요약 박스 */}
           <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200">

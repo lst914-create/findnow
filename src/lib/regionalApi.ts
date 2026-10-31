@@ -45,20 +45,38 @@ interface CacheEntry {
 const regionalCache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
+/**
+ * 카카오 REST API 키 안전 조회 및 전처리
+ */
 function getKakaoKey(): string {
-  return (
+  const key =
     process.env.KAKAO_REST_API_KEY ||
+    process.env.KAKAO_API_KEY ||
     process.env.NEXT_PUBLIC_KAKAO_REST_KEY ||
-    "4d7cd3190ca38a795008ebd7cc053820"
-  );
+    process.env.NEXT_PUBLIC_KAKAO_API_KEY ||
+    "4d7cd3190ca38a795008ebd7cc053820";
+  return key.trim();
 }
 
+/**
+ * 한국관광공사 TourAPI 공공데이터포털 서비스키 안전 처리
+ * - 공공데이터포털 특유의 이중 인코딩 방지를 위해 decode 후 깨끗한 키 반환
+ */
 function getTourApiKey(): string {
-  return (
+  const rawKey =
+    process.env.TOUR_API_KEY ||
+    process.env.KTO_API_KEY ||
     process.env.DATA_GO_KR_API_KEY ||
     process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
-    "w9iCzz0a9bHCdvlFLmOvVtA78NPktsoY3YIcAeQSSMbh%2FKpkxYz0AOokaJxZaO%2BMICURNdUrUpFznmKtumOvOA%3D%3D"
-  );
+    "w9iCzz0a9bHCdvlFLmOvVtA78NPktsoY3YIcAeQSSMbh%2FKpkxYz0AOokaJxZaO%2BMICURNdUrUpFznmKtumOvOA%3D%3D";
+
+  if (!rawKey) return "";
+  try {
+    // 이미 URL 인코딩된 키의 경우 복원 후 일관되게 처리할 수 있도록 정규화
+    return decodeURIComponent(rawKey.trim());
+  } catch {
+    return rawKey.trim();
+  }
 }
 
 // 카테고리별 기본 고화질 대표 이미지 맵핑 (이미지 없을 시 적용)
@@ -189,7 +207,8 @@ export async function fetchTourApiPlaces(
   else if (category === "special") contentTypeId = "28"; // 레포츠 / 특수시설
   else if (category === "food") contentTypeId = "39"; // 음식점
 
-  const url = `https://apis.data.go.kr/B551011/KorService2/searchKeyword2?serviceKey=${serviceKey}&keyword=${encodeURIComponent(
+  const encodedKey = encodeURIComponent(serviceKey);
+  const url = `https://apis.data.go.kr/B551011/KorService2/searchKeyword2?serviceKey=${encodedKey}&keyword=${encodeURIComponent(
     keyword
   )}&contentTypeId=${contentTypeId}&numOfRows=15&pageNo=1&MobileOS=ETC&MobileApp=Chajwo&_type=json`;
 

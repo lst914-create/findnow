@@ -436,11 +436,9 @@ export function findLawdCode(region: string, district = ""): { region: string; c
  * 국토교통부 아파트 매매 실거래가 API 호출
  */
 export async function fetchMolitTradeData(lawdCd: string, dealYmd: string): Promise<MolitTradeRecord[]> {
-  const apiKey =
-    process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
-    process.env.DATA_GO_KR_API_KEY ||
-    "w9iCzz0a9bHCdvlFLmOvVtA78NPktsoY3YIcAeQSSMbh%2FKpkxYz0AOokaJxZaO%2BMICURNdUrUpFznmKtumOvOA%3D%3D";
-  if (!apiKey) return [];
+  const rawKey = process.env.DATA_GO_KR_API_KEY || process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY;
+  if (!rawKey) return [];
+  const apiKey = rawKey.includes("%") ? rawKey : encodeURIComponent(rawKey);
 
   try {
     const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${apiKey}&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
@@ -485,11 +483,9 @@ export async function fetchMolitTradeData(lawdCd: string, dealYmd: string): Prom
  * 국토교통부 아파트 전월세 실거래가 API 호출
  */
 export async function fetchMolitRentData(lawdCd: string, dealYmd: string): Promise<MolitRentRecord[]> {
-  const apiKey =
-    process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
-    process.env.DATA_GO_KR_API_KEY ||
-    "w9iCzz0a9bHCdvlFLmOvVtA78NPktsoY3YIcAeQSSMbh%2FKpkxYz0AOokaJxZaO%2BMICURNdUrUpFznmKtumOvOA%3D%3D";
-  if (!apiKey) return [];
+  const rawKey = process.env.DATA_GO_KR_API_KEY || process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY;
+  if (!rawKey) return [];
+  const apiKey = rawKey.includes("%") ? rawKey : encodeURIComponent(rawKey);
 
   try {
     const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent?serviceKey=${apiKey}&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}&numOfRows=1000`;

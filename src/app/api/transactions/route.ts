@@ -261,6 +261,11 @@ export async function GET(request: NextRequest) {
           const dealAmtStr = getVal(item, "dealAmount").replace(/,/g, "");
           if (!dealAmtStr) continue;
 
+          // 취소여부 확인 (취소 거래 데이터 정합성 보완)
+          const dealCancelRaw = getVal(item, "dealingGbn") || getVal(item, "dealType") || "";
+          const isCanceled = dealCancelRaw.includes("취소") || dealCancelRaw === "C";
+          if (isCanceled) continue; // 취소된 거래 제외
+
           monthlyTrades.push({
             aptName: itemAptName,
             dealAmount: parseInt(dealAmtStr, 10),
@@ -271,6 +276,7 @@ export async function GET(request: NextRequest) {
             floor: parseInt(getVal(item, "floor"), 10),
             buildYear: parseInt(getVal(item, "buildYear"), 10),
             umdNm: itemUmdNm,
+            lawdCode: lawdEntry.code,
           });
         }
       }
@@ -289,6 +295,11 @@ export async function GET(request: NextRequest) {
           const depositStr = depositRaw.replace(/,/g, "").trim();
           if (!depositStr) continue;
 
+          // 전월세 취소여부 확인
+          const rentCancelRaw = getVal(item, "dealingGbn") || getVal(item, "dealType") || "";
+          const isCanceled = rentCancelRaw.includes("취소") || rentCancelRaw === "C";
+          if (isCanceled) continue;
+
           const rentRaw = getVal(item, "monthlyRent") || getVal(item, "월세금액") || getVal(item, "월세금") || getVal(item, "월세");
           const rentStr = rentRaw.replace(/,/g, "").trim();
 
@@ -303,6 +314,8 @@ export async function GET(request: NextRequest) {
             floor: parseInt(getVal(item, "floor") || getVal(item, "층"), 10),
             buildYear: parseInt(getVal(item, "buildYear") || getVal(item, "건축년도"), 10),
             umdNm: itemUmdNm,
+            contractTerm: getVal(item, "contractType") || getVal(item, "계약구분") || undefined,
+            lawdCode: lawdEntry.code,
           });
         }
       }
@@ -338,122 +351,8 @@ export async function GET(request: NextRequest) {
     timestamp: Date.now(),
   });
 
-  // 전월세 API가 미등록(403) 또는 데이터가 없는 경우:
-  // 매매 실거래가 및 전국 지역별/단지특성별 정밀 전세가율 모델 기반으로 고품질 전월세 거래 데이터 생성
-  if (rents.length === 0 && trades.length > 0) {
-    const sampleTrade = trades[0];
-    const tradeAptName = aptName || sampleTrade.aptName || "";
-    const avgTradePrice = Math.round(
-      trades.slice(0, 5).reduce((acc: number, t: any) => acc + t.dealAmount, 0) / Math.min(5, trades.length)
-    );
-    const bYear = sampleTrade.buildYear || 2015;
-    const age = 2026 - bYear;
-
-    // 단지별 맞춤 전세가율 산출
-    let ratio = 55;
-    const isRecon =
-      tradeAptName.includes("은마") ||
-      tradeAptName.includes("압구정") ||
-      tradeAptName.includes("신현대") ||
-      tradeAptName.includes("구현대") ||
-      tradeAptName.includes("한양") ||
-      tradeAptName.includes("미도") ||
-      tradeAptName.includes("선경") ||
-      (tradeAptName.includes("우성") && (region.includes("강남") || region.includes("서초") || region.includes("송파"))) ||
-      (tradeAptName.includes("주공") && age >= 28) ||
-      (age >= 35 && avgTradePrice >= 150000);
-
-    if (isRecon) {
-      ratio = avgTradePrice >= 350000 ? 21 : avgTradePrice >= 250000 ? 25 : 30;
-    } else if (region.includes("강남") || region.includes("서초")) {
-      ratio = avgTradePrice >= 400000 ? 38 : avgTradePrice >= 300000 ? 40 : 43;
-    } else if (region.includes("송파") || region.includes("용산")) {
-      ratio = avgTradePrice >= 250000 ? 41 : 44;
-    } else if (
-      region.includes("마포") ||
-      region.includes("성동") ||
-      region.includes("광진") ||
-      region.includes("분당") ||
-      region.includes("과천")
-    ) {
-      ratio = avgTradePrice >= 200000 ? 47 : 50;
-    } else if (region.includes("세종")) {
-      // 세종시는 매매가 대비 전세가율이 비교적 낮게 형성 (45~50%)
-      ratio = 48;
-    } else if (region.startsWith("서울")) {
-      ratio = avgTradePrice >= 150000 ? 52 : 56;
-    } else if (
-      region.includes("남양주") ||
-      region.includes("하남") ||
-      region.includes("광교") ||
-      region.includes("화성") ||
-      region.includes("구리") ||
-      region.includes("고양") ||
-      region.includes("용인") ||
-      region.includes("안양") ||
-      region.includes("수원") ||
-      region.includes("송도") ||
-      region.includes("청라") ||
-      region.includes("인천")
-    ) {
-      ratio = avgTradePrice >= 120000 ? 54 : 58;
-    } else if (
-      region.startsWith("부산") ||
-      region.startsWith("대구") ||
-      region.startsWith("대전") ||
-      region.startsWith("광주") ||
-      region.startsWith("울산")
-    ) {
-      // 5대 광역시는 실거래가 기준 전세가율 평균 62~68%
-      ratio = avgTradePrice >= 100000 ? 58 : 64;
-    } else if (region.startsWith("제주")) {
-      ratio = 60;
-    } else {
-      // 기타 지방 중소도시(강원, 충북, 충남, 전북, 전남, 경북, 경남): 70~76%
-      ratio = avgTradePrice >= 80000 ? 66 : 72;
-    }
-
-    // 각 매매 거래 건에 대응하여 전세(70%) 및 월세(30%) 거래 생성
-    trades.forEach((t: any, idx: number) => {
-      const fullDeposit = Math.round((t.dealAmount * (ratio / 100)) / 1000) * 1000;
-      const isMonthly = idx % 3 === 2; // 3건 중 1건은 월세/반전세
-
-      if (isMonthly) {
-        // 기준 보증금: 전세가의 약 20~30% (최소 5천만 ~ 최대 3억)
-        const deposit = Math.max(5000, Math.min(30000, Math.round((fullDeposit * 0.25) / 1000) * 1000));
-        // 전월세전환율 연 4.8% 적용 월세액 (만원 단위)
-        const monthly = Math.max(40, Math.round(((fullDeposit - deposit) * (0.048 / 12)) / 5) * 5);
-        rents.push({
-          aptName: t.aptName,
-          depositAmount: deposit,
-          monthlyRent: monthly,
-          dealYear: t.dealYear,
-          dealMonth: t.dealMonth,
-          dealDay: Math.min(28, (t.dealDay || 15) + (idx % 5)),
-          excluUseAr: t.excluUseAr,
-          floor: t.floor,
-          buildYear: t.buildYear,
-          umdNm: t.umdNm,
-        });
-      } else {
-        // 순수 전세
-        const variation = ((idx % 5) - 2) * 500; // ±1000만원 미세 변동
-        const deposit = Math.max(10000, fullDeposit + variation);
-        rents.push({
-          aptName: t.aptName,
-          depositAmount: deposit,
-          monthlyRent: 0,
-          dealYear: t.dealYear,
-          dealMonth: t.dealMonth,
-          dealDay: t.dealDay || 15,
-          excluUseAr: t.excluUseAr,
-          floor: t.floor,
-          buildYear: t.buildYear,
-          umdNm: t.umdNm,
-        });
-      }
-    });
-  }
+  // 실제 국토교통부 공공데이터 전월세 API에서 수집된 데이터만 사용하며,
+  // 인위적인 가짜 거래 내역 합성을 배제하여 공공데이터의 정확성을 엄격히 유지합니다.
 
   // 최신 거래일자 순 내림차순 정렬 (2026.09 -> 2026.08 -> ...)
   trades.sort((a, b) => {
@@ -468,5 +367,19 @@ export async function GET(request: NextRequest) {
     return db - da;
   });
 
-  return NextResponse.json({ trades, rents, region, district, lawdCode: lawdEntry.code, dealYmdList });
+  return NextResponse.json({
+    trades,
+    rents,
+    region,
+    district,
+    lawdCode: lawdEntry.code,
+    dealYmdList,
+    meta: {
+      sourceType: "INDIVIDUAL_ACTUAL_TRANSACTION",
+      sourceName: "국토교통부 실거래가 공개시스템",
+      queryStandard: "LAWD_CD(시군구 법정동코드 5자리) 및 DEAL_YMD(계약년월 6자리) 기준 개별 계약 건 조회",
+      usage: "단지/동/층/면적별 개별 실거래 체결 가격 및 전세가율 상세 분석용",
+      statDistinction: "본 자료는 국토교통부 실거래 신고 건별 원시 데이터이며, 한국부동산원 R-ONE 등 기관의 표본 기반 가격지수·집계통계와는 작성 기준 및 용도가 다릅니다. (단일 지표 혼용 금지, 통계 기준 분리 원칙 적용)",
+    },
+  });
 }

@@ -14,6 +14,16 @@ import {
 } from "recharts";
 
 import AptCommunitySection from "@/components/AptCommunitySection";
+import { DataSourceBadge } from "@/components/DataSourceBadge";
+import { makeDataSourceMeta } from "@/types/dataSource";
+import { validateApartment } from "@/lib/validateApartment";
+import { isWatched, toggleWatchlist } from "@/lib/watchlistStore";
+import NearbyRedevelopmentSection from "@/components/apt-detail/NearbyRedevelopmentSection";
+import SupplyVolumeSection from "@/components/apt-detail/SupplyVolumeSection";
+import CommercialDistrictSection from "@/components/apt-detail/CommercialDistrictSection";
+import RealtorAdSection from "@/components/apt-detail/RealtorAdSection";
+import ProReportPreviewSection from "@/components/apt-detail/ProReportPreviewSection";
+import NearbyLocationSummaryCard from "@/components/apt-detail/NearbyLocationSummaryCard";
 
 const AptDetailMap = dynamic(() => import("@/components/AptDetailMap"), {
   ssr: false,
@@ -26,84 +36,6 @@ const AptDetailMap = dynamic(() => import("@/components/AptDetailMap"), {
 
 interface DetailProps {
   params: Promise<{ id: string }>;
-}
-
-// 아파트별 가격 추이 데이터 생성 헬퍼
-function genPriceTrend(base: number, months = 24, variance = 0.04) {
-  const result = [];
-  let price = base;
-  const now = new Date(2026, 8, 1); // 2026.09
-  for (let i = months; i >= 0; i--) {
-    const d = new Date(now);
-    d.setMonth(d.getMonth() - i);
-    const label = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const delta = (Math.random() - 0.42) * variance * price;
-    price = Math.max(price + delta, base * 0.7);
-    result.push({ date: label, price: Math.round(price / 1000) / 10 }); // 억 단위
-  }
-  return result;
-}
-
-// 아파트별 전세 가격 추이 생성
-function genRentTrend(base: number, months = 24, variance = 0.03) {
-  const result = [];
-  let price = base;
-  const now = new Date(2026, 8, 1);
-  for (let i = months; i >= 0; i--) {
-    const d = new Date(now);
-    d.setMonth(d.getMonth() - i);
-    const label = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const delta = (Math.random() - 0.45) * variance * price;
-    price = Math.max(price + delta, base * 0.6);
-    result.push({ date: label, price: Math.round(price / 1000) / 10 });
-  }
-  return result;
-}
-
-// 월별 실거래 더미 데이터 대량 생성
-function genTransactions(
-  basePrice: number,
-  type: "매매" | "전월세",
-  area: string,
-  count = 20
-) {
-  const txs = [];
-  const now = new Date(2026, 8, 1);
-  const rentBase = basePrice * 0.52;
-  for (let i = 0; i < count; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i * 5 - Math.floor(Math.random() * 4));
-    const floor = Math.floor(Math.random() * 30) + 1;
-    if (type === "매매") {
-      const price = basePrice * (0.9 + Math.random() * 0.2);
-      const uk = Math.floor(price / 10000);
-      const man = Math.round((price % 10000) / 100) * 100;
-      txs.push({
-        date: `${String(d.getFullYear()).slice(2)}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`,
-        area,
-        floor: `${floor}층`,
-        price: `${uk}억 ${man > 0 ? man.toLocaleString() + "만" : ""}`,
-        rawPrice: Math.round(price),
-        type,
-        isReal: false,
-      });
-    } else {
-      const deposit = Math.round(rentBase * (0.8 + Math.random() * 0.4) / 1000) * 1000;
-      const monthly = Math.random() > 0.5 ? Math.round(deposit * 0.002 / 10) * 10 : 0;
-      const uk = Math.floor(deposit / 10000);
-      const man = Math.round(deposit % 10000 / 100) * 100;
-      txs.push({
-        date: `${String(d.getFullYear()).slice(2)}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`,
-        area,
-        floor: `${floor}층`,
-        price: monthly > 0 ? `보증 ${uk}억/${monthly}만` : `${uk}억 ${man > 0 ? man.toLocaleString() + "만" : ""}`,
-        rawPrice: deposit,
-        type,
-        isReal: false,
-      });
-    }
-  }
-  return txs;
 }
 
 import { APARTMENTS_DATA } from "@/lib/apartments";
@@ -310,6 +242,27 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const [showCount, setShowCount] = useState(5);
   const [activeLocation, setActiveLocation] = useState<"학군" | "교통" | "쾌적성">("교통");
 
+  // P0: 단지 데이터 검증 결과
+  const validationResult = useMemo(() => validateApartment(apt), [apt]);
+
+  // P2: 관심단지 상태 (클라이언트 전용)
+  const [watched, setWatched] = useState(false);
+  useEffect(() => {
+    setWatched(isWatched(apt.id));
+  }, [apt.id]);
+
+  function handleToggleWatchlist() {
+    const added = toggleWatchlist({
+      aptId: apt.id,
+      aptName: apt.name,
+      region: apt.region,
+      district: apt.district,
+      priceAtSave: apt.price_max ? Math.round((apt.price_min + apt.price_max) / 2) : undefined,
+    });
+    setWatched(added);
+  }
+
+
   // 국토교통부 실거래 API 데이터 상태
   const [apiTrades, setApiTrades] = useState<any[]>([]);
   const [apiRents, setApiRents] = useState<any[]>([]);
@@ -386,24 +339,6 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     };
   }, [apt.id, apt.apiRegion, apt.region, apt.district, apt.name]);
 
-  // 폴백 더미 데이터 생성
-  const dummySaleTrend = useMemo(
-    () => genPriceTrend(apt.price_min + (apt.price_max - apt.price_min) / 2, 36),
-    [apt.price_min, apt.price_max]
-  );
-  const dummyRentTrend = useMemo(
-    () => genRentTrend(apt.rent_min + (apt.rent_max - apt.rent_min) / 2, 36),
-    [apt.rent_min, apt.rent_max]
-  );
-  const dummySaleTxs = useMemo(
-    () => genTransactions(apt.price_min + (apt.price_max - apt.price_min) / 2, "매매", `${displayAreaSqm}㎡`, 30),
-    [apt.price_min, apt.price_max, displayAreaSqm]
-  );
-  const dummyRentTxs = useMemo(
-    () => genTransactions(apt.rent_min + (apt.rent_max - apt.rent_min) / 2, "전월세", `${displayAreaSqm}㎡`, 30),
-    [apt.rent_min, apt.rent_max, displayAreaSqm]
-  );
-
   // 국토부 실제 매매 거래 매핑 (면적도 84.xxm2의 경우 84m2로 정규화)
   const realSaleTxs = useMemo(() => {
     return apiTrades.map((t) => {
@@ -443,11 +378,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     });
   }, [apiRents]);
 
-  const allActiveTxs = tradeType === "매매"
-    ? (realSaleTxs.length > 0 ? realSaleTxs : dummySaleTxs)
-    : (realRentTxs.length > 0 ? realRentTxs : dummyRentTxs);
-
-  const hasRealDataForCurrentTab = tradeType === "매매" ? realSaleTxs.length > 0 : realRentTxs.length > 0;
+  // 가짜 더미 데이터 배제 — 100% 실제 공공데이터 실거래 신고 건만 사용
+  const allActiveTxs = tradeType === "매매" ? realSaleTxs : realRentTxs;
+  const hasRealDataForCurrentTab = allActiveTxs.length > 0;
 
   // 국토부 실제 거래 기반 월별 가격 추이 (실거래가 있으면 실제 데이터 그래프 반영)
   const realSaleTrend = useMemo(() => {
@@ -508,13 +441,14 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return allActiveTxs.filter((tx: any) => tx.area === selectedArea);
   }, [allActiveTxs, selectedArea]);
 
+  // 100% 국토교통부 실거래 데이터 기반 추이 (가짜 더미 추세 완전 배제)
   const activeTrend = useMemo(() => {
     if (tradeType === "매매") {
-      return (realSaleTrend && realSaleTrend.length >= 2) ? realSaleTrend : dummySaleTrend;
+      return realSaleTrend || [];
     } else {
-      return (realRentTrend && realRentTrend.length >= 2) ? realRentTrend : dummyRentTrend;
+      return realRentTrend || [];
     }
-  }, [tradeType, realSaleTrend, dummySaleTrend, realRentTrend, dummyRentTrend]);
+  }, [tradeType, realSaleTrend, realRentTrend]);
 
   const chartData = chartRange === "최근 1년"
     ? activeTrend.slice(-12)
@@ -522,9 +456,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     ? activeTrend.slice(-36)
     : activeTrend;
 
-  const latestPrice = chartData[chartData.length - 1]?.price ?? 0;
-  const minPrice = Math.min(...chartData.map((d) => d.price));
-  const maxPrice = Math.max(...chartData.map((d) => d.price));
+  const latestPrice = chartData.length > 0 ? (chartData[chartData.length - 1]?.price ?? 0) : 0;
+  const minPrice = chartData.length > 0 ? Math.min(...chartData.map((d) => d.price)) : 0;
+  const maxPrice = chartData.length > 0 ? Math.max(...chartData.map((d) => d.price)) : 0;
 
   const formatPrice = (price: number) => {
     const uk = Math.floor(price / 10000);
@@ -667,9 +601,30 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             <span>←</span>
             <span>목록</span>
           </Link>
-          <div className="text-sm font-bold text-slate-900 truncate max-w-[200px] sm:max-w-xs">{apt.name}</div>
-          <button className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer">
-            ⭐ 관심 단지
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="text-sm font-bold text-slate-900 truncate max-w-[160px] sm:max-w-xs">{apt.name}</div>
+            {/* P0: 데이터 무결성 배지 */}
+            {!validationResult.isValid && (
+              <span className="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                ⚠️ 검증 이슈
+              </span>
+            )}
+            {validationResult.isValid && validationResult.hasWarnings && (
+              <span className="flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                ⚡ 확인 필요
+              </span>
+            )}
+          </div>
+          {/* P2: 관심단지 버튼 (watchlistStore 연결) */}
+          <button
+            onClick={handleToggleWatchlist}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
+              watched
+                ? "bg-rose-500 text-white shadow-sm"
+                : "bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-500"
+            }`}
+          >
+            {watched ? "❤️ 관심 단지" : "🤍 관심 단지"}
           </button>
         </div>
       </header>
@@ -694,6 +649,45 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           </div>
         </div>
 
+        {/* P0: 단지 데이터 검증 이슈 패널 (이슈가 있을 때만 노출) */}
+        {(!validationResult.isValid || validationResult.hasWarnings) && (
+          <div className={`rounded-2xl border px-4 py-3 text-xs ${
+            !validationResult.isValid
+              ? "bg-red-50 border-red-200"
+              : "bg-amber-50 border-amber-200"
+          }`}>
+            <div className="flex items-center gap-2 mb-2">
+              <span>{!validationResult.isValid ? "⚠️" : "⚡"}</span>
+              <span className={`font-bold ${!validationResult.isValid ? "text-red-700" : "text-amber-700"}`}>
+                {!validationResult.isValid
+                  ? "이 단지의 일부 정보를 검증하지 못했습니다"
+                  : "일부 정보에 확인이 필요합니다"}
+              </span>
+            </div>
+            <ul className="space-y-1">
+              {validationResult.issues.map((issue, i) => (
+                <li key={i} className={`flex items-start gap-2 ${
+                  issue.severity === "ERROR" ? "text-red-600" :
+                  issue.severity === "WARN" ? "text-amber-600" : "text-slate-500"
+                }`}>
+                  <span className="mt-0.5 flex-shrink-0">
+                    {issue.severity === "ERROR" ? "✕" : issue.severity === "WARN" ? "·" : "ℹ"}
+                  </span>
+                  <span>
+                    <span className="font-semibold">[{issue.field}]</span> {issue.message}
+                    {issue.value !== undefined && (
+                      <span className="opacity-60 ml-1">(값: {String(issue.value)})</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-slate-400">
+              출처: 국토교통부 K-apt 공동주택관리정보 기반 내부 검증 로직
+            </p>
+          </div>
+        )}
+
         {/* ===== 시세/실거래 섹션 ===== */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
@@ -712,6 +706,19 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 {type}
               </button>
             ))}
+          </div>
+          {/* P1: 데이터 출처 배지 */}
+          <div className="px-5 pt-3 pb-0 flex items-center justify-between">
+            <span className="text-[11px] text-slate-400">
+              {isLoadingApi ? "🔄 국토교통부 실거래 조회 중…" : isApiConnected ? "✅ 국토교통부 실거래 연동" : "📊 예상 시세 기준"}
+            </span>
+            <DataSourceBadge
+              meta={makeDataSourceMeta(
+                "MOLIT_TRADE",
+                new Date().toISOString().slice(0, 7),
+              )}
+              compact
+            />
           </div>
 
           <div className="p-5 sm:p-7 space-y-6">
@@ -821,39 +828,49 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               </div>
 
               {/* 최고/최저/현재 요약 */}
-              <div className="flex gap-4 mb-3 text-xs text-slate-500">
-                <span>최저 <strong className="text-slate-700">{minPrice}억</strong></span>
-                <span>최고 <strong className="text-slate-700">{maxPrice}억</strong></span>
-                <span>현재 <strong className="text-blue-600">{latestPrice}억</strong></span>
-              </div>
+              {chartData.length > 0 && (
+                <div className="flex gap-4 mb-3 text-xs text-slate-500">
+                  <span>최저 <strong className="text-slate-700">{minPrice}억</strong></span>
+                  <span>최고 <strong className="text-slate-700">{maxPrice}억</strong></span>
+                  <span>현재 <strong className="text-blue-600">{latestPrice}억</strong></span>
+                </div>
+              )}
 
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 10, fill: "#94a3b8" }}
-                    tickLine={false}
-                    interval={Math.floor(chartData.length / 5)}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "#94a3b8" }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v) => `${v}억`}
-                    domain={["auto", "auto"]}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line
-                    type="monotone"
-                    dataKey="price"
-                    stroke="#2563eb"
-                    strokeWidth={2.5}
-                    dot={false}
-                    activeDot={{ r: 5, fill: "#2563eb" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              {chartData.length >= 2 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10, fill: "#94a3b8" }}
+                      tickLine={false}
+                      interval={Math.floor(chartData.length / 5)}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: "#94a3b8" }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${v}억`}
+                      domain={["auto", "auto"]}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="#2563eb"
+                      strokeWidth={2.5}
+                      dot={false}
+                      activeDot={{ r: 5, fill: "#2563eb" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-[180px] flex flex-col items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 text-center px-4">
+                  <span className="text-2xl mb-1">📊</span>
+                  <p className="text-xs font-semibold text-slate-600">국토교통부 실거래 가격 추이 준비 중</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">2건 이상의 실제 계약이 신고 및 공개되면 실시간 가격 변동 추이 차트가 자동으로 표시됩니다.</p>
+                </div>
+              )}
             </div>
 
             {/* ===== 실거래 내역 ===== */}
@@ -898,48 +915,63 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                       ))}
                     </div>
                   )}
-                  <div className="rounded-2xl border border-slate-100 overflow-hidden">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-slate-50">
-                        <tr className="text-xs text-slate-400">
-                          <th className="px-4 py-3">계약일</th>
-                          <th className="px-4 py-3">면적(전용)</th>
-                          <th className="px-4 py-3">층</th>
-                          <th className="px-4 py-3 text-right">거래금액</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {activeTxs.slice(0, showCount).map((tx: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
-                            <td className="px-4 py-3 text-slate-600 text-xs">
-                              <div className="flex items-center gap-1.5">
-                                <span>{tx.date}</span>
-                                {tx.isReal && (
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                                    실거래
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-slate-700">{tx.area}</td>
-                            <td className="px-4 py-3 text-slate-500 text-xs">{tx.floor}</td>
-                            <td className="px-4 py-3 font-bold text-blue-600 text-right">{tx.price}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {/* 더보기 버튼 */}
-                  {showCount < activeTxs.length && (
-                    <button
-                      onClick={() => setShowCount((prev) => prev + 10)}
-                      className="mt-3 w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all cursor-pointer"
-                    >
-                      더보기 <span className="text-slate-400">∨</span>
-                    </button>
-                  )}
-                  {showCount >= activeTxs.length && (
-                    <p className="mt-3 text-center text-xs text-slate-400">모든 실거래 내역을 확인했습니다.</p>
+                  {activeTxs.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
+                      <p className="text-sm font-semibold text-slate-600">
+                        {isLoadingApi
+                          ? "국토교통부 실시간 거래를 조회하고 있습니다..."
+                          : `최근 국토교통부에 신고된 ${tradeType} 계약 내역이 없습니다.`}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-1">
+                        국토교통부 실거래가 공개시스템의 실제 거래 신고 기준 원본 데이터만 제공합니다.
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="rounded-2xl border border-slate-100 overflow-hidden">
+                        <table className="w-full text-left text-sm">
+                          <thead className="bg-slate-50">
+                            <tr className="text-xs text-slate-400">
+                              <th className="px-4 py-3">계약일</th>
+                              <th className="px-4 py-3">면적(전용)</th>
+                              <th className="px-4 py-3">층</th>
+                              <th className="px-4 py-3 text-right">거래금액</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {activeTxs.slice(0, showCount).map((tx: any, idx: number) => (
+                              <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
+                                <td className="px-4 py-3 text-slate-600 text-xs">
+                                  <div className="flex items-center gap-1.5">
+                                    <span>{tx.date}</span>
+                                    {tx.isReal && (
+                                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                        실거래
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-slate-700">{tx.area}</td>
+                                <td className="px-4 py-3 text-slate-500 text-xs">{tx.floor}</td>
+                                <td className="px-4 py-3 font-bold text-blue-600 text-right">{tx.price}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {/* 더보기 버튼 */}
+                      {showCount < activeTxs.length && (
+                        <button
+                          onClick={() => setShowCount((prev) => prev + 10)}
+                          className="mt-3 w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all cursor-pointer"
+                        >
+                          더보기 <span className="text-slate-400">∨</span>
+                        </button>
+                      )}
+                      {showCount >= activeTxs.length && (
+                        <p className="mt-3 text-center text-xs text-slate-400">모든 실거래 내역을 확인했습니다.</p>
+                      )}
+                    </>
                   )}
             </div>
 
@@ -1675,6 +1707,24 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             </div>
           </div>
         </div>
+
+        {/* 반경 1km·3km 핵심 입지 종합 브리핑 요약 카드 */}
+        <NearbyLocationSummaryCard aptId={apt.id} aptName={apt.name} lat={apt.lat} lng={apt.lng} />
+
+        {/* P1: 주변 정비사업 목록 & 진행 단계 섹션 */}
+        <NearbyRedevelopmentSection aptId={apt.id} aptName={apt.name} />
+
+        {/* P1: 연도별 입주 예정 물량 섹션 */}
+        <SupplyVolumeSection aptId={apt.id} aptName={apt.name} />
+
+        {/* P2: 상권 업종 분포 및 점포 현황 */}
+        <CommercialDistrictSection aptId={apt.id} aptName={apt.name} />
+
+        {/* P3: 중개업소 파트너 광고 */}
+        <RealtorAdSection aptId={apt.id} aptName={apt.name} />
+
+        {/* P3: AI 심층 분석 유료 리포트 미리보기 */}
+        <ProReportPreviewSection aptId={apt.id} aptName={apt.name} />
 
         {/* ===== 단지별 커뮤니티 & 실시간 토론창구 (입지 분석 밑) ===== */}
         <AptCommunitySection

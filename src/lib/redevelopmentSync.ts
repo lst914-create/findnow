@@ -1,4 +1,6 @@
+import { createClient } from "@supabase/supabase-js";
 import { RedevelopmentZone, RedevelopmentNotice } from "./redevelopment";
+import { validateStageTransition } from "./redevelopmentStageValidator";
 
 export interface SyncResult {
   success: boolean;
@@ -158,8 +160,10 @@ export function applyNoticesToZones(
       const matchName = isZoneMatched(zone.name, notice.title);
 
       if (matchName && matchDistrict) {
-        // 1. 고시 내역 추가 (중복 방지)
+        // 1. 고시 내역 추가 (중복 방지 & 공식 URL 보존)
         const existingNotice = zone.notices?.find(n => n.title === notice.title || n.id === notice.id);
+        const noticeUrl = "https://land.seoul.go.kr/land/rebuild/rebuildZoneMain.do";
+
         if (!existingNotice) {
           const newNotice: RedevelopmentNotice = {
             id: notice.id,
@@ -167,27 +171,53 @@ export function applyNoticesToZones(
             org: `${notice.inst} 고시`,
             date: notice.date,
             type: "고시",
-            link: "https://land.seoul.go.kr/land/rebuild/rebuildZoneMain.do",
+            link: noticeUrl,
           };
           zone.notices = [newNotice, ...(zone.notices || [])];
           newNoticesCount++;
         }
 
-        // 2. 진행 단계 승격 변경 감지
-        if (detectedStatus && detectedStatus !== zone.status) {
-          changes.push({
-            zoneId: zone.id,
-            zoneName: zone.name,
-            field: "status",
-            oldValue: zone.status,
-            newValue: detectedStatus,
-            date: notice.date,
-          });
+        // 2. 단계 전이 및 역행 방지 검증 (Stage Regression Prevention)
+        if (detectedStatus) {
+          const transition = validateStageTransition(
+            zone.status,
+            zone.statusDate,
+            detectedStatus,
+            {
+              projectId: zone.id,
+              title: notice.title,
+              publishedAt: notice.date,
+              sourceUrl: noticeUrl,
+              sourceName: notice.inst,
+            }
+          );
 
-          // 상태 및 일자 갱신
-          zone.status = detectedStatus;
-          if (notice.date) {
-            zone.statusDate = notice.date;
+          if (transition.allowed && transition.finalStage !== zone.status) {
+            changes.push({
+              zoneId: zone.id,
+              zoneName: zone.name,
+              field: "status",
+              oldValue: zone.status,
+              newValue: transition.finalStage,
+              date: notice.date,
+            });
+
+            // 상태 및 일자 정상 승격 갱신
+            zone.status = transition.finalStage as RedevelopmentZone["status"];
+            if (notice.date) {
+              zone.statusDate = notice.date;
+            }
+          } else if (!transition.allowed && transition.requiresManualReview) {
+            // 단계 역행 또는 검토 필요 건 감사 기록
+            console.warn(`[정비사업 단계검증] ${zone.name}: ${transition.reason}`);
+            changes.push({
+              zoneId: zone.id,
+              zoneName: zone.name,
+              field: "status_regression_blocked",
+              oldValue: zone.status,
+              newValue: `차단됨(${detectedStatus}) - ${transition.reason}`,
+              date: notice.date,
+            });
           }
         }
       }
@@ -199,10 +229,145 @@ export function applyNoticesToZones(
     timestamp: new Date().toISOString(),
     source: "서울시 UPIS 정비사업 도시계획 고시 API & 공공데이터포털",
     totalScanned: notices.length,
-    updatedCount: changes.length,
+    updatedCount: changes.filter((c) => c.field === "status").length,
     newNoticesCount,
     changes,
   };
 
   return { updatedZones, syncResult };
+}
+
+// ---------------------------------------------------------------------------
+// Supabase 영구 저장 helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * service_role 키를 사용하는 서버-전용 Supabase 클라이언트
+ * (RLS 우회를 위해 anon key 대신 service_role key 사용)
+ */
+function getServerSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+  // service_role 키가 있으면 우선 사용, 없으면 anon key fallback
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    "";
+  return createClient(url, key);
+}
+
+/**
+ * 동기화 결과를 Supabase에 영구 저장합니다.
+ *  - 변경된 구역마다 `redevelopment_zone_overrides`에 upsert
+ *  - 동기화 실행 요약을 `redevelopment_sync_logs`에 insert
+ */
+export async function persistSyncResultToSupabase(
+  updatedZones: RedevelopmentZone[],
+  syncResult: SyncResult
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const supabase = getServerSupabase();
+
+    // 1. 변경이 발생한 구역 ID 목록
+    const changedZoneIds = new Set(syncResult.changes.map((c) => c.zoneId));
+
+    if (changedZoneIds.size > 0) {
+      const upsertRows = updatedZones
+        .filter((z) => changedZoneIds.has(z.id))
+        .map((z) => ({
+          zone_id: z.id,
+          status: z.status,
+          status_date: z.statusDate,
+          notices: z.notices as unknown as object,
+          updated_at: new Date().toISOString(),
+        }));
+
+      const { error: upsertError } = await supabase
+        .from("redevelopment_zone_overrides")
+        .upsert(upsertRows, { onConflict: "zone_id" });
+
+      if (upsertError) {
+        console.error("[Sync] zone_overrides upsert 오류:", upsertError.message);
+        return { ok: false, error: upsertError.message };
+      }
+    }
+
+    // 2. 새 고시가 추가된 구역도 notices만 업데이트 (status 변경 없이 고시만 추가된 경우)
+    if (syncResult.newNoticesCount > 0) {
+      const noticeOnlyZones = updatedZones.filter(
+        (z) => !changedZoneIds.has(z.id) && z.notices.some((n) => n.isNew)
+      );
+      if (noticeOnlyZones.length > 0) {
+        const noticeRows = noticeOnlyZones.map((z) => ({
+          zone_id: z.id,
+          status: z.status,
+          status_date: z.statusDate,
+          notices: z.notices as unknown as object,
+          updated_at: new Date().toISOString(),
+        }));
+        await supabase
+          .from("redevelopment_zone_overrides")
+          .upsert(noticeRows, { onConflict: "zone_id" });
+      }
+    }
+
+    // 3. 동기화 실행 로그 기록
+    const { error: logError } = await supabase
+      .from("redevelopment_sync_logs")
+      .insert({
+        source: syncResult.source,
+        total_scanned: syncResult.totalScanned,
+        updated_count: syncResult.updatedCount,
+        new_notices_count: syncResult.newNoticesCount,
+        changes: syncResult.changes as unknown as object,
+      });
+
+    if (logError) {
+      console.warn("[Sync] sync_logs insert 오류 (비치명적):", logError.message);
+    }
+
+    return { ok: true };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[Sync] persistSyncResultToSupabase 예외:", message);
+    return { ok: false, error: message };
+  }
+}
+
+/**
+ * Supabase에 저장된 오버라이드를 정적 데이터 위에 병합하여 반환합니다.
+ * 재배포 후에도 최신 status/notices가 유지됩니다.
+ */
+export async function loadZoneOverridesFromSupabase(
+  zones: RedevelopmentZone[]
+): Promise<RedevelopmentZone[]> {
+  try {
+    const supabase = getServerSupabase();
+    const { data, error } = await supabase
+      .from("redevelopment_zone_overrides")
+      .select("zone_id, status, status_date, notices");
+
+    if (error || !data) {
+      console.warn("[Sync] zone_overrides 로드 실패:", error?.message);
+      return zones; // fallback: 정적 데이터 그대로 반환
+    }
+
+    const overrideMap = new Map(data.map((row) => [row.zone_id, row]));
+
+    return zones.map((z) => {
+      const override = overrideMap.get(z.id);
+      if (!override) return z;
+
+      return {
+        ...z,
+        status: (override.status as RedevelopmentZone["status"]) ?? z.status,
+        statusDate: override.status_date ?? z.statusDate,
+        notices: Array.isArray(override.notices)
+          ? (override.notices as RedevelopmentNotice[])
+          : z.notices,
+      };
+    });
+  } catch (err) {
+    console.warn("[Sync] loadZoneOverridesFromSupabase 예외:", err);
+    return zones;
+  }
 }

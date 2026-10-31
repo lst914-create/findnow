@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { APARTMENTS_DATA, Apartment, getApartmentHighlightFeature } from "@/lib/apartments";
+import AptCardActionButtons from "@/components/AptCardActionButtons";
 
 // 전국 17개 시·도 및 시·군·구 매핑
 const NATIONWIDE_REGIONS: Record<string, { fullName: string; sigungus: string[] }> = {
@@ -655,6 +656,8 @@ export default function ApartmentSearchPage() {
                           />
                           {/* 그라디언트 오버레이 */}
                           <div className={`absolute inset-0 bg-gradient-to-t ${tierOverlay}`} />
+                          {/* 좌상단 빠른 액션 (관심단지 / 비교함) */}
+                          <AptCardActionButtons apt={apt} className="absolute top-3 left-3" />
                           {/* 콘텐츠 */}
                           <div className="absolute inset-0 flex flex-col justify-end px-4 pb-3 text-white">
                             {/* 태그 */}
@@ -746,15 +749,35 @@ export default function ApartmentSearchPage() {
                         </div>
                       </div>
 
-                      {/* 학군 · 교통 점수 카드 */}
+                      {/* 학군 · 역세권 검증 가능한 실제 거리 수치 */}
                       <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100/70">
-                          <div className="text-slate-400 text-[11px]">🎓 학군 점수</div>
-                          <div className="font-bold text-blue-700 text-sm mt-0.5">{apt.school_score}점</div>
+                        <div className="bg-blue-50/70 p-2.5 rounded-xl border border-blue-100/70 flex flex-col justify-between">
+                          <div className="text-slate-400 text-[10px] flex items-center justify-between">
+                            <span>🎓 안심 통학</span>
+                            {apt.tags?.includes("초품아") && (
+                              <span className="text-[9px] font-extrabold bg-blue-600 text-white px-1.5 rounded">초품아</span>
+                            )}
+                          </div>
+                          <div className="font-bold text-blue-900 text-xs mt-1 truncate">
+                            {apt.school_name || `${apt.district} 인근 초교`}
+                          </div>
+                          <div className="text-[11px] text-blue-700 font-medium mt-0.5">
+                            {apt.school_dist || (apt.tags?.includes("초품아") ? "도보 3분 이내" : "도보 5~8분권")}
+                          </div>
                         </div>
-                        <div className="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-100/70">
-                          <div className="text-slate-400 text-[11px]">🚇 교통/역세권 점수</div>
-                          <div className="font-bold text-indigo-700 text-sm mt-0.5">{apt.traffic_score}점</div>
+                        <div className="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-100/70 flex flex-col justify-between">
+                          <div className="text-slate-400 text-[10px] flex items-center justify-between">
+                            <span>🚇 역세권 접근성</span>
+                            {apt.walk_minutes && apt.walk_minutes <= 5 && (
+                              <span className="text-[9px] font-extrabold bg-indigo-600 text-white px-1.5 rounded">초역세권</span>
+                            )}
+                          </div>
+                          <div className="font-bold text-indigo-900 text-xs mt-1 truncate">
+                            {apt.station ? apt.station.split(" ")[0] : (apt.tags?.includes("역세권") ? "인근 전철역" : "대중교통")}
+                          </div>
+                          <div className="text-[11px] text-indigo-700 font-medium mt-0.5">
+                            {apt.walk_minutes ? `도보 약 ${apt.walk_minutes}분` : (apt.station_dist || "도보 5~10분권")}
+                          </div>
                         </div>
                       </div>
                     </div>

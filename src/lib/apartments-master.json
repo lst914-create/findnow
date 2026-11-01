@@ -184974,14 +184974,14 @@
     "name": "다산역자연앤푸르지오",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 74385,
-    "rent_max": 82215,
-    "gapPrice": 42162,
+    "price_min": 72000,
+    "price_max": 84000,
+    "rent_min": 46800,
+    "rent_max": 54600,
+    "gapPrice": 27300,
     "jeonseRatio": 65,
-    "area_sqm": 84,
-    "area_pyeong": 34,
+    "area_sqm": 59.9,
+    "area_pyeong": 25,
     "built_year": 2004,
     "household_count": 750,
     "school_score": 85,
@@ -185050,7 +185050,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10022765",
@@ -185146,13 +185146,13 @@
     "name": "다산 포레스트 2단지",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 76674,
-    "rent_max": 84745,
-    "gapPrice": 39752,
+    "price_min": 70000,
+    "price_max": 82000,
+    "rent_min": 46900,
+    "rent_max": 54940,
+    "gapPrice": 25080,
     "jeonseRatio": 67,
-    "area_sqm": 84,
+    "area_sqm": 84.6,
     "area_pyeong": 34,
     "built_year": 2017,
     "household_count": 570,
@@ -185219,20 +185219,20 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10023642",
     "name": "다산지금데시앙",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 68663,
-    "rent_max": 75891,
-    "gapPrice": 48185,
+    "price_min": 68000,
+    "price_max": 78000,
+    "rent_min": 40800,
+    "rent_max": 46800,
+    "gapPrice": 29200,
     "jeonseRatio": 60,
-    "area_sqm": 84,
+    "area_sqm": 84.7,
     "area_pyeong": 34,
     "built_year": 2006,
     "household_count": 750,
@@ -185303,20 +185303,20 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10023643",
     "name": "다산진건데시앙",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 74385,
-    "rent_max": 82215,
-    "gapPrice": 42162,
+    "price_min": 65000,
+    "price_max": 75000,
+    "rent_min": 42250,
+    "rent_max": 48750,
+    "gapPrice": 24500,
     "jeonseRatio": 65,
-    "area_sqm": 84,
+    "area_sqm": 84.7,
     "area_pyeong": 34,
     "built_year": 2012,
     "household_count": 750,
@@ -185386,21 +185386,21 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10023863",
     "name": "다산지금 경기행복주택",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 83540,
-    "rent_max": 92334,
-    "gapPrice": 32525,
+    "price_min": 35000,
+    "price_max": 45000,
+    "rent_min": 25550,
+    "rent_max": 32850,
+    "gapPrice": 10800,
     "jeonseRatio": 73,
-    "area_sqm": 84,
-    "area_pyeong": 34,
+    "area_sqm": 44,
+    "area_pyeong": 20,
     "built_year": 2017,
     "household_count": 930,
     "school_score": 88,
@@ -185469,7 +185469,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10023893",
@@ -185654,13 +185654,13 @@
     "name": "다산 메트로 3단지",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 76674,
-    "rent_max": 84745,
-    "gapPrice": 39752,
+    "price_min": 72000,
+    "price_max": 85000,
+    "rent_min": 48240,
+    "rent_max": 56950,
+    "gapPrice": 25905,
     "jeonseRatio": 67,
-    "area_sqm": 84,
+    "area_sqm": 84.6,
     "area_pyeong": 34,
     "built_year": 2011,
     "household_count": 870,
@@ -185731,7 +185731,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10024093",
@@ -185910,13 +185910,13 @@
     "name": "다산센트럴파크",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 70952,
-    "rent_max": 78421,
-    "gapPrice": 45776,
+    "price_min": 75000,
+    "price_max": 88000,
+    "rent_min": 46500,
+    "rent_max": 54560,
+    "gapPrice": 30970,
     "jeonseRatio": 62,
-    "area_sqm": 84,
+    "area_sqm": 84.7,
     "area_pyeong": 34,
     "built_year": 2012,
     "household_count": 1170,
@@ -185990,7 +185990,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10024407",
@@ -186327,14 +186327,14 @@
     "name": "다산역 경기행복주택아파트",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 73241,
-    "rent_max": 80950,
-    "gapPrice": 43366,
+    "price_min": 35000,
+    "price_max": 45000,
+    "rent_min": 22400,
+    "rent_max": 28800,
+    "gapPrice": 14400,
     "jeonseRatio": 64,
-    "area_sqm": 84,
-    "area_pyeong": 34,
+    "area_sqm": 44,
+    "area_pyeong": 20,
     "built_year": 2003,
     "household_count": 990,
     "school_score": 89,
@@ -186403,7 +186403,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10025331",
@@ -186671,13 +186671,13 @@
     "name": "다산금강펜테리움리버테라스2차",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 68663,
-    "rent_max": 75891,
-    "gapPrice": 48185,
+    "price_min": 85000,
+    "price_max": 96000,
+    "rent_min": 51000,
+    "rent_max": 57600,
+    "gapPrice": 36200,
     "jeonseRatio": 60,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2016,
     "household_count": 150,
@@ -186731,20 +186731,20 @@
         "ratio": 100
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10025561",
     "name": "다산센트럴에일린의뜰아파트",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 70952,
-    "rent_max": 78421,
-    "gapPrice": 45776,
+    "price_min": 80000,
+    "price_max": 92000,
+    "rent_min": 49600,
+    "rent_max": 57040,
+    "gapPrice": 32680,
     "jeonseRatio": 62,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2007,
     "household_count": 1170,
@@ -186818,7 +186818,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10025596",
@@ -186909,13 +186909,13 @@
     "name": "다산금강펜테리움리버테라스1차",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 68663,
-    "rent_max": 75891,
-    "gapPrice": 48185,
+    "price_min": 82000,
+    "price_max": 93000,
+    "rent_min": 49200,
+    "rent_max": 55800,
+    "gapPrice": 35000,
     "jeonseRatio": 60,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2015,
     "household_count": 750,
@@ -186986,7 +186986,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10025830",
@@ -188126,14 +188126,14 @@
     "name": "가운휴먼시아1단지",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 84685,
-    "rent_max": 93599,
-    "gapPrice": 31320,
+    "price_min": 58000,
+    "price_max": 68000,
+    "rent_min": 42920,
+    "rent_max": 50320,
+    "gapPrice": 16380,
     "jeonseRatio": 74,
-    "area_sqm": 84,
-    "area_pyeong": 34,
+    "area_sqm": 84.8,
+    "area_pyeong": 33,
     "built_year": 2006,
     "household_count": 990,
     "school_score": 89,
@@ -188202,20 +188202,20 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A47206006",
     "name": "가운휴먼시아2단지",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 68663,
-    "rent_max": 75891,
-    "gapPrice": 48185,
+    "price_min": 59000,
+    "price_max": 70000,
+    "rent_min": 35400,
+    "rent_max": 42000,
+    "gapPrice": 25800,
     "jeonseRatio": 60,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2007,
     "household_count": 1050,
@@ -188290,7 +188290,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A47270906",
@@ -188875,14 +188875,14 @@
     "name": "도농사랑으로7단지 부영아파트",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 114439,
-    "price_max": 126485,
-    "rent_min": 77819,
-    "rent_max": 86010,
-    "gapPrice": 38548,
+    "price_min": 48000,
+    "price_max": 56000,
+    "rent_min": 32640,
+    "rent_max": 38080,
+    "gapPrice": 16640,
     "jeonseRatio": 68,
-    "area_sqm": 84,
-    "area_pyeong": 34,
+    "area_sqm": 84.5,
+    "area_pyeong": 32,
     "built_year": 1996,
     "household_count": 330,
     "school_score": 78,
@@ -188948,7 +188948,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A47288803",

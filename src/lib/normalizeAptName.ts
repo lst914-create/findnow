@@ -8,9 +8,12 @@ export function normalizeAptName(name: string): string {
   return name
     // 1. 공백, 특수문자, 괄호류 제거
     .replace(/[\s\-_(),.·[\]{}<>]/g, "")
-    // 2. 단지명에 흔히 붙는 '아파트' 단어 완전 제거 (끝뿐만 아니라 중간 포함)
-    .replace(/아파트/g, "")
-    // 3. 주요 브랜드명 / 시행사명 상호 변환 (국토부 신고명 vs K-apt 등록명)
+    // 2. 단지명에 흔히 붙는 '아파트', '마을' 단어 제거
+    .replace(/아파트|마을/g, "")
+    // 3. 주요 브랜드명 / 시행사명 / 택지지구 접두사 상호 변환 (국토부 신고명 vs K-apt 등록명)
+    .replace(/다산지금|다산진건|다산신도시/g, "다산")
+    .replace(/가운마을/g, "가운")
+    .replace(/부영사랑으로|사랑으로\s*부영|사랑으로/gi, "부영")
     .replace(/금강펜테리움/gi, "펜테리움")
     .replace(/자연앤e편한세상|자연&e편한세상|이편한세상|e\-편한세상/gi, "e편한세상")
     .replace(/에스케이뷰|sk\s*view/gi, "sk뷰")
@@ -21,6 +24,7 @@ export function normalizeAptName(name: string): string {
     .replace(/유승\s*한내들/gi, "유승한내들")
     .replace(/신안\s*인스빌/gi, "신안인스빌")
     .replace(/한신\s*휴플러스|한신\s*더휴/gi, "한신더휴")
+    .replace(/센트럴에일린의뜰/gi, "에일린의뜰")
     // 4. 차수/단지/로마숫자 번호 표준화 (1~9차/단지)
     .replace(/1차|ⅰ|i단지|1단지|Ⅰ/gi, "1")
     .replace(/2차|ⅱ|ii단지|2단지|Ⅱ/gi, "2")

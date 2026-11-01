@@ -8,9 +8,11 @@ interface TradeInfo {
   normName: string;
   amount: number;
   dealDate: string; // YYYY.MM.DD
+  dealTime: number; // Unix timestamp
   floor: number;
   areaSqm: number;
-  pyeong: number;
+  pyeong: number;       // 전용 평형 (excluUseAr / 3.3)
+  supplyPyeong: number; // 대표 공급 평형 (25평, 34평 등)
 }
 
 interface RegionCache {
@@ -41,23 +43,88 @@ function formatPrice(manwon: number): string {
 }
 
 /**
+ * 전용면적(㎡)을 아파트 단지 마스터의 대표 공급 평형으로 정밀 변환
+ * 전용 59㎡ -> 25평, 84㎡ -> 34평 등 실제 한국 아파트 시장 규격
+ */
+function getSupplyPyeong(excluUseAr: number): number {
+  if (excluUseAr < 45) return Math.max(10, Math.round(excluUseAr * 0.45)); // 소형 (10~15평)
+  if (excluUseAr < 65) return 25; // 전용 59㎡ -> 24~25평형
+  if (excluUseAr < 80) return 30; // 전용 74㎡ -> 30평형
+  if (excluUseAr < 95) return 34; // 전용 84㎡ -> 34평형 (국민평형)
+  if (excluUseAr < 125) return 40; // 전용 101~115㎡ -> 39~44평형
+  return Math.round(excluUseAr * 0.36); // 전용 135㎡+ -> 50평형 이상
+}
+
+/**
+ * [사용자 핵심 가격 규칙]
+ * 1. 거래 목록을 최신순 정렬
+ * 2. 가장 최근 거래의 날짜(dealDate) 기준 31일(최근 1개월) 이내 거래들을 추출
+ * 3. 최근 1개월 내 거래가 2건 이상이면 -> 최근 1개월 실거래 평균가격!
+ * 4. 최근 1개월 내 거래가 1건이거나, 수개월/1년 전이 마지막 거래라면 -> 마지막 실거래가 그대로!
+ * ※ 중간값(min/max 평균)은 절대 사용하지 않음
+ */
+function computeAccurateTradePrice(trades: TradeInfo[]) {
+  if (!trades.length) return null;
+
+  // 최신 거래일 순 정렬
+  trades.sort((a, b) => b.dealTime - a.dealTime);
+
+  const latest = trades[0];
+  const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
+
+  // 최신 거래일로부터 1개월(31일) 이내 거래 필터
+  const recent1MonthTrades = trades.filter(
+    (t) => latest.dealTime - t.dealTime <= ONE_MONTH_MS
+  );
+
+  let finalPrice: number;
+  let isAverageOf1Month = false;
+
+  if (recent1MonthTrades.length >= 2) {
+    // 최근 1개월 내 복수 거래 -> 산술 평균
+    finalPrice = Math.round(
+      recent1MonthTrades.reduce((sum, t) => sum + t.amount, 0) / recent1MonthTrades.length
+    );
+    isAverageOf1Month = true;
+  } else {
+    // 1건이거나 과거 마지막 거래 -> 마지막 실거래가 그대로
+    finalPrice = latest.amount;
+    isAverageOf1Month = false;
+  }
+
+  return {
+    price: finalPrice,
+    latestPrice: latest.amount,
+    formatted: formatPrice(finalPrice),
+    dealDate: latest.dealDate,
+    floor: latest.floor,
+    areaSqm: Math.round(latest.areaSqm * 10) / 10,
+    pyeong: latest.supplyPyeong, // 아파트 마스터와 일치하는 공급 평형
+    rawPyeong: latest.pyeong,    // 전용 평형
+    isAverageOf1Month,
+    recentCount: recent1MonthTrades.length,
+    totalTradeCount: trades.length,
+  };
+}
+
+/**
  * POST /api/transactions/viewport
  * Body: {
  *   lawdCodes?: string[],
  *   regions?: Array<{ region: string; district: string }>,
- *   pyeong?: number,
- *   months?: number
+ *   pyeong?: number, // 0: 전체, 20: 20평대, 30: 30평대, 40: 40평대
+ *   months?: number  // 기본 12개월(1년) 실거래 조회
  * }
- * regions 배열을 받으면 서버에서 법정동 코드로 자동 변환
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     let lawdCodes: string[] = body.lawdCodes || [];
-    const pyeongFilter: number = body.pyeong ?? 0; // 0: 전체/30평대우선, 20: 20평대, 30: 30평대, 40: 40평대이상
-    const months: number = Math.min(6, Math.max(2, body.months || 3));
+    const pyeongFilter: number = body.pyeong ?? 0;
+    // 1년 전 마지막 거래까지 커버하기 위해 기본 12개월(1년) 수집
+    const months: number = Math.min(12, Math.max(3, body.months || 12));
 
-    // regions 배열이 주어진 경우 서버에서 법정동 코드로 변환
+    // regions 배열이 주어진 경우 서버에서 법정동 코드로 자동 변환
     if (body.regions && Array.isArray(body.regions)) {
       const extra: string[] = [];
       const seen = new Set<string>(lawdCodes);
@@ -133,15 +200,20 @@ export async function POST(request: NextRequest) {
 
             const normName = normalizeAptName(aptNm);
             const pyeong = Math.round(excluUseAr / 3.30578);
+            const supplyPyeong = getSupplyPyeong(excluUseAr);
+            const dealDate = `${year}.${month}.${day}`;
+            const dealTime = new Date(`${year}-${month}-${day}`).getTime();
 
             localTrades.push({
               aptName: aptNm,
               normName,
               amount,
-              dealDate: `${year}.${month}.${day}`,
+              dealDate,
+              dealTime,
               floor,
               areaSqm: excluUseAr,
               pyeong,
+              supplyPyeong,
             });
           }
         });
@@ -155,14 +227,41 @@ export async function POST(request: NextRequest) {
       regionTrades.push(...localTrades);
     };
 
-    // 최대 5개 법정동 코드까지 병렬 처리
-    const limitedCodes = lawdCodes.slice(0, 5);
+    // 최대 8개 법정동 코드까지 병렬 수집
+    const limitedCodes = lawdCodes.slice(0, 8);
     await Promise.all(limitedCodes.map(fetchRegion));
 
-    // 거래 데이터 정렬: 최신 거래일 우선
-    regionTrades.sort((a, b) => b.dealDate.localeCompare(a.dealDate));
+    // 최신 거래일 순 정렬
+    regionTrades.sort((a, b) => b.dealTime - a.dealTime);
 
-    // 평형 조건 필터링 및 단지별 최신 실거래가 매핑
+    // ─── 평형별 & 단지별 엄격 분류 ─────────────────────────────────────
+    // 단지명별 전체 거래 그룹
+    const tradesByApt = new Map<string, TradeInfo[]>();
+    // 단지명 + 공급평형별 세부 거래 그룹 (예: '다산유보라__34')
+    const tradesByAptPyeong = new Map<string, TradeInfo[]>();
+
+    for (const t of regionTrades) {
+      // 평형 필터 적용
+      if (pyeongFilter === 20) {
+        if (t.supplyPyeong < 20 || t.supplyPyeong >= 30) continue;
+      } else if (pyeongFilter === 30) {
+        if (t.supplyPyeong < 30 || t.supplyPyeong >= 40) continue;
+      } else if (pyeongFilter === 40) {
+        if (t.supplyPyeong < 40) continue;
+      }
+
+      // 1. 단지명 기준 그룹화
+      const aptArr = tradesByApt.get(t.normName) || [];
+      aptArr.push(t);
+      tradesByApt.set(t.normName, aptArr);
+
+      // 2. 단지명 + 평형 기준 세부 그룹화
+      const pyeongKey = `${t.normName}__${t.supplyPyeong}`;
+      const pyeongArr = tradesByAptPyeong.get(pyeongKey) || [];
+      pyeongArr.push(t);
+      tradesByAptPyeong.set(pyeongKey, pyeongArr);
+    }
+
     const priceMap: Record<string, number> = {};
     const detailsMap: Record<
       string,
@@ -175,43 +274,49 @@ export async function POST(request: NextRequest) {
         areaSqm: number;
         pyeong: number;
         tradeCount: number;
+        isAverage?: boolean;
       }
     > = {};
 
-    const tradesByApt = new Map<string, TradeInfo[]>();
+    // 1. 단지명 + 공급평형별 정확한 실거래가 계산 (평형별 분리)
+    tradesByAptPyeong.forEach((trades, pKey) => {
+      const calc = computeAccurateTradePrice(trades);
+      if (!calc) return;
+      priceMap[pKey] = calc.price;
+      detailsMap[pKey] = {
+        avgPrice: calc.price,
+        latestPrice: calc.latestPrice,
+        formatted: calc.formatted,
+        dealDate: calc.dealDate,
+        floor: calc.floor,
+        areaSqm: calc.areaSqm,
+        pyeong: calc.pyeong,
+        tradeCount: calc.totalTradeCount,
+        isAverage: calc.isAverageOf1Month,
+      };
+    });
 
-    for (const t of regionTrades) {
-      // 평형 필터링
-      if (pyeongFilter === 20) {
-        if (t.areaSqm < 45 || t.areaSqm >= 65) continue;
-      } else if (pyeongFilter === 30) {
-        if (t.areaSqm < 70 || t.areaSqm >= 95) continue;
-      } else if (pyeongFilter === 40) {
-        if (t.areaSqm < 95) continue;
-      }
-      // pyeongFilter === 0 이면 모든 거래 허용 (아래에서 대표 평형 선택)
-
-      const arr = tradesByApt.get(t.normName) || [];
-      arr.push(t);
-      tradesByApt.set(t.normName, arr);
-    }
-
+    // 2. 단지명 대표 평형 실거래가 계산 (평형 미지정 단지 기본 매칭용)
     tradesByApt.forEach((trades, normName) => {
-      if (!trades.length) return;
-
-      // 최근 3개월 실거래가 평균 계산
-      const avgAmount = Math.round(trades.reduce((acc, t) => acc + t.amount, 0) / trades.length);
+      // 가장 거래가 활발한 주력 평형(또는 최신 거래 평형)을 선별하여 다른 평형이 섞이지 않도록 격리
       const latest = trades[0];
-      priceMap[normName] = avgAmount;
+      const targetPyeong = latest.supplyPyeong;
+      const targetTrades = trades.filter((t) => t.supplyPyeong === targetPyeong);
+
+      const calc = computeAccurateTradePrice(targetTrades);
+      if (!calc) return;
+
+      priceMap[normName] = calc.price;
       detailsMap[normName] = {
-        avgPrice: avgAmount,
-        latestPrice: latest.amount,
-        formatted: formatPrice(avgAmount),
-        dealDate: latest.dealDate,
-        floor: latest.floor,
-        areaSqm: Math.round(latest.areaSqm * 10) / 10,
-        pyeong: latest.pyeong,
-        tradeCount: trades.length,
+        avgPrice: calc.price,
+        latestPrice: calc.latestPrice,
+        formatted: calc.formatted,
+        dealDate: calc.dealDate,
+        floor: calc.floor,
+        areaSqm: calc.areaSqm,
+        pyeong: calc.pyeong,
+        tradeCount: calc.totalTradeCount,
+        isAverage: calc.isAverageOf1Month,
       };
     });
 

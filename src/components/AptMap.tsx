@@ -47,16 +47,15 @@ export interface AptMarker {
 }
 
 export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
-  const avgPriceNum = Math.round((apt.price_min + apt.price_max) / 2);
-  const uk = Math.floor(avgPriceNum / 10000);
-  const cheon = Math.floor((avgPriceNum % 10000) / 1000);
-  const avgPriceStr = uk > 0 ? (cheon > 0 ? `${uk}.${cheon}억` : `${uk}.0억`) : `${avgPriceNum.toLocaleString()}만`;
+  // 중간값(min+max/2) 임의 생성 배제: 검증 실거래가 우선 적용
+  const priceNum = apt.price_max || apt.price_min || 0;
+  const avgPriceStr = priceNum > 0 ? formatPrice(priceNum) : "-";
 
   const jeonseRatio = apt.jeonseRatio ?? 56;
-  const rentNum = apt.rent_min && apt.rent_max
-    ? Math.round((apt.rent_min + apt.rent_max) / 2)
-    : Math.round(avgPriceNum * (jeonseRatio / 100));
-  const gapPrice = apt.gapPrice ?? Math.max(0, avgPriceNum - rentNum);
+  const rentNum = apt.rent_max || apt.rent_min
+    ? (apt.rent_max || apt.rent_min || 0)
+    : Math.round(priceNum * (jeonseRatio / 100));
+  const gapPrice = apt.gapPrice ?? Math.max(0, priceNum - rentNum);
 
   return {
     id: apt.id,
@@ -64,7 +63,7 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
     lat: apt.lat,
     lng: apt.lng,
     pyeong: apt.area_pyeong,
-    priceNum: avgPriceNum,
+    priceNum: priceNum,
     rentNum: rentNum,
     avgPrice: avgPriceStr,
     region: `${apt.region} ${apt.district}`,
@@ -502,7 +501,7 @@ export default function AptMap({
           body: JSON.stringify({
             regions: [...regionSet.values()],
             pyeong: pyeong,
-            months: 4,
+            months: 12, // 1년 전 마지막 거래까지 커버
           }),
         });
         if (!res.ok) return;
@@ -533,12 +532,14 @@ export default function AptMap({
   const markerHtml = (apt: AptMarker, isHighlight: boolean) => {
     const isMain = isHighlight;
 
-    // 실거래가 캐시 조회: 표준 normalizeAptName 엔진
+    // 실거래가 캐시 조회: 1순위 (단지명 + 공급평형 일치), 2순위 (단지명 대표 평형)
     const normName = normalizeAptName(apt.name);
-    const liveDetail = livePriceDetailCacheRef.current.get(normName);
+    const liveDetail =
+      livePriceDetailCacheRef.current.get(`${normName}__${apt.pyeong}`) ||
+      livePriceDetailCacheRef.current.get(normName);
     const hasLive = !!liveDetail;
 
-    // 가격 표시: 실거래가 우선, 없으면 마스터 데이터
+    // 가격 표시: 실거래가 우선 (최근 1개월 평균 또는 마지막 실거래가), 없으면 마스터 데이터
     let priceLabel: string;
     let pyeongLabel: string;
     if (filters.tradeType === "매매") {
@@ -588,7 +589,11 @@ export default function AptMap({
           gap: 3px;
         ">
           ${hasLive
-            ? `<span style="color:#2dd4bf; font-size:9px;">●</span> 실거래 ${liveDetail!.dealDate.slice(2).replace(".", "/")}`
+            ? `<span style="color:#2dd4bf; font-size:9px;">●</span> ${
+                (liveDetail as any).isAverage
+                  ? "실거래(최근1개월)"
+                  : `실거래 ${liveDetail!.dealDate.slice(2).replace(".", "/")}`
+              }`
             : apt.isRealPrice
               ? `<span style="color:#818cf8; font-size:9px;">●</span> 최근실거래`
               : `<span style="color:#f43f5e; font-size:9px;">🔥</span> ${viewers}명 보는중`

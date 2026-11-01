@@ -1,18 +1,29 @@
 /**
  * 국토교통부 실거래가 공개시스템(RTMS) 단지명과
- * K-apt 공동주택 마스터 단지명 간의 상호 매칭을 위한 표준 정규화 함수
+ * K-apt 공동주택 마스터 단지명 간의 전국 단위 표준 상호 매칭 함수
  */
 export function normalizeAptName(name: string): string {
   if (!name) return "";
 
   return name
-    // 1. 공백, 특수문자, 괄호류 제거
+    // 1. 법인/특수기호 및 괄호 제거
+    .replace(/\(주\)|주식회사|\[주\]|\(유\)|유한회사/gi, "")
     .replace(/[\s\-_(),.·[\]{}<>]/g, "")
-    // 2. 단지명에 흔히 붙는 '아파트', '마을' 단어 제거
+    // 2. 흔히 붙는 불용 접미사 제거
     .replace(/아파트|마을/g, "")
-    // 3. 주요 브랜드명 / 시행사명 / 택지지구 접두사 상호 변환 (국토부 신고명 vs K-apt 등록명)
+    // 3. 전국 주요 신도시 / 택지지구 접두사 상호 표준화
     .replace(/다산지금|다산진건|다산신도시/g, "다산")
+    .replace(/동탄2신도시|동탄신도시|동탄2/g, "동탄")
+    .replace(/미사강변도시|미사강변/g, "미사")
+    .replace(/위례신도시/g, "위례")
+    .replace(/송도국제도시/g, "송도")
+    .replace(/청라국제도시/g, "청라")
+    .replace(/배곧신도시/g, "배곧")
+    .replace(/운정신도시/g, "운정")
+    .replace(/검단신도시/g, "검단")
+    .replace(/옥정신도시|양주옥정/g, "옥정")
     .replace(/가운마을/g, "가운")
+    // 4. 주요 브랜드명 / 시행사명 상호 변환 (국토부 신고명 vs K-apt 등록명)
     .replace(/부영사랑으로|사랑으로\s*부영|사랑으로/gi, "부영")
     .replace(/금강펜테리움/gi, "펜테리움")
     .replace(/자연앤e편한세상|자연&e편한세상|이편한세상|e\-편한세상/gi, "e편한세상")
@@ -25,7 +36,16 @@ export function normalizeAptName(name: string): string {
     .replace(/신안\s*인스빌/gi, "신안인스빌")
     .replace(/한신\s*휴플러스|한신\s*더휴/gi, "한신더휴")
     .replace(/센트럴에일린의뜰/gi, "에일린의뜰")
-    // 4. 차수/단지/로마숫자 번호 표준화 (1~9차/단지)
+    .replace(/더샵|the\s*sharp/gi, "더샵")
+    .replace(/아이파크|i\-park/gi, "아이파크")
+    .replace(/두산위브|두산\s*위브/gi, "두산위브")
+    .replace(/한화꿈에그린|한화포레나/gi, "포레나")
+    .replace(/중흥에스클래스|중흥s\-클래스/gi, "중흥s클래스")
+    .replace(/디에이치|the\s*h/gi, "디에이치")
+    .replace(/아크로|acro/gi, "아크로")
+    // 5. 블록/블럭 표기 표준화 (예: A1블럭 -> A1)
+    .replace(/블록|블럭|bl/gi, "")
+    // 6. 차수/단지/로마숫자 번호 표준화 (1~9차/단지)
     .replace(/1차|ⅰ|i단지|1단지|Ⅰ/gi, "1")
     .replace(/2차|ⅱ|ii단지|2단지|Ⅱ/gi, "2")
     .replace(/3차|ⅲ|iii단지|3단지|Ⅲ/gi, "3")
@@ -35,6 +55,6 @@ export function normalizeAptName(name: string): string {
     .replace(/7차|ⅶ|vii단지|7단지|Ⅶ/gi, "7")
     .replace(/8차|ⅷ|viii단지|8단지|Ⅷ/gi, "8")
     .replace(/9차|ⅸ|ix단지|9단지|Ⅸ/gi, "9")
-    // 5. 영문 소문자화
+    // 7. 영문 소문자화
     .toLowerCase();
 }

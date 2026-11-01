@@ -188,8 +188,8 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   const a =
     Math.sin(dLat / 2) ** 2 +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -209,7 +209,7 @@ const APARTMENT_DATA: Record<string, any> = Object.fromEntries(
       parking: apt.parking || (apt.parkingRatio ? `세대당 ${apt.parkingRatio}대` : null),
       floor_area_ratio: apt.floor_area_ratio || (apt.far && apt.far !== 240 ? `${apt.far}%` : null),
       heating: (apt.heating && apt.heating !== "지역난방") ? apt.heating :
-               apt.heatingType ? apt.heatingType : null,
+        apt.heatingType ? apt.heatingType : null,
       station: apt.station ? `${apt.station} ${apt.station_dist || ""}`.trim() : null,
       // 학교: 실데이터만 사용, 없으면 null
       schools: (apt.schools && apt.schools.length > 0) ? apt.schools : null,
@@ -255,7 +255,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       aptName: apt.name,
       region: apt.region,
       district: apt.district,
-      priceAtSave: apt.price_max ? Math.round((apt.price_min + apt.price_max) / 2) : undefined,
+      priceAtSave: apt.price_max || apt.price_min || undefined,
     });
     setWatched(added);
   }
@@ -470,8 +470,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const chartData = chartRange === "최근 1년"
     ? activeTrend.slice(-12)
     : chartRange === "최근 3년"
-    ? activeTrend.slice(-36)
-    : activeTrend;
+      ? activeTrend.slice(-36)
+      : activeTrend;
 
   const latestPrice = chartData.length > 0 ? (chartData[chartData.length - 1]?.price ?? 0) : 0;
   const minPrice = chartData.length > 0 ? Math.min(...chartData.map((d) => d.price)) : 0;
@@ -485,40 +485,81 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return `${price.toLocaleString()}만원`;
   };
 
-  // 실거래 평균 계산: 최근 5건 거래 기준 평균 (선택된 평형 반영)
+  // 실거래 가격 계산: [사용자 핵심 규칙] 평형별 분류 -> 최근 1개월 실거래 평균 or 마지막 실거래가
   const currentAverageDisplay = useMemo(() => {
     if (hasRealDataForCurrentTab && activeTxs.length > 0) {
-      const recentTxs = activeTxs.slice(0, Math.min(5, activeTxs.length));
-      const validAmounts = (recentTxs as Array<{ rawPrice?: number }>)
-        .map((t) => t.rawPrice)
-        .filter((p): p is number => typeof p === "number" && p > 0);
-      if (validAmounts.length > 0) {
-        const avg = Math.round(validAmounts.reduce((a, b) => a + b, 0) / validAmounts.length);
-        return formatPrice(avg);
-      }
-    }
-    if (selectedArea !== "전체") {
-      const selectedNum = parseFloat(selectedArea.replace("㎡", ""));
-      const baseArea = displayAreaSqm || 84;
-      const baseAvg = Math.round((apt.price_min + apt.price_max) / 2);
-      if (selectedNum && baseArea) {
-        return formatPrice(Math.round(baseAvg * (selectedNum / baseArea)));
-      }
-    }
-    return tradeType === "매매"
-      ? formatPrice(Math.round((apt.price_min + apt.price_max) / 2))
-      : formatPrice(Math.round((apt.rent_min + apt.rent_max) / 2));
-  }, [hasRealDataForCurrentTab, activeTxs, selectedArea, displayAreaSqm, tradeType, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
+      const latest = activeTxs[0];
+      const latestPrice = (latest as any).rawPrice;
+      const latestDateStr = (latest as any).date || (latest as any).dealDate; // "26.10.21" 등
 
-  // 실거래 매매 평균가 (만원 단위, 지도 마커용) - 최근 5건 기준
+      let latestTime = 0;
+      if (latestDateStr) {
+        const parts = latestDateStr.split(".");
+        const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
+        const m = parseInt(parts[1] || "1", 10);
+        const d = parseInt(parts[2] || "1", 10);
+        latestTime = new Date(y, m - 1, d).getTime();
+      }
+
+      const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
+      const recent1Month = activeTxs.filter((t: any) => {
+        if (!t.rawPrice || t.rawPrice <= 0) return false;
+        if (!latestTime || !t.date) return false;
+        const parts = t.date.split(".");
+        const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
+        const m = parseInt(parts[1] || "1", 10);
+        const d = parseInt(parts[2] || "1", 10);
+        const tTime = new Date(y, m - 1, d).getTime();
+        return latestTime - tTime <= ONE_MONTH_MS;
+      });
+
+      // 최근 1개월 내 거래가 2건 이상이면 평균, 아니면 마지막 실거래가 1건 그대로!
+      if (recent1Month.length >= 2) {
+        const avg = Math.round(
+          recent1Month.reduce((acc: number, t: any) => acc + t.rawPrice, 0) / recent1Month.length
+        );
+        return formatPrice(avg);
+      } else if (latestPrice && latestPrice > 0) {
+        return formatPrice(latestPrice);
+      }
+    }
+    const fallbackPrice = tradeType === "매매"
+      ? (apt.price_max || apt.price_min || 0)
+      : (apt.rent_max || apt.rent_min || 0);
+    return fallbackPrice > 0 ? formatPrice(fallbackPrice) : "-";
+  }, [hasRealDataForCurrentTab, activeTxs, tradeType, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
+
+  // 실거래 매매 대표가 (만원 단위, 지도 마커용) - 최근 1개월 평균 or 마지막 실거래가
   const realSaleAvgManwon = useMemo(() => {
     if (realSaleTxs.length > 0) {
-      const recent = realSaleTxs.slice(0, Math.min(5, realSaleTxs.length));
-      const validAmounts = recent
-        .map((t: any) => t.rawPrice)
-        .filter((p: any): p is number => typeof p === "number" && p > 0);
-      if (validAmounts.length > 0) {
-        return Math.round(validAmounts.reduce((a: number, b: number) => a + b, 0) / validAmounts.length);
+      const latest = realSaleTxs[0];
+      const latestPrice = (latest as any).rawPrice;
+      const latestDateStr = (latest as any).date;
+      let latestTime = 0;
+      if (latestDateStr) {
+        const parts = latestDateStr.split(".");
+        const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
+        const m = parseInt(parts[1] || "1", 10);
+        const d = parseInt(parts[2] || "1", 10);
+        latestTime = new Date(y, m - 1, d).getTime();
+      }
+
+      const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
+      const recent1Month = realSaleTxs.filter((t: any) => {
+        if (!t.rawPrice || t.rawPrice <= 0 || !latestTime || !t.date) return false;
+        const parts = t.date.split(".");
+        const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
+        const m = parseInt(parts[1] || "1", 10);
+        const d = parseInt(parts[2] || "1", 10);
+        return latestTime - new Date(y, m - 1, d).getTime() <= ONE_MONTH_MS;
+      });
+
+      if (recent1Month.length >= 2) {
+        return Math.round(
+          recent1Month.reduce((acc: number, t: any) => acc + t.rawPrice, 0) / recent1Month.length
+        );
+      } else if (latestPrice && latestPrice > 0) {
+        return latestPrice;
       }
     }
     return undefined;
@@ -679,11 +720,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           {/* P2: 관심단지 버튼 (watchlistStore 연결) */}
           <button
             onClick={handleToggleWatchlist}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${
-              watched
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${watched
                 ? "bg-rose-500 text-white shadow-sm"
                 : "bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-500"
-            }`}
+              }`}
           >
             {watched ? "❤️ 관심 단지" : "🤍 관심 단지"}
           </button>
@@ -712,11 +752,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
         {/* P0: 단지 데이터 검증 이슈 패널 (이슈가 있을 때만 노출) */}
         {(!validationResult.isValid || validationResult.hasWarnings) && (
-          <div className={`rounded-2xl border px-4 py-3 text-xs ${
-            !validationResult.isValid
+          <div className={`rounded-2xl border px-4 py-3 text-xs ${!validationResult.isValid
               ? "bg-red-50 border-red-200"
               : "bg-amber-50 border-amber-200"
-          }`}>
+            }`}>
             <div className="flex items-center gap-2 mb-2">
               <span>{!validationResult.isValid ? "⚠️" : "⚡"}</span>
               <span className={`font-bold ${!validationResult.isValid ? "text-red-700" : "text-amber-700"}`}>
@@ -727,10 +766,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             </div>
             <ul className="space-y-1">
               {validationResult.issues.map((issue, i) => (
-                <li key={i} className={`flex items-start gap-2 ${
-                  issue.severity === "ERROR" ? "text-red-600" :
-                  issue.severity === "WARN" ? "text-amber-600" : "text-slate-500"
-                }`}>
+                <li key={i} className={`flex items-start gap-2 ${issue.severity === "ERROR" ? "text-red-600" :
+                    issue.severity === "WARN" ? "text-amber-600" : "text-slate-500"
+                  }`}>
                   <span className="mt-0.5 flex-shrink-0">
                     {issue.severity === "ERROR" ? "✕" : issue.severity === "WARN" ? "·" : "ℹ"}
                   </span>
@@ -758,11 +796,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               <button
                 key={type}
                 onClick={() => { setTradeType(type); setShowCount(5); setSelectedArea("전체"); }}
-                className={`flex-1 py-4 text-base font-bold transition-all cursor-pointer ${
-                  tradeType === type
+                className={`flex-1 py-4 text-base font-bold transition-all cursor-pointer ${tradeType === type
                     ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/40"
                     : "text-slate-400 hover:text-slate-700"
-                }`}
+                  }`}
               >
                 {type}
               </button>
@@ -776,11 +813,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 <button
                   key={area}
                   onClick={() => { setSelectedArea(area); setShowCount(5); }}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
-                    selectedArea === area
+                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${selectedArea === area
                       ? "bg-blue-600 text-white shadow-sm"
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   {area === "전체" ? "전체 평형" : area}
                 </button>
@@ -809,10 +845,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                   {isLoadingApi
                     ? "국토교통부 실거래 조회 중"
                     : tradeType === "전월세" && (realJeonseStats || realMonthlyStats)
-                    ? "국토교통부 전월세 실거래 기준"
-                    : hasRealDataForCurrentTab
-                    ? "국토교통부 실거래 기준 (최근 거래 평균)"
-                    : "예상 시세 기준 평균"}
+                      ? "국토교통부 전월세 실거래 기준"
+                      : hasRealDataForCurrentTab
+                        ? "국토교통부 실거래 기준 (최근 거래 평균)"
+                        : "예상 시세 기준 평균"}
                 </p>
               </div>
               <p className="text-4xl font-black text-slate-900 tracking-tight">
@@ -823,8 +859,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                   ? (realJeonseStats
                     ? `전세 기준 · ${selectedArea === "전체" ? "전체 평형" : `전용 ${selectedArea}`} · 최근 ${realJeonseStats.count}건 평균`
                     : selectedArea === "전체"
-                    ? `전체 평형 (전용 ${displayAreaSqm}㎡ 기준)`
-                    : `전용 ${selectedArea} 기준`)
+                      ? `전체 평형 (전용 ${displayAreaSqm}㎡ 기준)`
+                      : `전용 ${selectedArea} 기준`)
                   : (selectedArea === "전체"
                     ? (activeTxs.length > 0 ? `전체 평형 · 최근 ${Math.min(5, activeTxs.length)}건 평균` : `전용 ${displayAreaSqm}㎡ 기준`)
                     : `전용 ${selectedArea} 기준 (최근 ${Math.min(5, activeTxs.length)}건 평균)`)}
@@ -844,10 +880,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                       ? `${formatPrice(realSaleRange.min)} ~ ${formatPrice(realSaleRange.max)}`
                       : `${formatPrice(fallbackSaleRange.min)} ~ ${formatPrice(fallbackSaleRange.max)}`)
                     : realJeonseStats
-                    ? `${formatPrice(realJeonseStats.min)} ~ ${formatPrice(realJeonseStats.max)}`
-                    : (realisticJeonseRange)
-                    ? `${formatPrice(realisticJeonseRange.min)} ~ ${formatPrice(realisticJeonseRange.max)}`
-                    : "시세 조회 중"}
+                      ? `${formatPrice(realJeonseStats.min)} ~ ${formatPrice(realJeonseStats.max)}`
+                      : (realisticJeonseRange)
+                        ? `${formatPrice(realisticJeonseRange.min)} ~ ${formatPrice(realisticJeonseRange.max)}`
+                        : "시세 조회 중"}
                 </div>
                 {tradeType === "매매" && realSaleRange && (
                   <div className="text-[10px] text-blue-500 font-semibold mt-1">
@@ -869,8 +905,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                   {tradeType === "매매"
                     ? `${formatPrice(realisticJeonseRange.min)} ~ ${formatPrice(realisticJeonseRange.max)}`
                     : realMonthlyStats
-                    ? `보증 ${formatPrice(realMonthlyStats.minDeposit)} / 월 ${realMonthlyStats.minMonthly}~${realMonthlyStats.maxMonthly}만`
-                    : `보증 ${formatPrice(estimatedMonthly.deposit)} / 월 ${estimatedMonthly.minMonthly}~${estimatedMonthly.maxMonthly}만`}
+                      ? `보증 ${formatPrice(realMonthlyStats.minDeposit)} / 월 ${realMonthlyStats.minMonthly}~${realMonthlyStats.maxMonthly}만`
+                      : `보증 ${formatPrice(estimatedMonthly.deposit)} / 월 ${estimatedMonthly.minMonthly}~${estimatedMonthly.maxMonthly}만`}
                 </div>
                 {tradeType === "매매" && (
                   <div className="text-[10px] text-slate-400 mt-1">
@@ -898,11 +934,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     <button
                       key={r}
                       onClick={() => setChartRange(r)}
-                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                        chartRange === r
+                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${chartRange === r
                           ? "bg-blue-600 text-white"
                           : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                      }`}
+                        }`}
                     >
                       {r}
                     </button>
@@ -985,75 +1020,75 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               </div>
 
               {activeTxs.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
-                      <p className="text-sm font-semibold text-slate-600">
-                        {isLoadingApi
-                          ? "국토교통부 실시간 거래를 조회하고 있습니다..."
-                          : `최근 국토교통부에 신고된 ${tradeType} 계약 내역이 없습니다.`}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        국토교통부 실거래가 공개시스템의 실제 거래 신고 기준 원본 데이터만 제공합니다.
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="rounded-2xl border border-slate-100 overflow-x-auto">
-                        <table className="w-full text-left text-sm table-fixed">
-                          <colgroup>
-                            <col className="w-[33%] sm:w-[28%]" />
-                            <col className="w-[18%] sm:w-[20%]" />
-                            <col className="w-[15%] sm:w-[18%]" />
-                            <col className="w-[34%] sm:w-[34%]" />
-                          </colgroup>
-                          <thead className="bg-slate-50">
-                            <tr className="text-xs text-slate-400">
-                              <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-left font-medium">계약일</th>
-                              <th className="px-2 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-center font-medium">전용면적</th>
-                              <th className="px-2 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-center font-medium">층</th>
-                              <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-right font-medium">거래금액</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {activeTxs.slice(0, showCount).map((tx: any, idx: number) => (
-                              <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
-                                <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">
-                                  <div className="flex items-center gap-1 whitespace-nowrap">
-                                    <span className="font-medium text-slate-600 text-[11px] sm:text-xs">{tx.date}</span>
-                                    {tx.isReal && (
-                                      <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
-                                        실거래
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-700 text-center text-xs sm:text-sm font-medium whitespace-nowrap">
-                                  {tx.area}
-                                </td>
-                                <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-500 text-center text-xs sm:text-sm whitespace-nowrap">
-                                  {tx.floor}
-                                </td>
-                                <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 font-bold text-blue-600 text-right text-xs sm:text-sm tracking-tight whitespace-nowrap">
-                                  {tx.price}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                      {/* 더보기 버튼 */}
-                      {showCount < activeTxs.length && (
-                        <button
-                          onClick={() => setShowCount((prev) => prev + 10)}
-                          className="mt-3 w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all cursor-pointer"
-                        >
-                          더보기 <span className="text-slate-400">∨</span>
-                        </button>
-                      )}
-                      {showCount >= activeTxs.length && (
-                        <p className="mt-3 text-center text-xs text-slate-400">모든 실거래 내역을 확인했습니다.</p>
-                      )}
-                    </>
+                <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {isLoadingApi
+                      ? "국토교통부 실시간 거래를 조회하고 있습니다..."
+                      : `최근 국토교통부에 신고된 ${tradeType} 계약 내역이 없습니다.`}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    국토교통부 실거래가 공개시스템의 실제 거래 신고 기준 원본 데이터만 제공합니다.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-2xl border border-slate-100 overflow-x-auto">
+                    <table className="w-full text-left text-sm table-fixed">
+                      <colgroup>
+                        <col className="w-[33%] sm:w-[28%]" />
+                        <col className="w-[18%] sm:w-[20%]" />
+                        <col className="w-[15%] sm:w-[18%]" />
+                        <col className="w-[34%] sm:w-[34%]" />
+                      </colgroup>
+                      <thead className="bg-slate-50">
+                        <tr className="text-xs text-slate-400">
+                          <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-left font-medium">계약일</th>
+                          <th className="px-2 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-center font-medium">전용면적</th>
+                          <th className="px-2 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-center font-medium">층</th>
+                          <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-right font-medium">거래금액</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {activeTxs.slice(0, showCount).map((tx: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
+                            <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">
+                              <div className="flex items-center gap-1 whitespace-nowrap">
+                                <span className="font-medium text-slate-600 text-[11px] sm:text-xs">{tx.date}</span>
+                                {tx.isReal && (
+                                  <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
+                                    실거래
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-700 text-center text-xs sm:text-sm font-medium whitespace-nowrap">
+                              {tx.area}
+                            </td>
+                            <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-500 text-center text-xs sm:text-sm whitespace-nowrap">
+                              {tx.floor}
+                            </td>
+                            <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 font-bold text-blue-600 text-right text-xs sm:text-sm tracking-tight whitespace-nowrap">
+                              {tx.price}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* 더보기 버튼 */}
+                  {showCount < activeTxs.length && (
+                    <button
+                      onClick={() => setShowCount((prev) => prev + 10)}
+                      className="mt-3 w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all cursor-pointer"
+                    >
+                      더보기 <span className="text-slate-400">∨</span>
+                    </button>
                   )}
+                  {showCount >= activeTxs.length && (
+                    <p className="mt-3 text-center text-xs text-slate-400">모든 실거래 내역을 확인했습니다.</p>
+                  )}
+                </>
+              )}
             </div>
 
           </div>
@@ -1149,20 +1184,18 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                           {dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`}
                         </td>
                         <td className="py-3 px-3 text-right hidden sm:table-cell">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${
-                            a.school_score >= 95 ? "bg-blue-100 text-blue-700" :
-                            a.school_score >= 85 ? "bg-indigo-50 text-indigo-600" :
-                            "bg-slate-100 text-slate-500"
-                          }`}>
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${a.school_score >= 95 ? "bg-blue-100 text-blue-700" :
+                              a.school_score >= 85 ? "bg-indigo-50 text-indigo-600" :
+                                "bg-slate-100 text-slate-500"
+                            }`}>
                             {a.school_score}점
                           </span>
                         </td>
                         <td className="py-3 px-3 text-right hidden sm:table-cell">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${
-                            a.traffic_score >= 95 ? "bg-emerald-100 text-emerald-700" :
-                            a.traffic_score >= 85 ? "bg-green-50 text-green-600" :
-                            "bg-slate-100 text-slate-500"
-                          }`}>
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${a.traffic_score >= 95 ? "bg-emerald-100 text-emerald-700" :
+                              a.traffic_score >= 85 ? "bg-green-50 text-green-600" :
+                                "bg-slate-100 text-slate-500"
+                            }`}>
                             {a.traffic_score}점
                           </span>
                         </td>
@@ -1218,17 +1251,17 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             facilities: (liveKapt?.facilities && liveKapt.facilities.length > 0)
               ? liveKapt.facilities
               : (apt.facilities && apt.facilities.length > 0
-                  ? apt.facilities
-                  : ["관리사무소", "어린이놀이터", "경로당/시니어클럽", "자전거보관소", "주민공동시설", "분리수거장"]),
+                ? apt.facilities
+                : ["관리사무소", "어린이놀이터", "경로당/시니어클럽", "자전거보관소", "주민공동시설", "분리수거장"]),
             area_distributions: (liveKapt?.area_distributions && liveKapt.area_distributions.length > 0)
               ? liveKapt.area_distributions
               : (apt.area_distributions && apt.area_distributions.length > 0
-                  ? apt.area_distributions
-                  : [
-                      { label: "전용 59㎡ (25평)", pyeong: 25, units: Math.round((apt.household_count || 500) * 0.35), ratio: 35 },
-                      { label: "전용 84㎡ (34평)", pyeong: 34, units: Math.round((apt.household_count || 500) * 0.45), ratio: 45 },
-                      { label: "전용 114㎡ (45평)", pyeong: 45, units: Math.round((apt.household_count || 500) * 0.20), ratio: 20 },
-                    ]),
+                ? apt.area_distributions
+                : [
+                  { label: "전용 59㎡ (25평)", pyeong: 25, units: Math.round((apt.household_count || 500) * 0.35), ratio: 35 },
+                  { label: "전용 84㎡ (34평)", pyeong: 34, units: Math.round((apt.household_count || 500) * 0.45), ratio: 45 },
+                  { label: "전용 114㎡ (45평)", pyeong: 45, units: Math.round((apt.household_count || 500) * 0.20), ratio: 20 },
+                ]),
             school_name: apt.school_name || (apt.district ? `${apt.district.replace(/[0-9·동읍면리]/g, "")}초등학교` : "인근 초등학교"),
             school_dist: apt.school_dist || "도보 5분 (320m)",
             subwayLine: liveKapt?.subwayLine || (apt.station ? apt.station.split(" ")[0] : null),
@@ -1245,8 +1278,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             parkingRatioNum >= 1.4
               ? { text: "주차 쾌적 (여유)", color: "text-emerald-700 bg-emerald-50 border-emerald-200" }
               : parkingRatioNum >= 1.1
-              ? { text: "주차 보통", color: "text-blue-700 bg-blue-50 border-blue-200" }
-              : { text: "주차 다소 혼잡", color: "text-amber-700 bg-amber-50 border-amber-200" };
+                ? { text: "주차 보통", color: "text-blue-700 bg-blue-50 border-blue-200" }
+                : { text: "주차 다소 혼잡", color: "text-amber-700 bg-amber-50 border-amber-200" };
 
           // 주차 지하비율
           const totalPark = info.parking_total || (info.parking_underground + info.parking_ground) || 1;
@@ -1545,11 +1578,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 <button
                   key={item.key}
                   onClick={() => setActiveLocation(item.key)}
-                  className={`w-full text-left p-3 rounded-2xl transition-all cursor-pointer border-2 ${
-                    activeLocation === item.key
+                  className={`w-full text-left p-3 rounded-2xl transition-all cursor-pointer border-2 ${activeLocation === item.key
                       ? `border-slate-200 bg-slate-50 ring-2 ${item.ring}`
                       : "border-transparent hover:bg-slate-50 hover:border-slate-100"
-                  }`}
+                    }`}
                 >
                   <div className="flex justify-between text-sm font-semibold mb-2">
                     <span className="text-slate-700">{item.label}</span>
@@ -1642,8 +1674,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                               {apt.tags?.some((t: string) => /광역버스|BRT|역세권/.test(t))
                                 ? "첨두시 5~10분 / 비첨두시 10~20분"
                                 : apt.traffic_score >= 85
-                                ? "첨두시 8~12분 / 비첨두시 15~25분"
-                                : "첨두시 10~15분 / 비첨두시 20~30분"}
+                                  ? "첨두시 8~12분 / 비첨두시 15~25분"
+                                  : "첨두시 10~15분 / 비첨두시 20~30분"}
                             </div>
                           </div>
                         </div>
@@ -1745,8 +1777,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                       {apt.nature_score >= 95
                         ? "공원·녹지가 매우 풍부한 최고급 자연환경입니다. 산책로, 한강공원, 대형 근린공원이 도보권 내 위치합니다."
                         : apt.nature_score >= 85
-                        ? "인근에 공원과 녹지공간이 잘 갖춰진 쾌적한 주거환경입니다."
-                        : "주변 자연환경이 적절히 갖춰진 지역입니다."}
+                          ? "인근에 공원과 녹지공간이 잘 갖춰진 쾌적한 주거환경입니다."
+                          : "주변 자연환경이 적절히 갖춰진 지역입니다."}
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-500 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">

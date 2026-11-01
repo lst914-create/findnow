@@ -869,72 +869,6 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               </p>
             </div>
 
-            {/* 시세 박스 */}
-            <div className="grid grid-cols-2 gap-3">
-              {/* 전세 보증금 / 매매 시세 */}
-              <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                <div className="text-[11px] font-semibold text-blue-500 mb-1">
-                  {tradeType === "매매" ? "매매 실거래가" : "전세 보증금"}
-                </div>
-                <div className="text-lg font-black text-slate-900 leading-tight">
-                  {tradeType === "매매"
-                    ? (realSaleRange
-                      ? (realSaleRange.min === realSaleRange.max
-                          ? formatPrice(realSaleRange.min)
-                          : `${formatPrice(realSaleRange.min)} ~ ${formatPrice(realSaleRange.max)}`)
-                      : (fallbackSaleRange.min > 0
-                          ? (fallbackSaleRange.min === fallbackSaleRange.max
-                              ? formatPrice(fallbackSaleRange.min)
-                              : `${formatPrice(fallbackSaleRange.min)} ~ ${formatPrice(fallbackSaleRange.max)}`)
-                          : "실거래가 확인 중"))
-                    : realJeonseStats
-                      ? `${formatPrice(realJeonseStats.min)} ~ ${formatPrice(realJeonseStats.max)}`
-                      : (realisticJeonseRange)
-                        ? `${formatPrice(realisticJeonseRange.min)} ~ ${formatPrice(realisticJeonseRange.max)}`
-                        : "시세 조회 중"}
-                </div>
-                {tradeType === "매매" && realSaleRange && (
-                  <div className="text-[10px] text-blue-500 font-semibold mt-1">
-                    {selectedArea !== "전체" ? `${selectedArea} 최근 실거래가 밴드 반영` : "최근 국토부 실거래가 밴드 반영"}
-                  </div>
-                )}
-                {tradeType === "전월세" && realJeonseStats && (
-                  <div className="text-[10px] text-blue-400 mt-1">
-                    {selectedArea !== "전체" ? `${selectedArea} 최근 ${realJeonseStats.count}건 실거래 기준` : `최근 ${realJeonseStats.count}건 실거래 기준`}
-                  </div>
-                )}
-              </div>
-              {/* 월세 / 전세 시세 */}
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <div className="text-[11px] font-semibold text-slate-400 mb-1">
-                  {tradeType === "매매" ? "전세 실거래가" : "월세"}
-                </div>
-                <div className="text-lg font-black text-slate-700 leading-tight">
-                  {tradeType === "매매"
-                    ? (realisticJeonseRange && realisticJeonseRange.min > 0
-                        ? (realisticJeonseRange.min === realisticJeonseRange.max
-                            ? formatPrice(realisticJeonseRange.min)
-                            : `${formatPrice(realisticJeonseRange.min)} ~ ${formatPrice(realisticJeonseRange.max)}`)
-                        : "전세 시세 확인 중")
-                    : realMonthlyStats
-                      ? `보증 ${formatPrice(realMonthlyStats.minDeposit)} / 월 ${realMonthlyStats.minMonthly}~${realMonthlyStats.maxMonthly}만`
-                      : `보증 ${formatPrice(estimatedMonthly.deposit)} / 월 ${estimatedMonthly.minMonthly}~${estimatedMonthly.maxMonthly}만`}
-                </div>
-                {tradeType === "매매" && (
-                  <div className="text-[10px] text-slate-400 mt-1">
-                    {realJeonseStats ? `최근 ${realJeonseStats.count}건 실거래 기준` : `실거래 기준 전세가율 ${apt.jeonseRatio || 60}% 반영`}
-                  </div>
-                )}
-                {tradeType === "전월세" && (
-                  <div className="text-[10px] text-slate-400 mt-1">
-                    {realMonthlyStats
-                      ? `최근 ${realMonthlyStats.count}건 실거래 기준`
-                      : "전월세전환율 4.8% 환산 기준"}
-                  </div>
-                )}
-              </div>
-            </div>
-
             {/* ===== 가격 추이 그래프 ===== */}
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -1288,10 +1222,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           const parkingRatioNum = Number(info.parkingRatio) || 1.1;
           const parkingStatus =
             parkingRatioNum >= 1.4
-              ? { text: "주차 쾌적 (여유)", color: "text-emerald-700 bg-emerald-50 border-emerald-200" }
+              ? { text: "여유", color: "text-emerald-700 bg-emerald-50 border-emerald-200" }
               : parkingRatioNum >= 1.1
-                ? { text: "주차 보통", color: "text-blue-700 bg-blue-50 border-blue-200" }
-                : { text: "주차 다소 혼잡", color: "text-amber-700 bg-amber-50 border-amber-200" };
+                ? { text: "보통", color: "text-blue-700 bg-blue-50 border-blue-200" }
+                : { text: "다소 혼잡", color: "text-amber-700 bg-amber-50 border-amber-200" };
 
           // 주차 지하비율
           const totalPark = info.parking_total || (info.parking_underground + info.parking_ground) || 1;

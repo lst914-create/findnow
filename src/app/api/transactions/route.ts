@@ -1,27 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LAWD_CODES, findLawdCode } from "@/lib/publicDataApi";
-
-function normalizeAptName(name: string): string {
-  if (!name) return "";
-  return name
-    .replace(/[\s\-_(),.·]/g, "")
-    // ─── 브랜드명 한글↔영문 통일 (국토부 API vs 마스터 데이터 혼용 대응) ───
-    .replace(/이편한세상|e\-편한세상/gi, "e편한세상")
-    .replace(/자연앤e편한세상|자연&e편한세상/gi, "e편한세상")
-    .replace(/에스케이뷰|sk\s*view/gi, "sk뷰")
-    .replace(/대우\s*푸르지오(?!아)/gi, "푸르지오")
-    .replace(/금호\s*어울림/gi, "금호어울림")
-    // ─── 차수/단지 번호 정규화 ────────────────────────────────────────────
-    .replace(/1차|ⅰ|i단지|1단지|Ⅰ/gi, "1")
-    .replace(/2차|ⅱ|ii단지|2단지|Ⅱ/gi, "2")
-    .replace(/3차|ⅲ|iii단지|3단지|Ⅲ/gi, "3")
-    .replace(/4차|ⅳ|iv단지|4단지|Ⅳ/gi, "4")
-    .replace(/5차|ⅴ|v단지|5단지|Ⅴ/gi, "5")
-    .replace(/6차|ⅵ|vi단지|6단지|Ⅵ/gi, "6")
-    .replace(/7차|ⅶ|vii단지|7단지|Ⅶ/gi, "7")
-    .replace(/8차|ⅷ|viii단지|8단지|Ⅷ/gi, "8")
-    .toLowerCase();
-}
+import { normalizeAptName } from "@/lib/normalizeAptName";
 
 const COMMON_KEYWORDS = [
   "펜테리움", "리버테라스", "아이비플레이스", "메이플타운", "에일린의뜰",
@@ -100,6 +79,23 @@ function isAptNameMatch(
 
   // ─── 2. 정규화 문자열 완전 일치 ────────────────────────────────────────────
   if (tNorm === cNorm) return true;
+
+  // ─── 2-1. 동/읍/면 접두사 유연 매칭 (예: '수택금호어울림' vs '금호어울림', '수택동금호어울림') ───
+  const cleanDist = targetDistrict ? targetDistrict.replace(/(동|읍|면|리)$/, "") : "";
+  if (cleanDist && cleanDist.length >= 2) {
+    if (tNorm.startsWith(cleanDist)) {
+      const stripped = tNorm.slice(cleanDist.length);
+      if (stripped === cNorm || stripped.includes(cNorm) || cNorm.includes(stripped)) {
+        return true;
+      }
+    }
+    if (cNorm.startsWith(cleanDist)) {
+      const stripped = cNorm.slice(cleanDist.length);
+      if (stripped === tNorm || stripped.includes(tNorm) || tNorm.includes(stripped)) {
+        return true;
+      }
+    }
+  }
 
   // ─── 3. 차수/단지 번호 불일치 시 매칭 거부 ────────────────────────────────
   //  양쪽 모두 번호가 있을 때만 엄격 비교 (1단지 vs 2단지 혼동 방지)

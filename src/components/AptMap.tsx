@@ -352,6 +352,13 @@ export default function AptMap({
   // 조건 필터링 함수
   const filterMarkers = (aptList: AptMarker[]) => {
     return aptList.filter((apt) => {
+      // 0. 실거래가 없는 임시 더미 제외 (실거래가가 검증된 단지만 지도 마커에 표출)
+      const norm = normalizeAptName(apt.name);
+      const hasLivePrice =
+        livePriceDetailCacheRef.current.has(`${norm}__${apt.pyeong}`) ||
+        livePriceDetailCacheRef.current.has(norm);
+      if (apt.priceNum <= 0 && !hasLivePrice && apt.id !== highlightId) return false;
+
       // 1. 평형
       if (filters.pyeong > 0) {
         if (filters.pyeong === 20 && (apt.pyeong < 20 || apt.pyeong >= 30)) return false;

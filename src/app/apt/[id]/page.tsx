@@ -848,7 +848,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                       ? "국토교통부 전월세 실거래 기준"
                       : hasRealDataForCurrentTab
                         ? "국토교통부 실거래 기준 (최근 거래 평균)"
-                        : "예상 시세 기준 평균"}
+                        : apt.isRealPrice
+                          ? "국토교통부 실거래 기준"
+                          : "국토교통부 실거래 조회 중"}
                 </p>
               </div>
               <p className="text-4xl font-black text-slate-900 tracking-tight">
@@ -861,9 +863,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     : selectedArea === "전체"
                       ? `전체 평형 (전용 ${displayAreaSqm}㎡ 기준)`
                       : `전용 ${selectedArea} 기준`)
-                  : (selectedArea === "전체"
-                    ? (activeTxs.length > 0 ? `전체 평형 · 최근 ${Math.min(5, activeTxs.length)}건 평균` : `전용 ${displayAreaSqm}㎡ 기준`)
-                    : `전용 ${selectedArea} 기준 (최근 ${Math.min(5, activeTxs.length)}건 평균)`)}
+                  : (activeTxs.length > 0
+                    ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 최근 1개월 평균/최종 실거래`
+                    : `매매 기준 · ${apt.area_pyeong || 34}평형 · 국토교통부 최종 실거래`)}
               </p>
             </div>
 
@@ -872,13 +874,19 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               {/* 전세 보증금 / 매매 시세 */}
               <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
                 <div className="text-[11px] font-semibold text-blue-500 mb-1">
-                  {tradeType === "매매" ? "매매 예상 시세" : "전세 보증금"}
+                  {tradeType === "매매" ? "매매 실거래가" : "전세 보증금"}
                 </div>
                 <div className="text-lg font-black text-slate-900 leading-tight">
                   {tradeType === "매매"
                     ? (realSaleRange
-                      ? `${formatPrice(realSaleRange.min)} ~ ${formatPrice(realSaleRange.max)}`
-                      : `${formatPrice(fallbackSaleRange.min)} ~ ${formatPrice(fallbackSaleRange.max)}`)
+                      ? (realSaleRange.min === realSaleRange.max
+                          ? formatPrice(realSaleRange.min)
+                          : `${formatPrice(realSaleRange.min)} ~ ${formatPrice(realSaleRange.max)}`)
+                      : (fallbackSaleRange.min > 0
+                          ? (fallbackSaleRange.min === fallbackSaleRange.max
+                              ? formatPrice(fallbackSaleRange.min)
+                              : `${formatPrice(fallbackSaleRange.min)} ~ ${formatPrice(fallbackSaleRange.max)}`)
+                          : "실거래가 확인 중"))
                     : realJeonseStats
                       ? `${formatPrice(realJeonseStats.min)} ~ ${formatPrice(realJeonseStats.max)}`
                       : (realisticJeonseRange)
@@ -899,11 +907,15 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               {/* 월세 / 전세 시세 */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
                 <div className="text-[11px] font-semibold text-slate-400 mb-1">
-                  {tradeType === "매매" ? "전세 예상 시세" : "월세"}
+                  {tradeType === "매매" ? "전세 실거래가" : "월세"}
                 </div>
                 <div className="text-lg font-black text-slate-700 leading-tight">
                   {tradeType === "매매"
-                    ? `${formatPrice(realisticJeonseRange.min)} ~ ${formatPrice(realisticJeonseRange.max)}`
+                    ? (realisticJeonseRange && realisticJeonseRange.min > 0
+                        ? (realisticJeonseRange.min === realisticJeonseRange.max
+                            ? formatPrice(realisticJeonseRange.min)
+                            : `${formatPrice(realisticJeonseRange.min)} ~ ${formatPrice(realisticJeonseRange.max)}`)
+                        : "전세 시세 확인 중")
                     : realMonthlyStats
                       ? `보증 ${formatPrice(realMonthlyStats.minDeposit)} / 월 ${realMonthlyStats.minMonthly}~${realMonthlyStats.maxMonthly}만`
                       : `보증 ${formatPrice(estimatedMonthly.deposit)} / 월 ${estimatedMonthly.minMonthly}~${estimatedMonthly.maxMonthly}만`}

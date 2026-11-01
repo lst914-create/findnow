@@ -208,35 +208,45 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
                   {units.slice(0, 5).map((p) => (
                     <div
                       key={p.id}
-                      className="p-4 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-100 transition-all flex items-center justify-between text-xs group"
+                      className="p-3.5 sm:p-4 rounded-2xl bg-slate-50 hover:bg-slate-100/80 border border-slate-100 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-xs group"
                     >
-                      <div className="flex-1 min-w-0 pr-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Link
-                            href={`/search?q=${encodeURIComponent(p.name)}`}
-                            className="font-extrabold text-slate-900 text-sm hover:text-blue-600 transition-colors truncate"
-                          >
-                            {p.name}
-                          </Link>
-                          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-semibold text-[10px]">
-                            {p.supplyType}
-                          </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between sm:justify-start gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Link
+                              href={`/search?q=${encodeURIComponent(p.name)}`}
+                              className="font-extrabold text-slate-900 text-sm hover:text-blue-600 transition-colors truncate"
+                            >
+                              {p.name}
+                            </Link>
+                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-semibold text-[10px] shrink-0 whitespace-nowrap">
+                              {p.supplyType}
+                            </span>
+                          </div>
+                          {/* 모바일: 상단 우측에 세대수 깔끔하게 배치 */}
+                          <div className="sm:hidden text-right shrink-0 whitespace-nowrap">
+                            <span className="font-extrabold text-slate-900 text-sm">
+                              {p.totalUnits.toLocaleString()}
+                            </span>
+                            <span className="text-slate-500 text-[11px] ml-0.5">세대</span>
+                          </div>
                         </div>
-                        <div className="text-slate-400 mt-1 flex items-center gap-2 text-xs">
-                          <span>{p.expectedMoveIn} 입주예정</span>
-                          <span>·</span>
-                          <span>직선 {p.distanceM < 1000 ? `${p.distanceM}m` : `${(p.distanceM / 1000).toFixed(1)}km`}</span>
+                        <div className="text-slate-500 mt-1 flex items-center gap-1.5 text-[11px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis">
+                          <span className="shrink-0">{p.expectedMoveIn} 입주예정</span>
+                          <span className="text-slate-300">·</span>
+                          <span className="shrink-0">직선 {p.distanceM < 1000 ? `${p.distanceM}m` : `${(p.distanceM / 1000).toFixed(1)}km`}</span>
                           {p.developer && (
                             <>
-                              <span>·</span>
-                              <span className="truncate max-w-[120px]">{p.developer}</span>
+                              <span className="text-slate-300">·</span>
+                              <span className="truncate">{p.developer}</span>
                             </>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="text-right">
+                      <div className="flex items-center justify-end gap-3 shrink-0">
+                        {/* PC 화면 세대수 */}
+                        <div className="hidden sm:block text-right whitespace-nowrap">
                           <span className="font-extrabold text-slate-900 text-base">
                             {p.totalUnits.toLocaleString()}
                           </span>
@@ -244,7 +254,7 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
                         </div>
                         <Link
                           href="/subscriptions"
-                          className="px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 font-bold hover:border-slate-300 transition-all group-hover:translate-x-0.5"
+                          className="w-full sm:w-auto text-center px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-slate-900 font-bold hover:border-slate-300 transition-all text-xs whitespace-nowrap shadow-2xs"
                         >
                           분양정보 ↗
                         </Link>

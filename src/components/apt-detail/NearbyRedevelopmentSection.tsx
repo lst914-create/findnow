@@ -84,30 +84,27 @@ export function NearbyRedevelopmentSection({ aptId, aptName }: Props) {
   return (
     <div id="nearby-redevelopment" className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden scroll-mt-24">
       {/* Header */}
-      <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+      <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
             <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-1.5">
               <span>🏗️</span> 주변 정비사업 목록 &amp; 진행 단계
             </h3>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
-              {loading ? "조회중" : `${zones.length}개 구역`}
-            </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
             {aptName} 인근 재개발·재건축 구역의 추진 단계와 공급 예정 정보입니다.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center justify-between sm:justify-start gap-2 flex-wrap">
           {/* 반경 선택 탭 */}
-          <div className="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium">
+          <div className="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium shrink-0">
             {[1000, 1500, 2000, 3000].map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRadius(r)}
-                className={`px-2.5 py-1 rounded-lg transition-colors ${
+                className={`px-2 py-1 rounded-lg transition-colors whitespace-nowrap text-[11px] sm:text-xs ${
                   radius === r
                     ? "bg-white text-slate-900 font-bold shadow-sm"
                     : "text-slate-500 hover:text-slate-800"
@@ -118,33 +115,33 @@ export function NearbyRedevelopmentSection({ aptId, aptName }: Props) {
             ))}
           </div>
 
-          {/* 정렬 */}
-          <div className="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium">
-            {(["distance", "stage"] as const).map((s) => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setSortBy(s)}
-                className={`px-2.5 py-1 rounded-lg transition-colors ${
-                  sortBy === s
-                    ? "bg-white text-slate-900 font-bold shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {s === "distance" ? "거리순" : "진행순"}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* 정렬 */}
+            <div className="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium shrink-0">
+              {(["distance", "stage"] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setSortBy(s)}
+                  className={`px-2 py-1 rounded-lg transition-colors whitespace-nowrap text-[11px] sm:text-xs ${
+                    sortBy === s
+                      ? "bg-white text-slate-900 font-bold shadow-sm"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  {s === "distance" ? "거리순" : "진행순"}
+                </button>
+              ))}
+            </div>
+
+            <Link
+              href="/redevelopment"
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/70 px-2.5 py-1.5 rounded-xl transition-colors flex items-center gap-1 whitespace-nowrap shrink-0"
+            >
+              <span>전체 지도</span>
+              <span>↗</span>
+            </Link>
           </div>
-
-          <Link
-            href="/redevelopment"
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/70 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1"
-          >
-            <span>전체 지도</span>
-            <span>↗</span>
-          </Link>
-
-          <DataSourceBadge provider="MOLIT_REDNV" meta={data?.meta} />
         </div>
       </div>
 

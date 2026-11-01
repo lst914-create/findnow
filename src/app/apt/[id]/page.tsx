@@ -1162,8 +1162,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs text-slate-400 border-b border-slate-100">
-                      <th className="text-left py-2 pr-4 font-semibold">단지명</th>
-                      <th className="text-right py-2 px-3 font-semibold">매매 시세</th>
+                      <th className="text-left py-2 pr-4 font-semibold whitespace-nowrap">단지명</th>
+                      <th className="text-right py-2 px-3 font-semibold whitespace-nowrap">매매 시세</th>
                       <th className="text-right py-2 px-3 font-semibold hidden sm:table-cell">거리</th>
                       <th className="text-right py-2 px-3 font-semibold hidden sm:table-cell">학군</th>
                       <th className="text-right py-2 px-3 font-semibold hidden sm:table-cell">교통</th>
@@ -1178,7 +1178,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                           <div className="text-[11px] text-slate-400">{a.region}</div>
                         </td>
                         <td className="py-3 px-3 text-right font-bold text-blue-600 whitespace-nowrap">
-                          {Math.round((a.price_min + a.price_max) / 2 / 10000)}억
+                          {Math.round((a.price_max || a.price_min) / 10000)}억
                         </td>
                         <td className="py-3 px-3 text-right text-slate-400 text-xs hidden sm:table-cell">
                           {dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`}
@@ -1311,27 +1311,27 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               </div>
 
               {/* 1. 핵심 4대 인프라 카드 (Top Highlights) */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 {/* 1) 주차 환경 */}
-                <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                    <span className="flex items-center gap-1">🚗 주차 제원</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${parkingStatus.color}`}>
+                <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium gap-1">
+                    <span className="flex items-center gap-1 whitespace-nowrap shrink-0">🚗 주차 제원</span>
+                    <span className={`text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full border font-bold whitespace-nowrap shrink-0 ${parkingStatus.color}`}>
                       {parkingStatus.text}
                     </span>
                   </div>
-                  <div className="my-2.5">
-                    <div className="text-2xl font-black text-slate-900">
-                      세대당 {parkingRatioNum.toFixed(2)}<span className="text-sm font-semibold text-slate-500 ml-0.5">대</span>
+                  <div className="my-2">
+                    <div className="text-xl sm:text-2xl font-black text-slate-900 whitespace-nowrap">
+                      세대당 {parkingRatioNum.toFixed(2)}<span className="text-xs sm:text-sm font-semibold text-slate-500 ml-0.5">대</span>
                     </div>
-                    <div className="text-xs text-slate-600 mt-0.5">
-                      총 <strong className="text-slate-900 font-bold">{info.parking_total?.toLocaleString()}대</strong> 주차 가능
+                    <div className="text-[11px] sm:text-xs text-slate-600 mt-0.5 whitespace-nowrap truncate">
+                      총 <strong className="text-slate-900 font-bold">{info.parking_total?.toLocaleString()}대</strong> 가능
                     </div>
                   </div>
                   {/* 지하/지상 바 */}
                   <div className="space-y-1 pt-1.5 border-t border-slate-200/60">
-                    <div className="flex justify-between text-[11px] text-slate-500">
-                      <span>지하 {info.parking_underground}대 ({undergroundPct}%)</span>
+                    <div className="flex justify-between text-[10px] sm:text-[11px] text-slate-500 whitespace-nowrap">
+                      <span>지하 {info.parking_underground}대</span>
                       <span>지상 {info.parking_ground}대</span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden flex">
@@ -1342,73 +1342,73 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 </div>
 
                 {/* 2) 단지 규모 */}
-                <div className="bg-gradient-to-br from-slate-50 to-indigo-50/40 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                    <span className="flex items-center gap-1">🏘️ 단지 규모</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold">
-                      {info.household_count >= 1000 ? "대단지 (1,000+)" : "일반단지"}
+                <div className="bg-gradient-to-br from-slate-50 to-indigo-50/40 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium gap-1">
+                    <span className="flex items-center gap-1 whitespace-nowrap shrink-0">🏘️ 단지 규모</span>
+                    <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold whitespace-nowrap shrink-0">
+                      {info.household_count >= 1000 ? "대단지" : "일반단지"}
                     </span>
                   </div>
-                  <div className="my-2.5">
-                    <div className="text-2xl font-black text-slate-900">
-                      {info.household_count?.toLocaleString()}<span className="text-sm font-semibold text-slate-500 ml-0.5">세대</span>
+                  <div className="my-2">
+                    <div className="text-xl sm:text-2xl font-black text-slate-900 whitespace-nowrap">
+                      {info.household_count?.toLocaleString()}<span className="text-xs sm:text-sm font-semibold text-slate-500 ml-0.5">세대</span>
                     </div>
-                    <div className="text-xs text-slate-600 mt-0.5">
+                    <div className="text-[11px] sm:text-xs text-slate-600 mt-0.5 whitespace-nowrap truncate">
                       총 <strong className="text-slate-900 font-bold">{info.dong_count}개동</strong>
                     </div>
                   </div>
-                  <div className="text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 flex items-center justify-between">
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 flex items-center justify-between whitespace-nowrap overflow-hidden">
                     <span>최고 {info.floor_top}층</span>
-                    <span className="text-slate-400">·</span>
+                    <span className="text-slate-300">·</span>
                     <span>지하 {info.floor_base || 1}층</span>
-                    <span className="text-slate-400">·</span>
+                    <span className="text-slate-300">·</span>
                     <span>승강기 {info.elevatorCount}대</span>
                   </div>
                 </div>
 
                 {/* 3) 사용승인 & 시공사 */}
-                <div className="bg-gradient-to-br from-slate-50 to-emerald-50/40 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                    <span className="flex items-center gap-1">📅 준공/승인</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+                <div className="bg-gradient-to-br from-slate-50 to-emerald-50/40 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium gap-1">
+                    <span className="flex items-center gap-1 whitespace-nowrap shrink-0">📅 준공/승인</span>
+                    <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold whitespace-nowrap shrink-0">
                       {2026 - (info.built_year || 2010)}년차
                     </span>
                   </div>
-                  <div className="my-2.5">
-                    <div className="text-xl font-black text-slate-900 font-mono tracking-tight">
+                  <div className="my-2">
+                    <div className="text-lg sm:text-xl font-black text-slate-900 font-mono tracking-tight whitespace-nowrap">
                       {info.approval_date}
                     </div>
-                    <div className="text-xs text-slate-600 mt-0.5 truncate" title={info.construction}>
+                    <div className="text-[11px] sm:text-xs text-slate-600 mt-0.5 truncate whitespace-nowrap" title={info.construction}>
                       시공: <strong className="text-slate-900 font-bold">{info.construction}</strong>
                     </div>
                   </div>
-                  <div className="text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 truncate" title={info.developer}>
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 truncate whitespace-nowrap" title={info.developer}>
                     시행: {info.developer}
                   </div>
                 </div>
 
                 {/* 4) 전기차(EV) 충전 인프라 */}
-                <div className="bg-gradient-to-br from-slate-50 to-teal-50/40 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
-                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                    <span className="flex items-center gap-1">⚡ 전기차 충전</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-bold">
-                      친환경 인프라
+                <div className="bg-gradient-to-br from-slate-50 to-teal-50/40 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between">
+                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium gap-1">
+                    <span className="flex items-center gap-1 whitespace-nowrap shrink-0">⚡ 전기차 충전</span>
+                    <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-bold whitespace-nowrap shrink-0">
+                      친환경
                     </span>
                   </div>
-                  <div className="my-2.5">
-                    <div className="text-2xl font-black text-teal-700">
-                      총 {info.ev_total}<span className="text-sm font-semibold text-slate-500 ml-0.5">대</span>
+                  <div className="my-2">
+                    <div className="text-xl sm:text-2xl font-black text-teal-700 whitespace-nowrap">
+                      총 {info.ev_total}<span className="text-xs sm:text-sm font-semibold text-slate-500 ml-0.5">대</span>
                     </div>
-                    <div className="text-xs text-slate-600 mt-0.5">
-                      완속 및 급속 충전시설 완비
+                    <div className="text-[11px] sm:text-xs text-slate-600 mt-0.5 whitespace-nowrap truncate">
+                      완속·급속 충전소 완비
                     </div>
                   </div>
-                  <div className="text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 flex items-center justify-between">
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 pt-1.5 border-t border-slate-200/60 flex items-center justify-between whitespace-nowrap overflow-hidden">
                     <span>지하 {info.ev_underground}대</span>
-                    <span className="text-slate-400">·</span>
+                    <span className="text-slate-300">·</span>
                     <span>지상 {info.ev_ground}대</span>
-                    <span className="text-slate-400">·</span>
-                    <span className="text-teal-600 font-bold">안전 관리중</span>
+                    <span className="text-slate-300">·</span>
+                    <span className="text-teal-600 font-bold">안전관리</span>
                   </div>
                 </div>
               </div>
@@ -1417,7 +1417,6 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               <div>
                 <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                   <span>📐 건축·설비·관리 정밀 제원</span>
-                  <span className="text-xs font-normal text-slate-400">| 국토교통부 표준 코드 규격</span>
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
                   {[

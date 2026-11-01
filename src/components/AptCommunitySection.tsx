@@ -240,10 +240,6 @@ export default function AptCommunitySection({
       {/* 1. 섹션 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-2 border border-blue-100">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>단지 고유 실시간 소통창구 (단지별 개별 저장)</span>
-          </div>
           <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
             <span>💬</span>
             <span>{aptName} 단지 이야기 & 토론</span>
@@ -336,9 +332,6 @@ export default function AptCommunitySection({
             {cat}
           </button>
         ))}
-        <span className="text-slate-400 text-xs ml-auto shrink-0">
-          {aptName} 전용 {filteredComments.length}개의 이야기
-        </span>
       </div>
 
       {/* 4. 피드 목록 (단지별 개별 이야기) */}
@@ -405,13 +398,10 @@ export default function AptCommunitySection({
 
       {/* 5. 간편 이야기 작성창 */}
       <form onSubmit={handleAddComment} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-        <div className="text-xs font-bold text-slate-800 flex items-center justify-between">
-          <span className="flex items-center gap-1.5">
+        <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
             <span>✏️</span>
             <span>{aptName}에 대해 이야기 남기기</span>
-          </span>
-          <span className="text-[11px] text-blue-600 font-semibold">이 단지에 개별 저장됩니다</span>
-        </div>
+          </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {/* 말머리 */}

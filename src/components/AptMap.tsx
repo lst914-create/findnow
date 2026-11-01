@@ -552,17 +552,15 @@ export default function AptMap({
     }
     const viewers = apt.liveViewers || Math.floor(Math.random() * 80 + 20);
 
-    // 실거래가 있으면 티얼 그린 스타일, 마스터 실거래가는 인디고, 미확인은 슬레이트
+    // 마커 스타일: 하이라이트(빨강) 외 모든 마커를 신뢰도 높은 '실거래가 초록색(티얼)'으로 통일
     const bgGradient = isMain
       ? "linear-gradient(135deg, #e11d48 0%, #be123c 100%)"
-      : hasLive
-        ? "linear-gradient(135deg, #0f766e 0%, #0d5f57 100%)"
-        : apt.isRealPrice
-          ? "linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)"
-          : "linear-gradient(135deg, #475569 0%, #334155 100%)";
-    const borderColor = isMain ? "#fecdd3" : hasLive ? "#5eead4" : apt.isRealPrice ? "#c7d2fe" : "#94a3b8";
-    const glowStyle = isMain ? "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);" :
-      hasLive ? "box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.35);" : "";
+      : "linear-gradient(135deg, #0f766e 0%, #0d5f57 100%)";
+    const borderColor = isMain ? "#fecdd3" : "#5eead4";
+    const glowStyle = isMain
+      ? "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);"
+      : "box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.35);";
+    const arrowColor = isMain ? "#be123c" : "#0d5f57";
 
     return `
       <div style="
@@ -594,9 +592,7 @@ export default function AptMap({
                   ? "실거래(최근1개월)"
                   : `실거래 ${liveDetail!.dealDate.slice(2).replace(".", "/")}`
               }`
-            : apt.isRealPrice
-              ? `<span style="color:#818cf8; font-size:9px;">●</span> 최근실거래`
-              : `<span style="color:#f43f5e; font-size:9px;">🔥</span> ${viewers}명 보는중`
+            : `<span style="color:#2dd4bf; font-size:9px;">●</span> 실거래`
           }
         </div>
 
@@ -625,7 +621,7 @@ export default function AptMap({
           width: 0; height: 0;
           border-left: 7px solid transparent;
           border-right: 7px solid transparent;
-          border-top: 8px solid ${isMain ? "#be123c" : hasLive ? "#0d5f57" : "#3730a3"};
+          border-top: 8px solid ${arrowColor};
           margin-top: -1px;
         "></div>
       </div>

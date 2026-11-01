@@ -1197607,13 +1197607,13 @@
     "name": "교문우성한양",
     "region": "경기 구리시",
     "district": "교문동",
-    "price_min": 125163,
-    "price_max": 138338,
-    "rent_min": 88866,
-    "rent_max": 98220,
-    "gapPrice": 38208,
+    "price_min": 62000,
+    "price_max": 74000,
+    "rent_min": 44020,
+    "rent_max": 52540,
+    "gapPrice": 21460,
     "jeonseRatio": 71,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2015,
     "household_count": 810,
@@ -1197683,7 +1197683,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A47170801",
@@ -1198525,13 +1198525,13 @@
     "name": "힐스테이트 구리역 ",
     "region": "경기 구리시",
     "district": "수택동",
-    "price_min": 98000,
-    "price_max": 149000,
-    "rent_min": 63700,
-    "rent_max": 96850,
-    "gapPrice": 45421,
+    "price_min": 85000,
+    "price_max": 98000,
+    "rent_min": 55250,
+    "rent_max": 63700,
+    "gapPrice": 34300,
     "jeonseRatio": 65,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2024,
     "household_count": 1050,
@@ -1198777,13 +1198777,13 @@
     "name": "한양수자인구리역리버시티",
     "region": "경기 구리시",
     "district": "수택동",
-    "price_min": 119090,
-    "price_max": 131626,
-    "rent_min": 80981,
-    "rent_max": 89506,
-    "gapPrice": 40115,
+    "price_min": 82000,
+    "price_max": 95000,
+    "rent_min": 55760,
+    "rent_max": 64600,
+    "gapPrice": 30400,
     "jeonseRatio": 68,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2013,
     "household_count": 630,
@@ -1198854,7 +1198854,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10025060",
@@ -1199454,13 +1199454,13 @@
     "name": "리버프라임 토평",
     "region": "경기 구리시",
     "district": "수택동",
-    "price_min": 119090,
-    "price_max": 131626,
-    "rent_min": 86936,
-    "rent_max": 96087,
-    "gapPrice": 33847,
+    "price_min": 65000,
+    "price_max": 75000,
+    "rent_min": 47450,
+    "rent_max": 54750,
+    "gapPrice": 20250,
     "jeonseRatio": 73,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2008,
     "household_count": 330,
@@ -1199527,7 +1199527,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A47103007",
@@ -1199862,13 +1199862,13 @@
     "name": "수택금호어울림",
     "region": "경기 구리시",
     "district": "수택동",
-    "price_min": 119090,
-    "price_max": 131626,
-    "rent_min": 76218,
-    "rent_max": 84241,
-    "gapPrice": 45129,
+    "price_min": 58000,
+    "price_max": 68000,
+    "rent_min": 37120,
+    "rent_max": 43520,
+    "gapPrice": 24480,
     "jeonseRatio": 64,
-    "area_sqm": 84,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2002,
     "household_count": 1290,
@@ -1199942,7 +1199942,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A47175602",

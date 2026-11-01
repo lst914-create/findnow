@@ -234,11 +234,17 @@ export async function GET(request: NextRequest) {
   const trades: any[] = [];
   const rents: any[] = [];
 
+  let cleanApiKey = apiKey.trim();
+  try {
+    cleanApiKey = decodeURIComponent(cleanApiKey);
+  } catch {}
+  const encodedKey = encodeURIComponent(cleanApiKey);
+
   try {
     // 2. 병렬 fetch (Promise.all) - 36번 직렬 통신(3~4초)을 1회 왕복(0.15초)으로 단축!
     const fetchPromises = dealYmdList.map(async (dealYmd) => {
-      const tradeUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${apiKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
-      const rentUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent?serviceKey=${apiKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+      const tradeUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+      const rentUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
 
       const [tradeRes, rentRes] = await Promise.all([
         fetch(tradeUrl, { next: { revalidate: 3600 } }).catch(() => null),

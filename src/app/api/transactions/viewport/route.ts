@@ -6,6 +6,7 @@ import { normalizeAptName } from "@/lib/normalizeAptName";
 interface TradeInfo {
   aptName: string;
   normName: string;
+  umdNm?: string;
   amount: number;
   dealDate: string; // YYYY.MM.DD
   dealTime: number; // Unix timestamp
@@ -204,9 +205,12 @@ export async function POST(request: NextRequest) {
             const dealDate = `${year}.${month}.${day}`;
             const dealTime = new Date(`${year}-${month}-${day}`).getTime();
 
+            const umdNm = getVal(item, "umdNm");
+
             localTrades.push({
               aptName: aptNm,
               normName,
+              umdNm,
               amount,
               dealDate,
               dealTime,
@@ -296,28 +300,71 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    // 2. 단지명 대표 평형 실거래가 계산 (평형 미지정 단지 기본 매칭용)
+    // 2. 단지명 대표 실거래가 계산
+    // [사용자 핵심 규칙]: "가격은 34평 기준으로 나오면 좋겠고, 34평이 없다면 가장 비싼 금액의 평수와 가격이 나오면 돼."
     tradesByApt.forEach((trades, normName) => {
-      // 가장 거래가 활발한 주력 평형(또는 최신 거래 평형)을 선별하여 다른 평형이 섞이지 않도록 격리
-      const latest = trades[0];
-      const targetPyeong = latest.supplyPyeong;
-      const targetTrades = trades.filter((t) => t.supplyPyeong === targetPyeong);
+      if (!trades.length) return;
 
-      const calc = computeAccurateTradePrice(targetTrades);
-      if (!calc) return;
+      // 평형별로 거래 그룹화
+      const pyeongMap = new Map<number, TradeInfo[]>();
+      for (const t of trades) {
+        const arr = pyeongMap.get(t.supplyPyeong) || [];
+        arr.push(t);
+        pyeongMap.set(t.supplyPyeong, arr);
+      }
 
-      priceMap[normName] = calc.price;
+      let selectedCalc: ReturnType<typeof computeAccurateTradePrice> = null;
+
+      // 1순위: 34평(전용 84㎡ 내외, 32~35평대) 거래가 있는지 확인
+      const pyeong34Trades =
+        pyeongMap.get(34) ||
+        trades.filter((t) => t.supplyPyeong >= 32 && t.supplyPyeong <= 35);
+
+      if (pyeong34Trades && pyeong34Trades.length > 0) {
+        selectedCalc = computeAccurateTradePrice(pyeong34Trades);
+        if (selectedCalc) {
+          selectedCalc.pyeong = 34; // 34평으로 표준화 표기
+        }
+      } else {
+        // 2순위: 34평이 없다면 -> 모든 평형 중 '가장 비싼 금액의 평수와 그 가격' 선정!
+        let maxPrice = -1;
+        pyeongMap.forEach((pTrades) => {
+          const calc = computeAccurateTradePrice(pTrades);
+          if (calc && calc.price > maxPrice) {
+            maxPrice = calc.price;
+            selectedCalc = calc;
+          }
+        });
+      }
+
+      if (!selectedCalc) return;
+
+      // 기본 키 등록
+      priceMap[normName] = selectedCalc.price;
       detailsMap[normName] = {
-        avgPrice: calc.price,
-        latestPrice: calc.latestPrice,
-        formatted: calc.formatted,
-        dealDate: calc.dealDate,
-        floor: calc.floor,
-        areaSqm: calc.areaSqm,
-        pyeong: calc.pyeong,
-        tradeCount: calc.totalTradeCount,
-        isAverage: calc.isAverageOf1Month,
+        avgPrice: selectedCalc.price,
+        latestPrice: selectedCalc.latestPrice,
+        formatted: selectedCalc.formatted,
+        dealDate: selectedCalc.dealDate,
+        floor: selectedCalc.floor,
+        areaSqm: selectedCalc.areaSqm,
+        pyeong: selectedCalc.pyeong,
+        tradeCount: selectedCalc.totalTradeCount,
+        isAverage: selectedCalc.isAverageOf1Month,
       };
+
+      // 동/지역 접두사 대응 (예: '금호어울림' -> '수택금호어울림' 등으로 매칭되도록 별칭 키 등록)
+      const firstTrade = trades[0];
+      if (firstTrade && (firstTrade as any).umdNm) {
+        const cleanUmd = (firstTrade as any).umdNm.replace(/(동|읍|면|리)$/, "");
+        if (cleanUmd && cleanUmd.length >= 2) {
+          const aliasWithUmd = normalizeAptName(`${cleanUmd}${firstTrade.aptName}`);
+          if (!priceMap[aliasWithUmd]) {
+            priceMap[aliasWithUmd] = selectedCalc.price;
+            detailsMap[aliasWithUmd] = detailsMap[normName];
+          }
+        }
+      }
     });
 
     return NextResponse.json(

@@ -983,14 +983,14 @@ export default function AptMap({
       const radiusMeters = Math.min(Math.max(Math.round(latSpan * 111000 * 0.6), 400), 3000);
 
       try {
-        // 1페이지 & 2페이지 최대 30건 검색하여 누락 차단
+        // 1페이지 & 2페이지 최대 30건 검색하여 누락 차단 (CORS 차단 방지를 위해 내부 프록시 API 사용)
         const pages = [1, 2];
         const fetchPromises = pages.map((page) => {
-          const url = `https://dapi.kakao.com/v2/local/search/keyword.json?` +
+          const url = `/api/kakao/places?` +
             `query=${encodeURIComponent("아파트")}` +
             `&x=${centerLng.toFixed(6)}&y=${centerLat.toFixed(6)}` +
-            `&radius=${radiusMeters}&size=15&page=${page}&category_group_code=`;
-          return fetch(url, { headers: { Authorization: `KakaoAK ${apiKey}` } })
+            `&radius=${radiusMeters}&size=15&page=${page}`;
+          return fetch(url)
             .then((r) => (r.ok ? r.json() : null))
             .catch(() => null);
         });

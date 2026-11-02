@@ -15,6 +15,7 @@ const COMMON_KEYWORDS = [
   "두산위브", "서희스타힐스", "한신더휴", "지웰", "엘크루", "엘시티",
   "동원베네스트", "신동아파밀리에", "금호어울림", "포레나",
   "대우이안", "대우푸르지오", "우방아이유쉘", "중흥에스클래스",
+  "부영", "사랑으로", "플루리움", "한양수자인", "주공", "우미린",
 ];
 
 function extractKeywords(name: string): Set<string> {
@@ -40,9 +41,38 @@ function extractAptNums(norm: string): string[] {
   return norm.match(/\d{1,3}/g) || [];
 }
 
+// 시군구 및 읍면동 접두사 제거 헬퍼
+function stripRegionAndDong(norm: string, region = "", district = ""): string {
+  let res = norm;
+  const regParts = region
+    .split(/\s+/)
+    .map((p) => p.replace(/(특별시|광역시|특별자치시|시|군|구)$/, ""))
+    .filter((p) => p.length >= 2);
+  for (const p of regParts) {
+    if (res.startsWith(p)) {
+      res = res.slice(p.length);
+      break;
+    }
+  }
+  const distParts = district
+    .split(/\s+/)
+    .map((p) => p.replace(/(동|읍|면|리)$/, ""))
+    .filter((p) => p.length >= 2);
+  for (const p of distParts) {
+    if (res.startsWith(p)) {
+      res = res.slice(p.length);
+      break;
+    }
+  }
+  // 다산/도농/지금 등 통합지역 고유 접두사
+  res = res.replace(/^(지금동|지금|도농동|도농|다산동|다산)/, "");
+  return res;
+}
+
 function isAptNameMatch(
   targetName: string,
   candidateName: string,
+  targetRegion = "",
   targetDistrict = "",
   candidateUmd = ""
 ): boolean {
@@ -80,22 +110,12 @@ function isAptNameMatch(
   // ─── 2. 정규화 문자열 완전 일치 ────────────────────────────────────────────
   if (tNorm === cNorm) return true;
 
-  // ─── 2-1. 동/읍/면 접두사 유연 매칭 (예: '수택금호어울림' vs '금호어울림', '수택동금호어울림') ───
-  const cleanDist = targetDistrict ? targetDistrict.replace(/(동|읍|면|리)$/, "") : "";
-  if (cleanDist && cleanDist.length >= 2) {
-    if (tNorm.startsWith(cleanDist)) {
-      const stripped = tNorm.slice(cleanDist.length);
-      if (stripped === cNorm || stripped.includes(cNorm) || cNorm.includes(stripped)) {
-        return true;
-      }
-    }
-    if (cNorm.startsWith(cleanDist)) {
-      const stripped = cNorm.slice(cleanDist.length);
-      if (stripped === tNorm || stripped.includes(tNorm) || tNorm.includes(stripped)) {
-        return true;
-      }
-    }
-  }
+  // ─── 2-1. 시/군/구 및 동/읍/면 접두사 제거 후 비교 (예: '남양주지금동부영' -> '부영') ───
+  const tStripped = stripRegionAndDong(tNorm, targetRegion, targetDistrict);
+  const cStripped = stripRegionAndDong(cNorm, targetRegion, candidateUmd);
+
+  if (tStripped === cStripped) return true;
+  if (tStripped === cNorm || cStripped === tNorm) return true;
 
   // ─── 3. 차수/단지 번호 불일치 시 매칭 거부 ────────────────────────────────
   //  양쪽 모두 번호가 있을 때만 엄격 비교 (1단지 vs 2단지 혼동 방지)
@@ -120,26 +140,21 @@ function isAptNameMatch(
     const similarity = intersectionCount / unionCount;
 
     if (intersectionCount >= 2 || similarity >= 0.4) {
-      // 브랜드 키워드 교집합이 1개뿐인 경우 (힐스테이트, 래미안, 아이파크 등 오탐 방지):
-      // 단지명 정규화 문자열 포함 관계를 추가 확인하여 다른 단지 오탐 차단
-      // 예: '래미안리버사이드' vs '반포래미안아이파크' → 교집합=['래미안'] 1개, 포함관계 없음 → 거부
-      //     '래미안리버사이드' vs '래미안 리버사이드'  → 교집합=['래미안'] 1개, 포함관계 있음 → 허용
       if (intersectionCount === 1) {
-        if (!tNorm.includes(cNorm) && !cNorm.includes(tNorm)) {
+        if (!tNorm.includes(cNorm) && !cNorm.includes(tNorm) && !tStripped.includes(cStripped) && !cStripped.includes(tStripped)) {
           return false;
         }
       }
       return true;
     }
-
   }
 
-  // ─── 5. 일반 단지: 포함 관계 검사 ────────────────────────────────────────
-  const tCore = tNorm.replace(/아파트|단지/g, "");
-  const cCore = cNorm.replace(/아파트|단지/g, "");
-  if (tCore.length >= 4 && cCore.length >= 4) {
-    if (tCore.includes(cCore) || cCore.includes(tCore)) {
-      if (tNums.length === cNums.length) return true;
+  // ─── 5. 일반 단지: 접두사 제거 후 포함 관계 검사 ──────────────────────────
+  if (tStripped.length >= 2 && cStripped.length >= 2) {
+    if (tStripped.includes(cStripped) || cStripped.includes(tStripped)) {
+      if (tNums.length === 0 || cNums.length === 0 || tNums.join(",") === cNums.join(",")) {
+        return true;
+      }
     }
   }
 
@@ -256,7 +271,7 @@ export async function GET(request: NextRequest) {
           const itemAptName = getVal(item, "aptNm");
           const itemUmdNm = getVal(item, "umdNm");
 
-          if (aptName && !isAptNameMatch(aptName, itemAptName, district, itemUmdNm)) {
+          if (aptName && !isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
             continue;
           }
 
@@ -289,7 +304,7 @@ export async function GET(request: NextRequest) {
           const itemAptName = getVal(item, "aptNm") || getVal(item, "아파트");
           const itemUmdNm = getVal(item, "umdNm") || getVal(item, "법정동");
 
-          if (aptName && !isAptNameMatch(aptName, itemAptName, district, itemUmdNm)) {
+          if (aptName && !isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
             continue;
           }
 

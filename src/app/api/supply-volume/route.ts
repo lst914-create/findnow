@@ -78,7 +78,8 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const aptId = searchParams.get("aptId");
-  const periodStart = searchParams.get("periodStart") ?? "2024-01";
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const periodStart = searchParams.get("periodStart") ?? currentMonthStr;
   const periodEnd = searchParams.get("periodEnd") ?? "2030-12";
 
   let baseLat: number, baseLng: number;
@@ -148,20 +149,64 @@ export async function GET(req: NextRequest) {
     console.warn("[Supply Volume] Applyhome fetch failed:", err);
   }
 
-  // 2. K-apt 마스터 아파트 중 2024년 이후 준공 예정 단지 병합
+  // 2. K-apt 마스터 아파트 중 현재 이후 준공/입주 예정 단지 병합
+  const currentYear = new Date().getFullYear();
+
+  const normalizeAptName = (str: string) =>
+    str
+      .replace(/\s+/g, "")
+      .replace(/\d{4}년\d{1,2}월예정/g, "")
+      .replace(/예정/g, "")
+      .replace(/아파트/g, "")
+      .replace(/주택재건축.*$/g, "")
+      .replace(/재건축.*$/g, "")
+      .replace(/주택재개발.*$/g, "")
+      .toLowerCase();
+
   for (const apt of APARTMENTS_DATA) {
-    if (apt.built_year < 2024 || (aptId && apt.id === aptId)) continue;
+    if (aptId && apt.id === aptId) continue;
+    // 과거 구축 아파트 (준공승인 완료 단지이거나 built_year가 과거인 경우) 제외
+    if (apt.built_year < currentYear && !apt.name.includes("예정")) continue;
+
+    // 만약 사용승인일이 과거이고 이름에 예정이 없으면 기입주 단지이므로 제외
+    if (apt.approval_date && !apt.name.includes("예정")) {
+      const appYear = parseInt(apt.approval_date.slice(0, 4), 10);
+      if (appYear < currentYear) continue;
+    }
+
     const distM = haversineM(baseLat, baseLng, apt.lat, apt.lng);
     if (distM > maxRadiusM) continue;
 
-    const expectedMoveIn = `${apt.built_year}-06`;
+    // 단지명에 2028년08월예정과 같은 표기가 있으면 해당 년월 추출, 없으면 6월 기본값
+    const dateMatch = apt.name.match(/(\d{4})년\s*(\d{1,2})월/);
+    let expectedMoveIn = `${apt.built_year}-06`;
+    if (dateMatch) {
+      expectedMoveIn = `${dateMatch[1]}-${dateMatch[2].padStart(2, "0")}`;
+    }
+
+    // 이미 지난 시점의 입주는 배제 (앞으로 입주 예정만)
     if (expectedMoveIn < periodStart || expectedMoveIn > periodEnd) continue;
 
-    const alreadyAdded = units.some((u) => u.name === apt.name || u.distanceM === Math.round(distM));
+    // 청약홈 공고 또는 이미 추가된 단지와 중복 여부 확인
+    const normApt = normalizeAptName(apt.name);
+    const alreadyAdded = units.some((u) => {
+      const normU = normalizeAptName(u.name);
+      return (
+        normU === normApt ||
+        (normU.length >= 3 && normApt.includes(normU)) ||
+        (normApt.length >= 3 && normU.includes(normApt)) ||
+        (Math.abs(u.distanceM - Math.round(distM)) < 50 && (normU.includes(normApt.slice(0, 3)) || normApt.includes(normU.slice(0, 3))))
+      );
+    });
+
     if (!alreadyAdded) {
+      const cleanDisplayName = apt.name
+        .replace(/\s*\d{4}년\s*\d{1,2}월예정$/, "")
+        .replace(/\s*예정$/, "");
+
       units.push({
         id: apt.id,
-        name: apt.name,
+        name: cleanDisplayName,
         supplyType: "분양" as SupplyType,
         totalUnits: apt.household_count,
         saleUnits: apt.household_count,
@@ -220,7 +265,7 @@ export async function GET(req: NextRequest) {
       "RONE_APPLY",
       new Date().toISOString().slice(0, 10),
       {
-        providerLabel: "한국부동산원 청약홈 분양정보(ApplyhomeInfoDetailSvc) 및 국토교통부 신축 단지 실시간 연동",
+        providerLabel: "한국부동산원 청약홈 분양정보 및\n국토교통부 신축 단지 실시간 연동",
       }
     ),
   };

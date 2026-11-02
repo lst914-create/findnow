@@ -46,19 +46,21 @@ export function DataSourceBadge({ meta, provider, className = "", compact = fals
     <div className={`relative inline-flex items-center ${className}`}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-[10px] text-slate-400 hover:text-slate-600 transition-colors group"
+        className="flex items-center gap-1.5 text-[10px] text-slate-400 hover:text-slate-600 transition-colors group text-left"
         title="데이터 출처 확인"
       >
         <span className={`w-1.5 h-1.5 rounded-full ${style.dot} flex-shrink-0`} />
-        <span className="font-medium">
+        <span className="font-medium whitespace-pre-line text-left leading-tight">
           {compact ? activeMeta.provider : activeMeta.providerLabel}
         </span>
         {!compact && refDate && (
-          <span className="text-slate-300">·</span>
+          <span className="text-slate-300 shrink-0">·</span>
         )}
-        {!compact && refDate && <span>{refDate}</span>}
+        {!compact && refDate && (
+          <span className="whitespace-nowrap shrink-0">{refDate}</span>
+        )}
         <svg
-          className="w-3 h-3 text-slate-300 group-hover:text-slate-500"
+          className="w-3 h-3 text-slate-300 group-hover:text-slate-500 shrink-0"
           fill="none" stroke="currentColor" viewBox="0 0 24 24"
         >
           <circle cx="12" cy="12" r="10" strokeWidth="2" />

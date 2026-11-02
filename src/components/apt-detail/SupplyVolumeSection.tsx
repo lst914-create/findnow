@@ -117,7 +117,7 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
             </Link>
           </div>
 
-          <div className="self-end sm:self-auto shrink-0">
+          <div className="w-full sm:w-auto flex justify-start sm:justify-end mt-1 sm:mt-0">
             <DataSourceBadge provider="RONE_APPLY" meta={data?.meta} />
           </div>
         </div>

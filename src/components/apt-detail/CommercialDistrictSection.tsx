@@ -68,12 +68,12 @@ export function CommercialDistrictSection({ aptId, aptName }: Props) {
       {/* Header */}
       <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-1.5">
-              <span>☕</span> 주변 상가 업종 구성 & 점포 수
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <h3 className="font-extrabold text-slate-800 text-base whitespace-nowrap">
+              주변 상가 업종 구성 & 점포 수
             </h3>
             {totalStores > 0 && (
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 shrink-0 whitespace-nowrap">
                 점포 {totalStores.toLocaleString()}개
               </span>
             )}

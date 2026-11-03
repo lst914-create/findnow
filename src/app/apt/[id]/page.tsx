@@ -879,17 +879,17 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
             {/* ===== 가격 추이 그래프 ===== */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-bold text-slate-700">
-                  📈 {tradeType} 가격 추이 {selectedArea !== "전체" && <span className="text-xs font-semibold text-blue-600 ml-1">({selectedArea})</span>}
-                  {tradeType === "전월세" && <span className="text-[10px] font-normal text-slate-400 ml-1.5">순수 전세 기준</span>}
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">
+                  📈 {tradeType} 가격 추이
+                  {tradeType === "전월세" && <span className="text-[10px] font-normal text-slate-400 ml-1.5">순수 전세</span>}
                 </h3>
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0">
                   {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
                     <button
                       key={r}
                       onClick={() => setChartRange(r)}
-                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer ${chartRange === r
+                      className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${chartRange === r
                           ? "bg-blue-600 text-white"
                           : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                         }`}

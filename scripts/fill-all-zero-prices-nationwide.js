@@ -92,3 +92,4 @@ data.forEach(a => {
 
 fs.writeFileSync(masterPath, JSON.stringify(data, null, 2), 'utf8');
 console.log(`✅ 전국 누락 아파트 가격 전수 반영 완료! 총 ${filledCount.toLocaleString()}개 단지 시세 생성`);
+

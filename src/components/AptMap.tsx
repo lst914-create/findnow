@@ -419,11 +419,13 @@ export default function AptMap({
     });
   };
 
-  /* ── 카카오 전용 마커 HTML (우리 DB 없는 단지 - 회색 스타일) ──────── */
-  const kakaoOnlyMarkerHtml = (name: string, viewers: number) => {
-    // 이름에서 암의적 평형 추정 (xx평 패턴 검색)
-    const pyeongMatch = name.match(/(\d{2})평|평/); // 이름에 평형 없으면 기본 30평
-    const pyeong = pyeongMatch ? parseInt(pyeongMatch[1] || "30") : 30;
+  /* ── 카카오 전용 마커 HTML (우리 DB 외 보강 단지 - 세련된 보라색 실거래가 스타일) ──────── */
+  const kakaoOnlyMarkerHtml = (name: string, viewers: number, priceStr?: string, pyeongNum?: number) => {
+    // 이름에서 평형 추정 (xx평 패턴 검색, 없으면 기본 32평)
+    const pyeongMatch = name.match(/(\d{2})평/);
+    const pyeong = pyeongNum || (pyeongMatch ? parseInt(pyeongMatch[1]) : 32);
+    const hasPrice = Boolean(priceStr && priceStr !== "-");
+
     return `
       <div style="
         position: relative;
@@ -431,45 +433,58 @@ export default function AptMap({
         flex-direction: column;
         align-items: center;
         cursor: pointer;
-        filter: drop-shadow(0 3px 8px rgba(0,0,0,0.2));
-        opacity: 0.85;
+        filter: drop-shadow(0 4px 10px rgba(124, 58, 237, 0.35));
+        transition: transform 0.15s ease;
       ">
+        <!-- 상단 라벨 배지 (보라색 포인트) -->
         <div style="
-          background: rgba(30, 41, 59, 0.85);
-          color: #cbd5e1;
+          background: rgba(88, 28, 135, 0.92);
+          backdrop-filter: blur(4px);
+          color: #f3e8ff;
           font-size: 10px;
-          font-weight: 600;
+          font-weight: 700;
           padding: 2px 7px;
           border-radius: 12px;
           margin-bottom: 3px;
           white-space: nowrap;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
           display: flex;
           align-items: center;
           gap: 3px;
+          letter-spacing: -0.3px;
         ">
-          <span style="color:#94a3b8; font-size:9px;">👁</span> ${viewers}명 보는중
+          ${hasPrice ? `<span style="color:#c084fc;">●</span> 실거래` : `<span style="color:#e9d5ff;">👁</span> ${viewers}명`}
         </div>
+
+        <!-- 오각형 집 모양 마커 본체 (고급스러운 퍼플 그라데이션) -->
         <div style="
-          background: linear-gradient(135deg, #475569 0%, #334155 100%);
-          color: #e2e8f0;
+          background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+          color: #ffffff;
           padding: 6px 11px 5px;
           border-radius: 10px;
-          border: 2px solid #64748b;
+          border: 2px solid #ddd6fe;
           white-space: nowrap;
-          font-family: 'Pretendard', sans-serif;
-          line-height: 1.2;
+          font-family: 'Pretendard', -apple-system, sans-serif;
+          line-height: 1.15;
           text-align: center;
-          min-width: 64px;
+          min-width: 62px;
+          box-shadow: 0 2px 8px rgba(109, 40, 217, 0.3);
         ">
-          <div style="font-size: 10px; font-weight: 500; opacity: 0.75;">${pyeong}평대</div>
-          <div style="font-size: 12px; font-weight: 700; color: #94a3b8;">시세보기</div>
+          <div style="font-size: 10px; font-weight: 600; opacity: 0.9; letter-spacing: -0.2px; margin-bottom: 1px;">
+            ${pyeong}평${hasPrice ? "" : "대"}
+          </div>
+          <div style="font-size: 13.5px; font-weight: 800; letter-spacing: -0.4px; text-shadow: 0 1px 2px rgba(0,0,0,0.25);">
+            ${hasPrice ? priceStr : "시세 확인"}
+          </div>
         </div>
+
+        <!-- 하단 오각형 뾰족 꼬리 -->
         <div style="
-          width: 0; height: 0;
+          width: 0;
+          height: 0;
           border-left: 7px solid transparent;
           border-right: 7px solid transparent;
-          border-top: 8px solid #334155;
+          border-top: 8px solid #6d28d9;
           margin-top: -1px;
         "></div>
       </div>
@@ -1021,7 +1036,7 @@ export default function AptMap({
           (a) => a.lat >= sw.getLat() && a.lat <= ne.getLat() && a.lng >= sw.getLng() && a.lng <= ne.getLng()
         );
 
-        // 우리 DB에 45m 이내로 없는 단지만 카카오 전용 마커로 보강 렌더링
+        // 우리 DB에 80m 이내로 없는 단지만 카카오 전용 마커로 보강 렌더링
         const addedSet = new Set<string>();
 
         aptDocs.forEach((doc, idx) => {
@@ -1029,10 +1044,33 @@ export default function AptMap({
           const lng = parseFloat(doc.x);
           if (!lat || !lng) return;
 
-          // 반경 40m 이내에 마스터 단지가 이미 있거나 이름이 같으면 스킵
+          // 카카오 장소명 정규화 (지역 접두사 제거)
+          const cleanKakaoName = doc.place_name
+            .replace(/^(경기\s*)?(남양주시?|다산동?|도농동?|지금동?|가운동?)\s*/, "")
+            .replace(/아파트$/, "");
+          const normKakao = normalizeAptName(cleanKakaoName);
+
+          // 1. 이미 우리 마스터 DB에 있는 단지인지 정밀 검사
           const isAlreadyInDb = visibleDbMarkers.some((m) => {
             const dist = Math.hypot(m.lat - lat, m.lng - lng);
-            return dist < 0.00045 || m.name.replace(/\s+/g, "").includes(doc.place_name.replace(/\s+/g, "").slice(0, 4));
+            // 반경 350m 이내이면서 이름 유사성 검사
+            if (dist < 0.0035) {
+              const mClean = m.name
+                .replace(/^(경기\s*)?(남양주시?|다산동?|도농동?|지금동?|가운동?)\s*/, "")
+                .replace(/아파트$/, "");
+              const mNorm = normalizeAptName(mClean);
+              if (mNorm.length >= 2 && normKakao.length >= 2) {
+                if (mNorm.includes(normKakao) || normKakao.includes(mNorm)) return true;
+                // 단지 번호(예: 7단지, 6단지) 일치 여부
+                const kNum = normKakao.match(/\d+/g)?.join("");
+                const mNum = mNorm.match(/\d+/g)?.join("");
+                if (kNum && mNum && kNum === mNum && mNorm.slice(0, 2) === normKakao.slice(0, 2)) {
+                  return true;
+                }
+              }
+            }
+            // 70m 이내 초근접 동일 좌표 단지
+            return dist < 0.0007;
           });
           if (isAlreadyInDb) return;
 
@@ -1041,13 +1079,30 @@ export default function AptMap({
           if (addedSet.has(dedupKey)) return;
           addedSet.add(dedupKey);
 
+          // 2. 실시간 국토부 실거래가 캐시에서 해당 단지 실거래가 매칭
+          let matchedDetail =
+            livePriceDetailCacheRef.current.get(normKakao) ||
+            livePriceDetailCacheRef.current.get(normalizeAptName(doc.place_name));
+
+          if (!matchedDetail && normKakao.length >= 2) {
+            for (const [key, val] of livePriceDetailCacheRef.current.entries()) {
+              if (key.length >= 2 && (normKakao.includes(key) || key.includes(normKakao))) {
+                matchedDetail = val;
+                break;
+              }
+            }
+          }
+
+          const priceStr = matchedDetail?.formatted;
+          const pyeongNum = matchedDetail?.pyeong;
+
           const viewers = 25 + ((idx * 19) % 70);
           const el = document.createElement("div");
           el.className = "apt-kakao-only-marker";
-          el.innerHTML = kakaoOnlyMarkerHtml(doc.place_name, viewers);
+          el.innerHTML = kakaoOnlyMarkerHtml(doc.place_name, viewers, priceStr, pyeongNum);
           el.style.cursor = "pointer";
 
-          // 클릭 시 카카오 상세 또는 검색 연결
+          // 클릭 시 카카오 상세 또는 우리 검색 연결
           el.addEventListener("click", () => {
             const kakaoUrl = `https://map.kakao.com/link/search/${encodeURIComponent(doc.place_name)}`;
             window.open(kakaoUrl, "_blank");

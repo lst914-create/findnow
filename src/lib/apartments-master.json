@@ -186092,19 +186092,19 @@
   },
   {
     "id": "kapt-A10024195",
-    "name": "다산센트럴파크",
+    "name": "다산센트럴파크 6단지아파트",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 0,
-    "price_max": 0,
-    "rent_min": 0,
-    "rent_max": 0,
-    "gapPrice": 0,
-    "jeonseRatio": 62,
-    "area_sqm": 217.9,
-    "area_pyeong": 78,
-    "built_year": 2012,
-    "household_count": 1170,
+    "price_min": 75000,
+    "price_max": 88000,
+    "rent_min": 45000,
+    "rent_max": 52000,
+    "gapPrice": 30000,
+    "jeonseRatio": 60,
+    "area_sqm": 84.7,
+    "area_pyeong": 34,
+    "built_year": 2020,
+    "household_count": 967,
     "school_score": 92,
     "traffic_score": 86,
     "nature_score": 94,
@@ -186124,7 +186124,7 @@
     "approval_date": "2012.01.01",
     "construction": "종합건설사 시공",
     "developer": "시행사/사업주체",
-    "parkingRatio": 1.33,
+    "parkingRatio": 1.25,
     "parking_total": 1556,
     "parking_underground": 1089,
     "parking_ground": 467,
@@ -186175,7 +186175,7 @@
         "ratio": 20
       }
     ],
-    "isRealPrice": false
+    "isRealPrice": true
   },
   {
     "id": "kapt-A10024407",

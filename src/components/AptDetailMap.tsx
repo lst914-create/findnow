@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { APT_MARKERS, type AptMarker } from "./AptMap";
 import { loadKakaoMap } from "@/lib/kakaoMapLoader";
+import { normalizeAptName } from "@/lib/normalizeAptName";
 
 interface AptDetailMapProps {
   /** 현재 보고 있는 단지 id */
@@ -26,6 +27,11 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
   const [tradeType, setTradeType] = useState<"매매" | "전월세">("매매");
   const [selectedApt, setSelectedApt] = useState<AptMarker | null>(null);
 
+  // 실시간 국토교통부 실거래가 캐시 (메인 지도와 100% 동일한 출처)
+  const livePriceDetailMapRef = useRef<Map<string, { formatted: string; price: number; pyeong: number }>>(
+    new Map()
+  );
+
   const currentApt =
     APT_MARKERS.find((a) => a.id === aptId) ||
     (aptName ? APT_MARKERS.find((a) => a.name.includes(aptName) || aptName.includes(a.name)) : null) ||
@@ -38,15 +44,27 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
       ? "linear-gradient(135deg, #e11d48 0%, #be123c 100%)"
       : "linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)";
     const borderColor = isMain ? "#fecdd3" : "#c7d2fe";
-    const rent = Math.round((apt.priceNum * 0.52) / 10000);
 
-    // 현재 단지: 실거래 평균가 우선, 없으면 정적 시세
+    const norm = normalizeAptName(apt.name);
+    const liveDetail =
+      livePriceDetailMapRef.current.get(`${norm}__${apt.pyeong}`) ||
+      livePriceDetailMapRef.current.get(norm);
+
+    const effectivePriceNum = isMain && realAvgPriceNum && realAvgPriceNum > 0
+      ? realAvgPriceNum
+      : (liveDetail?.price || apt.priceNum);
+
+    const rent = Math.round((effectivePriceNum * 0.52) / 10000);
+
+    // 실거래 가격 라벨: 메인 지도와 100% 동일하게 formatPrice 사용
     let priceLabel: string;
     if (tradeType === "매매") {
       if (isMain && realAvgPriceNum && realAvgPriceNum > 0) {
         const uk = Math.floor(realAvgPriceNum / 10000);
         const cheon = Math.floor((realAvgPriceNum % 10000) / 1000);
         priceLabel = uk > 0 ? (cheon > 0 ? `${uk}.${cheon}억` : `${uk}억`) : `${realAvgPriceNum.toLocaleString()}만`;
+      } else if (liveDetail?.formatted) {
+        priceLabel = liveDetail.formatted;
       } else {
         priceLabel = apt.avgPrice;
       }
@@ -54,6 +72,7 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
       priceLabel = `${rent}억`;
     }
     const viewers = apt.liveViewers || Math.floor(Math.random() * 80 + 20);
+    const displayPyeong = liveDetail?.pyeong || apt.pyeong;
 
     return `
       <div style="
@@ -97,7 +116,7 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
           ${isMain ? "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);" : ""}
         ">
           <div style="font-size: 10px; font-weight: 600; opacity: 0.9; letter-spacing: -0.2px; margin-bottom: 1px;">
-            ${apt.pyeong}평
+            ${displayPyeong}평
           </div>
           <div style="font-size: ${isMain ? "15px" : "13.5px"}; font-weight: 800; letter-spacing: -0.4px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
             ${priceLabel}
@@ -116,6 +135,51 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
       </div>
     `;
   };
+
+  /* ── 주변 단지 국토부 실시간 실거래가 fetch (메인 지도와 동기화) ── */
+  useEffect(() => {
+    let isCancelled = false;
+    async function fetchNearbyLivePrices() {
+      if (!currentApt) return;
+      const regionParts = (currentApt.region || "").split(" ");
+      const region = regionParts.slice(0, 2).join(" ");
+      const district = regionParts.slice(2).join(" ");
+
+      try {
+        const res = await fetch("/api/transactions/viewport", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            regions: [{ region, district }],
+            months: 12,
+          }),
+        });
+        if (res.ok && !isCancelled) {
+          const data = await res.json();
+          if (data.detailsMap) {
+            Object.entries(data.detailsMap as Record<string, any>).forEach(([k, v]) => {
+              livePriceDetailMapRef.current.set(k, {
+                formatted: v.formatted,
+                price: v.avgPrice || v.latestPrice,
+                pyeong: v.pyeong,
+              });
+            });
+            // 실거래가 반영 후 오버레이 즉시 갱신
+            if (mapRef.current && window.kakao?.maps) {
+              renderOverlays(window.kakao.maps, mapRef.current);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("AptDetailMap 실거래가 연동 실패:", e);
+      }
+    }
+
+    fetchNearbyLivePrices();
+    return () => {
+      isCancelled = true;
+    };
+  }, [currentApt?.id, currentApt?.region]);
 
   /* ── 카카오 지도 초기화 ──────────────────────────────────── */
   useEffect(() => {

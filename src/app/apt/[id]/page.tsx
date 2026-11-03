@@ -440,9 +440,11 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   }, [filteredApiTrades]);
 
   const realRentTrend = useMemo(() => {
-    if (filteredApiRents.length === 0) return null;
+    // 순수 전세 거래만 필터 (월세 및 반전세 제외하여 전세 시세 왜곡 차단)
+    const pureJeonseRents = filteredApiRents.filter((r) => !r.monthlyRent || r.monthlyRent === 0);
+    if (pureJeonseRents.length === 0) return null;
     const monthlyMap = new Map<string, number[]>();
-    filteredApiRents.forEach((r) => {
+    pureJeonseRents.forEach((r) => {
       const key = `${r.dealYear}.${String(r.dealMonth).padStart(2, "0")}`;
       if (!monthlyMap.has(key)) monthlyMap.set(key, []);
       monthlyMap.get(key)!.push(r.depositAmount);
@@ -488,7 +490,13 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   // 실거래 가격 계산: [사용자 핵심 규칙] 평형별 분류 -> 최근 1개월 실거래 평균 or 마지막 실거래가
   const currentAverageDisplay = useMemo(() => {
     if (hasRealDataForCurrentTab && activeTxs.length > 0) {
-      const latest = activeTxs[0];
+      // 전월세 탭인 경우 순수 전세 거래 우선 반영 (월세 보증금 왜곡 방지)
+      const pureJeonseTxs = tradeType === "전월세"
+        ? activeTxs.filter((t: any) => !t.monthlyRent || t.monthlyRent === 0)
+        : activeTxs;
+      const targetTxs = pureJeonseTxs.length > 0 ? pureJeonseTxs : activeTxs;
+
+      const latest = targetTxs[0];
       const latestPrice = (latest as any).rawPrice;
       const latestDateStr = (latest as any).date || (latest as any).dealDate; // "26.10.21" 등
 
@@ -502,7 +510,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       }
 
       const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
-      const recent1Month = activeTxs.filter((t: any) => {
+      const recent1Month = targetTxs.filter((t: any) => {
         if (!t.rawPrice || t.rawPrice <= 0) return false;
         if (!latestTime || !t.date) return false;
         const parts = t.date.split(".");
@@ -874,6 +882,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-slate-700">
                   📈 {tradeType} 가격 추이 {selectedArea !== "전체" && <span className="text-xs font-semibold text-blue-600 ml-1">({selectedArea})</span>}
+                  {tradeType === "전월세" && <span className="text-[10px] font-normal text-slate-400 ml-1.5">순수 전세 기준</span>}
                 </h3>
                 <div className="flex gap-1">
                   {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
@@ -1077,7 +1086,18 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
         {/* ===== 인근 단지 비교 (위경도 기반 거리순) ===== */}
         {(() => {
-          // 현재 아파트 위경도 기준으로 거리순 정렬 → 10km 이내 + 동일 광역시도 우선, 최대 5개
+          // 가격 포맷 함수: 만원 → 정확한 억/천만 표기 (지도/상세와 동일)
+          function formatPriceApt(manwon: number): string {
+            if (!manwon || manwon <= 0) return "-";
+            const uk = Math.floor(manwon / 10000);
+            const remainder = manwon % 10000;
+            const cheon = Math.floor(remainder / 1000);
+            if (uk > 0 && cheon > 0) return `${uk}.${cheon}억`;
+            if (uk > 0) return `${uk}억`;
+            return `${manwon.toLocaleString()}만`;
+          }
+
+          // 현재 아파트 위경도 기준으로 거리순 정렬 → 15km 이내 + 동일 광역시도 우선, 최대 5개
           const currentLat = apt.lat;
           const currentLng = apt.lng;
           const currentProvince = apt.region?.split(" ")[0] || ""; // "서울" / "경기" 등
@@ -1101,62 +1121,127 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
           if (nearbyApts.length === 0) return null;
 
+          // 특징 태그 생성 함수
+          function getFeatureTags(a: any): string[] {
+            const tags: string[] = [];
+            if (a.ev_charger_count && a.ev_charger_count > 0) tags.push("🔌 EV충전");
+            if (a.parkingRatio && a.parkingRatio >= 1.5) tags.push("🚗 주차여유");
+            else if (a.parkingRatio && a.parkingRatio < 0.8) tags.push("🚗 주차부족");
+            if (a.heatingType === "지역난방" || a.heating === "지역난방") tags.push("🔥 지역난방");
+            if (a.hallType === "복도식") tags.push("🏢 복도식");
+            if (a.jeonseRatio && a.jeonseRatio >= 70) tags.push("📈 전세가율높음");
+            if (a.built_year && a.built_year >= 2020) tags.push("✨ 신축");
+            else if (a.built_year && a.built_year <= 2000) tags.push("🏚 구축");
+            if (a.facilities && Array.isArray(a.facilities)) {
+              if (a.facilities.includes("수영장")) tags.push("🏊 수영장");
+              if (a.facilities.includes("헬스장")) tags.push("💪 헬스장");
+              if (a.facilities.includes("커뮤니티")) tags.push("🏛 커뮤니티");
+            }
+            return tags.slice(0, 3); // 최대 3개
+          }
+
           return (
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8">
-              <h2 className="text-lg font-bold text-slate-900 mb-5">🏡 인근 단지 비교</h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-slate-400 border-b border-slate-100">
-                      <th className="text-left py-2 pr-4 font-semibold whitespace-nowrap">단지명</th>
-                      <th className="text-right py-2 px-3 font-semibold whitespace-nowrap">매매 시세</th>
-                      <th className="text-right py-2 px-3 font-semibold hidden sm:table-cell">거리</th>
-                      <th className="text-right py-2 px-3 font-semibold hidden sm:table-cell">학군</th>
-                      <th className="text-right py-2 px-3 font-semibold hidden sm:table-cell">교통</th>
-                      <th className="text-right py-2 pl-3 font-semibold"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-50">
-                    {nearbyApts.map(({ id, a, dist }) => (
-                      <tr key={id} className="hover:bg-blue-50/30 transition-colors">
-                        <td className="py-3 pr-4">
-                          <div className="font-semibold text-slate-800 leading-snug">{a.name}</div>
-                          <div className="text-[11px] text-slate-400">{a.region}</div>
-                        </td>
-                        <td className="py-3 px-3 text-right font-bold text-blue-600 whitespace-nowrap">
-                          {Math.round((a.price_max || a.price_min) / 10000)}억
-                        </td>
-                        <td className="py-3 px-3 text-right text-slate-400 text-xs hidden sm:table-cell">
-                          {dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`}
-                        </td>
-                        <td className="py-3 px-3 text-right hidden sm:table-cell">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${a.school_score >= 95 ? "bg-blue-100 text-blue-700" :
-                              a.school_score >= 85 ? "bg-indigo-50 text-indigo-600" :
-                                "bg-slate-100 text-slate-500"
-                            }`}>
-                            {a.school_score}점
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 sm:p-7">
+              <h2 className="text-lg font-bold text-slate-900 mb-1">🏡 인근 단지 비교</h2>
+              <p className="text-xs text-slate-400 mb-5">국토교통부 실거래가 기준 · 직선거리 순</p>
+              <div className="space-y-3">
+                {nearbyApts.map(({ id, a, dist }) => {
+                  // 가격: price_max가 만원 단위 (예: 85000 = 8.5억)
+                  const priceManwon = a.price_max || a.price_min || 0;
+                  const rentManwon = a.rent_max || a.rent_min || 0;
+                  const parkingStr = a.parkingRatio
+                    ? `${a.parkingRatio.toFixed(1)}대/세대`
+                    : a.parking_total && a.household_count
+                      ? `${(a.parking_total / a.household_count).toFixed(1)}대/세대`
+                      : null;
+                  const gapManwon = (priceManwon > 0 && rentManwon > 0)
+                    ? priceManwon - rentManwon
+                    : (a.gapPrice || null);
+                  const featureTags = getFeatureTags(a);
+                  const distStr = dist < 1 ? `${Math.round(dist * 1000)}m` : `${dist.toFixed(1)}km`;
+
+                  return (
+                    <div key={id} className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4 hover:bg-blue-50/30 transition-colors">
+                      {/* 단지명 + 거리 + 보기 버튼 */}
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-800 text-sm leading-snug truncate">{a.name}</div>
+                          <div className="text-[11px] text-slate-400 mt-0.5">📍 {distStr} · {a.region}</div>
+                        </div>
+                        <Link
+                          href={`/apt/${id}`}
+                          className="flex-shrink-0 text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap mt-0.5"
+                        >
+                          보기 →
+                        </Link>
+                      </div>
+
+                      {/* 매매 + 전세 가격 */}
+                      <div className="flex items-center gap-3 mb-2">
+                        <div>
+                          <span className="text-[10px] text-slate-400">매매</span>
+                          <span className="ml-1 font-bold text-blue-600 text-sm">
+                            {formatPriceApt(priceManwon)}
                           </span>
-                        </td>
-                        <td className="py-3 px-3 text-right hidden sm:table-cell">
-                          <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-bold ${a.traffic_score >= 95 ? "bg-emerald-100 text-emerald-700" :
-                              a.traffic_score >= 85 ? "bg-green-50 text-green-600" :
-                                "bg-slate-100 text-slate-500"
-                            }`}>
-                            {a.traffic_score}점
+                        </div>
+                        {rentManwon > 0 && (
+                          <>
+                            <span className="text-slate-200">|</span>
+                            <div>
+                              <span className="text-[10px] text-slate-400">전세</span>
+                              <span className="ml-1 font-semibold text-emerald-600 text-sm">
+                                {formatPriceApt(rentManwon)}
+                              </span>
+                              {a.jeonseRatio && (
+                                <span className="ml-1 text-[10px] text-slate-400">({a.jeonseRatio}%)</span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                        {gapManwon && gapManwon > 0 && (
+                          <>
+                            <span className="text-slate-200">|</span>
+                            <div>
+                              <span className="text-[10px] text-slate-400">갭</span>
+                              <span className="ml-1 font-semibold text-amber-600 text-sm">
+                                {formatPriceApt(gapManwon)}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      {/* 세부 정보 바 */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 mb-2">
+                        {a.household_count && (
+                          <span>🏠 {a.household_count.toLocaleString()}세대</span>
+                        )}
+                        {parkingStr && (
+                          <span>🚗 {parkingStr}</span>
+                        )}
+                        {a.built_year && (
+                          <span>📅 {a.built_year}년</span>
+                        )}
+                        {(a.school_score || a.traffic_score) && (
+                          <span>
+                            🏫 학군{a.school_score}·교통{a.traffic_score}
                           </span>
-                        </td>
-                        <td className="py-3 pl-3 text-right">
-                          <Link
-                            href={`/apt/${id}`}
-                            className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
-                          >
-                            보기 →
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        )}
+                      </div>
+
+                      {/* 특징 태그 */}
+                      {featureTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {featureTags.map((tag, i) => (
+                            <span key={i} className="px-1.5 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] text-slate-600 font-medium">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

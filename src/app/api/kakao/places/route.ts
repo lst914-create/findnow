@@ -53,3 +53,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ documents: [], meta: { total_count: 0 } });
   }
 }
+

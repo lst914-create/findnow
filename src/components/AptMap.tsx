@@ -1011,16 +1011,24 @@ export default function AptMap({
           if (res?.documents) docs.push(...res.documents);
         });
 
-        // 실제 아파트 주거시설만 필터
-        const aptDocs = docs.filter((d) =>
-          d.category_name &&
-          (d.category_name.includes("아파트") || d.place_name.includes("아파트")) &&
-          !d.place_name.includes("상가") &&
-          !d.place_name.includes("관리사무소") &&
-          !d.place_name.includes("노인정") &&
-          !d.place_name.includes("어린이집") &&
-          !d.place_name.includes("공인중개사")
-        );
+        // 실제 아파트 주거시설만 필터 (카카오 category_name이 정확히 주거시설>아파트여야 함)
+        const aptDocs = docs.filter((d) => {
+          // category_name이 반드시 "주거시설 > 아파트"를 포함해야 함
+          // place_name만으로 판단하면 아파트 내 편의시설·POI가 포함되어 오마커 발생
+          if (!d.category_name || !d.category_name.includes("주거시설")) return false;
+          if (!d.category_name.includes("아파트")) return false;
+          // 명시적 비주거 POI 제외
+          if (d.place_name.includes("상가")) return false;
+          if (d.place_name.includes("관리사무소")) return false;
+          if (d.place_name.includes("노인정")) return false;
+          if (d.place_name.includes("어린이집")) return false;
+          if (d.place_name.includes("공인중개사")) return false;
+          if (d.place_name.includes("부동산")) return false;
+          if (d.place_name.includes("카페")) return false;
+          if (d.place_name.includes("편의점")) return false;
+          if (d.place_name.includes("주차장")) return false;
+          return true;
+        });
 
         // 기존 카카오 전용 마커 정리
         kakaoOnlyOverlaysRef.current.forEach((o) => o.setMap(null));
@@ -1097,10 +1105,11 @@ export default function AptMap({
             finalPyeong = matchedDetail.pyeong || 32;
           }
 
-          // 2-2. 인근 마스터 DB 단지(반경 500m 이내) 기반 실거래 시세 산출
+          // 2-2. 인근 마스터 DB 단지(반경 200m 이내 & 가격 존재)에서만 보조 시세 사용
+          // ⚠️ 500m 같은 넓은 반경은 엉뚱한 위치에 가격이 붙는 원인 — 200m로 엄격 제한
           if (!finalPriceStr) {
             let nearestDbApt: AptMarker | null = null;
-            let minDist = 0.005; // 약 500m
+            let minDist = 0.002; // 약 200m (기존 500m에서 축소)
             visibleDbMarkers.forEach((m) => {
               const d = Math.hypot(m.lat - lat, m.lng - lng);
               if (d < minDist && m.priceNum > 0) {
@@ -1115,17 +1124,10 @@ export default function AptMap({
             }
           }
 
-          // 2-3. 뷰포트 화면 내 평균 실거래가 기반 폴백 (무조건 금액 표출 보장)
+          // 2-3. 가격 없으면 마커 미표시 (오정보 방지 — 가짜 평균가 붙이지 않음)
           if (!finalPriceStr) {
-            const validDbPrices = visibleDbMarkers.filter((m) => m.priceNum > 0).map((m) => m.priceNum);
-            if (validDbPrices.length > 0) {
-              const avgP = Math.round(validDbPrices.reduce((a, b) => a + b, 0) / validDbPrices.length);
-              finalPriceStr = formatPrice(avgP);
-              finalPyeong = 32;
-            } else {
-              finalPriceStr = "5.2억";
-              finalPyeong = 32;
-            }
+            // 과거: 뷰포트 평균 or 5.2억 하드코딩 → 폐기. 가격 불명 시 마커 생략
+            return;
           }
 
           const viewers = 25 + ((idx * 19) % 70);

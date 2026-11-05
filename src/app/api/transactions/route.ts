@@ -384,19 +384,26 @@ export async function GET(request: NextRequest) {
     return db - da;
   });
 
-  return NextResponse.json({
-    trades,
-    rents,
-    region,
-    district,
-    lawdCode: lawdEntry.code,
-    dealYmdList,
-    meta: {
-      sourceType: "INDIVIDUAL_ACTUAL_TRANSACTION",
-      sourceName: "국토교통부 실거래가 공개시스템",
-      queryStandard: "LAWD_CD(시군구 법정동코드 5자리) 및 DEAL_YMD(계약년월 6자리) 기준 개별 계약 건 조회",
-      usage: "단지/동/층/면적별 개별 실거래 체결 가격 및 전세가율 상세 분석용",
-      statDistinction: "본 자료는 국토교통부 실거래 신고 건별 원시 데이터이며, 한국부동산원 R-ONE 등 기관의 표본 기반 가격지수·집계통계와는 작성 기준 및 용도가 다릅니다. (단일 지표 혼용 금지, 통계 기준 분리 원칙 적용)",
+  return NextResponse.json(
+    {
+      trades,
+      rents,
+      region,
+      district,
+      lawdCode: lawdEntry.code,
+      dealYmdList,
+      meta: {
+        sourceType: "INDIVIDUAL_ACTUAL_TRANSACTION",
+        sourceName: "국토교통부 실거래가 공개시스템",
+        queryStandard: "LAWD_CD(시군구 법정동코드 5자리) 및 DEAL_YMD(계약년월 6자리) 기준 개별 계약 건 조회",
+        usage: "단지/동/층/면적별 개별 실거래 체결 가격 및 전세가율 상세 분석용",
+        statDistinction: "본 자료는 국토교통부 실거래 신고 건별 원시 데이터이며, 한국부동산원 R-ONE 등 기관의 표본 기반 가격지수·집계통계와는 작성 기준 및 용도가 다릅니다. (단일 지표 혼용 금지, 통계 기준 분리 원칙 적용)",
+      },
     },
-  });
+    {
+      headers: {
+        "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+      },
+    }
+  );
 }

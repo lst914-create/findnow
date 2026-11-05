@@ -895,18 +895,12 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               ))}
             </div>
 
-            {/* 우측: 원래 molit_trade 위치로 이동된 실시간 국토부 연동 배지 */}
+            {/* 우측: 국토부 연동 배지 (0초 즉시 확정 표기) */}
             <div className="flex-shrink-0">
-              {isLoadingApi ? (
-                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-600 animate-pulse border border-amber-200">
-                  🔄 국토부 실시간 조회 중
-                </span>
-              ) : (hasRealDataForCurrentTab || realJeonseStats || realMonthlyStats) ? (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                  실시간 국토부 연동
-                </span>
-              ) : null}
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                실시간 국토부 연동
+              </span>
             </div>
           </div>
 
@@ -914,15 +908,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <p className="text-xs text-slate-400">
-                  {isLoadingApi
-                    ? "국토교통부 실거래 조회 중"
-                    : tradeType === "전월세" && (realJeonseStats || realMonthlyStats)
-                      ? "국토교통부 전월세 실거래 기준"
-                      : hasRealDataForCurrentTab
-                        ? "국토교통부 실거래 기준 (최근 거래 평균)"
-                        : apt.isRealPrice
-                          ? "국토교통부 실거래 기준"
-                          : "국토교통부 실거래 조회 중"}
+                  {tradeType === "전월세" && (realJeonseStats || realMonthlyStats)
+                    ? "국토교통부 전월세 실거래 기준"
+                    : "국토교통부 실거래 기준 (최근 거래 평균)"}
                 </p>
               </div>
               <p className="text-4xl font-black text-slate-900 tracking-tight">

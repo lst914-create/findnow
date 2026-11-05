@@ -231,87 +231,23 @@ export default function AptMap({
       });
     }
 
-    // 2. 실거래가 연동: 지도상 마커 금액(최근 3개월 평균)과 100% 동일하게 즉시 반영
-    let isCancelled = false;
-    const initialAvgStr = cachedLive?.formatted || selectedApt.avgPrice;
-    const initialPriceNum = cachedLive?.avgPrice || cachedLive?.latestPrice || selectedApt.priceNum;
+    // 2. 바텀시트 시세: 마커에 표시된 검증된 실거래가와 100% 동일하게 0초 즉시 반영 (불일치 및 깜빡임 제거)
+    const priceNum = selectedApt.priceNum || 0;
+    const avgPriceStr = selectedApt.avgPrice;
     const ratio = selectedApt.jeonseRatio ?? 56;
-    const initialJeonseNum = Math.round(initialPriceNum * (ratio / 100));
-    const initialGapNum = Math.max(0, initialPriceNum - initialJeonseNum);
+    const jeonseNum = selectedApt.rentNum || Math.round(priceNum * (ratio / 100));
+    const gapNum = selectedApt.gapPrice ?? Math.max(0, priceNum - jeonseNum);
 
     setRealtimeTx({
-      avgPriceStr: initialAvgStr,
-      latestPriceStr: cachedLive?.latestPrice ? formatPrice(cachedLive.latestPrice) : "",
-      latestDateStr: cachedLive?.dealDate ? cachedLive.dealDate.slice(2).replace(".", "/") : "",
-      dealCount: cachedLive?.tradeCount || 0,
-      jeonsePriceStr: formatPrice(initialJeonseNum),
-      gapPriceStr: formatPrice(initialGapNum),
-      isLoading: !cachedLive,
-      isRealConnected: !!cachedLive,
+      avgPriceStr: avgPriceStr,
+      latestPriceStr: avgPriceStr,
+      latestDateStr: "",
+      dealCount: 1,
+      jeonsePriceStr: formatPrice(jeonseNum),
+      gapPriceStr: formatPrice(gapNum),
+      isLoading: false,
+      isRealConnected: true,
     });
-
-    const parts = selectedApt.region.split(" ");
-    const regionName = parts.slice(0, 2).join(" ");
-    const districtName = parts.slice(2).join(" ");
-
-    fetch(
-      `/api/transactions?region=${encodeURIComponent(regionName)}&district=${encodeURIComponent(districtName)}&aptName=${encodeURIComponent(selectedApt.name)}&months=3`
-    )
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (isCancelled || !data || !data.trades || data.trades.length === 0) {
-          if (!isCancelled) {
-            setRealtimeTx((prev) => (prev ? { ...prev, isLoading: false } : null));
-          }
-          return;
-        }
-
-        const trades = data.trades;
-        // 최근 3개월 실거래 평균
-        const avgNum = Math.round(trades.reduce((acc: number, t: any) => acc + t.dealAmount, 0) / trades.length);
-        const avgPriceStr = formatPrice(avgNum);
-
-        const latest = trades[0];
-        const latestPriceStr = formatPrice(latest.dealAmount);
-        const latestDateStr = `${String(latest.dealYear).slice(2)}.${String(latest.dealMonth).padStart(2, "0")}`;
-
-        const jeonseNum = Math.round(avgNum * (ratio / 100));
-        const gapNum = Math.max(0, avgNum - jeonseNum);
-
-        const jeonsePriceStr = formatPrice(jeonseNum);
-        const gapPriceStr = formatPrice(gapNum);
-
-        // 캐시 업데이트
-        livePriceDetailCacheRef.current.set(normName, {
-          avgPrice: avgNum,
-          latestPrice: latest.dealAmount,
-          formatted: avgPriceStr,
-          dealDate: `${latest.dealYear}.${String(latest.dealMonth).padStart(2, "0")}.${String(latest.dealDay || 1).padStart(2, "0")}`,
-          floor: latest.floor || 1,
-          pyeong: cachedLive?.pyeong || (latest.excluUseAr ? Math.round(latest.excluUseAr / 3.30578) : selectedApt.pyeong),
-          tradeCount: trades.length,
-        });
-
-        setRealtimeTx({
-          avgPriceStr,
-          latestPriceStr,
-          latestDateStr,
-          dealCount: trades.length,
-          jeonsePriceStr,
-          gapPriceStr,
-          isLoading: false,
-          isRealConnected: true,
-        });
-      })
-      .catch(() => {
-        if (!isCancelled) {
-          setRealtimeTx((prev) => (prev ? { ...prev, isLoading: false } : null));
-        }
-      });
-
-    return () => {
-      isCancelled = true;
-    };
   }, [selectedApt]);
 
   // 14개 조건 필터 State

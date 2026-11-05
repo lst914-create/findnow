@@ -139,7 +139,7 @@ async function main() {
     updated++;
 
     if (apt.name.includes('다산한강반도유보라') || apt.name.includes('다산금강펜테리움') || apt.name.includes('다산신안인스빌')) {
-      console.log(`🎯 [정밀동기화] ${apt.name}: ${(prev/10000).toFixed(1)}억 -> ${(finalPrice/10000).toFixed(1)}억 (최근1개월 ${recent1Month.length}건 기준, 최신:${(latest.amount/10000).toFixed(2)}억)`);
+      console.log(`🎯 [정밀동기화] ${apt.name}: ${(prev / 10000).toFixed(1)}억 -> ${(finalPrice / 10000).toFixed(1)}억 (최근1개월 ${recent1Month.length}건 기준, 최신:${(latest.amount / 10000).toFixed(2)}억)`);
     }
   }
 

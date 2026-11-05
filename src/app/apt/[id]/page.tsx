@@ -423,7 +423,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const realSaleTrend = useMemo(() => {
     if (filteredApiTrades.length === 0) return null;
     const monthlyMap = new Map<string, number[]>();
-    filteredApiTrades.forEach((t) => {
+    filteredApiTrades.filter((t) => !t.floor || t.floor > 1).forEach((t) => {
       const key = `${t.dealYear}.${String(t.dealMonth).padStart(2, "0")}`;
       if (!monthlyMap.has(key)) monthlyMap.set(key, []);
       monthlyMap.get(key)!.push(t.dealAmount);
@@ -441,7 +441,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
   const realRentTrend = useMemo(() => {
     // 순수 전세 거래만 필터 (월세 및 반전세 제외하여 전세 시세 왜곡 차단)
-    const pureJeonseRents = filteredApiRents.filter((r) => !r.monthlyRent || r.monthlyRent === 0);
+    const pureJeonseRents = filteredApiRents.filter((r) => (!r.monthlyRent || r.monthlyRent === 0) && (!r.floor || r.floor > 1));
     if (pureJeonseRents.length === 0) return null;
     const monthlyMap = new Map<string, number[]>();
     pureJeonseRents.forEach((r) => {
@@ -882,7 +882,6 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               <div className="flex items-center justify-between mb-3 gap-2">
                 <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">
                   📈 {tradeType} 가격 추이
-                  {tradeType === "전월세" && <span className="text-[10px] font-normal text-slate-400 ml-1.5">순수 전세</span>}
                 </h3>
                 <div className="flex gap-1 shrink-0">
                   {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (

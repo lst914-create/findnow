@@ -3,6 +3,10 @@
     {
       "path": "/api/redevelopment/sync",
       "schedule": "0 19 * * *"
+    },
+    {
+      "path": "/api/cron/sync-transactions",
+      "schedule": "0 15 * * *"
     }
   ]
 }

@@ -353,6 +353,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         date: `${String(t.dealYear).slice(2)}.${String(t.dealMonth).padStart(2, "0")}.${String(t.dealDay).padStart(2, "0")}`,
         area: `${normArea}㎡`,
         floor: `${t.floor}층`,
+        floorNum: t.floor,
         price: `${uk > 0 ? `${uk}억 ` : ""}${man > 0 ? `${man.toLocaleString()}만` : uk > 0 ? "" : "0만"}`,
         rawPrice: t.dealAmount,
         type: "매매" as const,
@@ -372,6 +373,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         date: `${String(r.dealYear).slice(2)}.${String(r.dealMonth).padStart(2, "0")}.${String(r.dealDay).padStart(2, "0")}`,
         area: `${normArea}㎡`,
         floor: `${r.floor}층`,
+        floorNum: r.floor,
         price: r.monthlyRent > 0 ? `보증 ${depositText}/${r.monthlyRent}만` : depositText,
         rawPrice: r.depositAmount,
         monthlyRent: r.monthlyRent,
@@ -478,6 +480,68 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const latestPrice = chartData.length > 0 ? (chartData[chartData.length - 1]?.price ?? 0) : 0;
   const minPrice = chartData.length > 0 ? Math.min(...chartData.map((d) => d.price)) : 0;
   const maxPrice = chartData.length > 0 ? Math.max(...chartData.map((d) => d.price)) : 0;
+
+  // [사용자 요구사항] 최근 1개월 내 최저가 / 최고가 / 현재가 (1층 제외, 전월세는 순수전세만)
+  const recentPriceSummary = useMemo(() => {
+    if (!hasRealDataForCurrentTab || activeTxs.length === 0) {
+      return null;
+    }
+
+    // 1층 거래 제외 & 전월세는 순수 전세(월세=0)만 필터
+    const validTxs = activeTxs.filter((t: any) => {
+      if (!t.rawPrice || t.rawPrice <= 0) return false;
+      if (t.floor === "1층" || t.floorNum === 1) return false;
+      if (tradeType === "전월세" && t.monthlyRent && t.monthlyRent > 0) return false;
+      return true;
+    });
+
+    if (validTxs.length === 0) return null;
+
+    const latest = validTxs[0];
+    const latestDateStr = latest.date;
+    let latestTime = 0;
+    if (latestDateStr) {
+      const parts = latestDateStr.split(".");
+      const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
+      const m = parseInt(parts[1] || "1", 10);
+      const d = parseInt(parts[2] || "1", 10);
+      latestTime = new Date(y, m - 1, d).getTime();
+    }
+
+    const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
+    const recent1Month = validTxs.filter((t: any) => {
+      if (!latestTime || !t.date) return false;
+      const parts = t.date.split(".");
+      const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
+      const m = parseInt(parts[1] || "1", 10);
+      const d = parseInt(parts[2] || "1", 10);
+      const tTime = new Date(y, m - 1, d).getTime();
+      return latestTime - tTime <= ONE_MONTH_MS;
+    });
+
+    // 최근 1개월 내 거래가 있으면 그 집합, 없으면 최신 거래 1건 기준
+    const targetSet = recent1Month.length > 0 ? recent1Month : [latest];
+    const prices = targetSet.map((t: any) => t.rawPrice);
+    const minVal = Math.min(...prices);
+    const maxVal = Math.max(...prices);
+
+    let latestVal: number;
+    if (recent1Month.length >= 2) {
+      latestVal = Math.round(prices.reduce((a: number, b: number) => a + b, 0) / prices.length);
+    } else {
+      latestVal = latest.rawPrice;
+    }
+
+    return {
+      min: +(minVal / 10000).toFixed(2),
+      max: +(maxVal / 10000).toFixed(2),
+      latest: +(latestVal / 10000).toFixed(2),
+    };
+  }, [hasRealDataForCurrentTab, activeTxs, tradeType]);
+
+  const displayMinPrice = recentPriceSummary?.min ?? minPrice;
+  const displayMaxPrice = recentPriceSummary?.max ?? maxPrice;
+  const displayLatestPrice = recentPriceSummary?.latest ?? latestPrice;
 
   const formatPrice = (price: number) => {
     const uk = Math.floor(price / 10000);
@@ -899,12 +963,12 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 </div>
               </div>
 
-              {/* 최고/최저/현재 요약 */}
-              {chartData.length > 0 && (
+              {/* 최고/최저/현재 요약 (최근 1개월 실거래 기준, 1층 제외) */}
+              {(displayMaxPrice > 0 || chartData.length > 0) && (
                 <div className="flex gap-4 mb-3 text-xs text-slate-500">
-                  <span>최저 <strong className="text-slate-700">{minPrice}억</strong></span>
-                  <span>최고 <strong className="text-slate-700">{maxPrice}억</strong></span>
-                  <span>현재 <strong className="text-blue-600">{latestPrice}억</strong></span>
+                  <span>최저 <strong className="text-slate-700">{displayMinPrice}억</strong></span>
+                  <span>최고 <strong className="text-slate-700">{displayMaxPrice}억</strong></span>
+                  <span>현재 <strong className="text-blue-600">{displayLatestPrice}억</strong></span>
                 </div>
               )}
 

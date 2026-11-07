@@ -910,7 +910,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6">
             <div className="text-white">
               <div className="flex flex-wrap gap-2 mb-2">
-                {apt.tags.map((t: string) => (
+                {apt.tags
+                  .filter((t: string) => t !== "실거래가연동" && t !== "실거래인증")
+                  .map((t: string) => (
                   <span key={t} className="px-2.5 py-0.5 bg-white/25 backdrop-blur text-white text-xs font-bold rounded-full border border-white/30">
                     #{t}
                   </span>
@@ -1831,25 +1833,25 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 </p>
                 <div className="space-y-1.5 text-[11px] text-slate-600">
                   <div className="flex items-start gap-1.5">
-                    <span className="font-bold text-indigo-600 shrink-0">🚇 교통</span>
+                    <span className="font-bold text-indigo-600 shrink-0">교통</span>
                     <span>지하철역 직선거리(500m 내 96점, 800m 92점, 1.2km 88점 등) 및 정류장 거리</span>
                   </div>
                   <div className="flex items-start gap-1.5">
-                    <span className="font-bold text-blue-600 shrink-0">🎓 학군</span>
+                    <span className="font-bold text-blue-600 shrink-0">학군</span>
                     <span>초등학교 통학거리(350m 내 초품아 95점, 500m 90점, 800m 85점) 및 학교 분포</span>
                   </div>
                   <div className="flex items-start gap-1.5">
-                    <span className="font-bold text-emerald-600 shrink-0">🌳 쾌적성</span>
+                    <span className="font-bold text-emerald-600 shrink-0">쾌적성</span>
                     <span>도보권 근린공원 수(4곳 이상 93점, 2곳 이상 88점) 및 수변·한강 조망 가점</span>
                   </div>
                   <div className="flex items-start gap-1.5">
-                    <span className="font-bold text-amber-600 shrink-0">🛒 편의시설</span>
+                    <span className="font-bold text-amber-600 shrink-0">편의시설</span>
                     <span>도보권 대형마트·병의원 밀집도(500m 내 3곳 94점, 800m 90점, 1.5km 85점)</span>
                   </div>
                 </div>
                 <div className="pt-2 border-t border-slate-200 text-[10px] text-slate-400 flex items-center justify-between">
                   <span>* 4대 핵심 입지 영역 각 100점 만점 산술 평균</span>
-                  <span className="font-semibold text-slate-500">실시간 팩트 연동</span>
+                  <span className="font-semibold text-slate-500">실시간 연동</span>
                 </div>
               </div>
             </div>

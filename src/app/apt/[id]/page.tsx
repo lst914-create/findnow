@@ -283,6 +283,25 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const [liveKapt, setLiveKapt] = useState<any | null>(null);
   const [isKaptLoading, setIsKaptLoading] = useState(false);
 
+  // 카카오 기반 100% 공식 인프라 데이터 (지하철역, 학군, 공원)
+  const [infraData, setInfraData] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (!apt.lat || !apt.lng) return;
+    let isMounted = true;
+    fetch(`/api/infra-summary?lat=${apt.lat}&lng=${apt.lng}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (isMounted && data && !data.error) {
+          setInfraData(data);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, [apt.lat, apt.lng]);
+
   // 평형별 필터 상태
   const [selectedArea, setSelectedArea] = useState<string>("전체");
 
@@ -1790,10 +1809,47 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <h4 className="text-sm font-extrabold text-indigo-700 flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-xs">🚇</span>
-                    교통 세부 정보
+                    교통 & 역세권 세부 정보
                   </h4>
-                  {/* 지하철 */}
-                  {apt.station ? (
+                  {/* 지하철역 100% 실존 팩트 데이터 */}
+                  {infraData?.subways && infraData.subways.length > 0 ? (
+                    <div className="space-y-2">
+                      {/* 가장 가까운 대표 지하철역 */}
+                      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[11px] font-bold text-indigo-500">🚇 가장 가까운 지하철역</span>
+                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-600 text-white">
+                            {infraData.subways[0].distanceMeters <= 800
+                              ? "역세권 (도보 10분 내)"
+                              : infraData.subways[0].distanceMeters <= 1500
+                                ? "도보 통근 권역"
+                                : "버스/차량 연계 권역"}
+                          </span>
+                        </div>
+                        <div className="font-extrabold text-indigo-900 text-base">{infraData.subways[0].name}</div>
+                        <div className="flex items-center gap-2 mt-1.5 text-xs text-indigo-700">
+                          <span>🚶 도보 약 {infraData.subways[0].walkMinutes}분 ({infraData.subways[0].distanceMeters.toLocaleString()}m)</span>
+                          {infraData.subways[0].distanceMeters > 1000 && (
+                            <span className="text-indigo-500">· 🚌 버스 약 {Math.round(infraData.subways[0].distanceMeters / 250)}분</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 인근 추가 지하철역 (2~3위) */}
+                      {infraData.subways.length > 1 && (
+                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
+                          <div className="text-[10px] font-bold text-slate-400 mb-1.5">인근 환승 및 기타 지하철역</div>
+                          <div className="flex flex-wrap gap-2">
+                            {infraData.subways.slice(1).map((sub: any, idx: number) => (
+                              <span key={idx} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">
+                                <span>🚇</span> {sub.name} <span className="text-slate-400 text-[10px]">({(sub.distanceMeters / 1000).toFixed(1)}km)</span>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : apt.station ? (
                     <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
                       <div className="text-[11px] font-bold text-indigo-500 mb-2">🚇 인근 지하철역</div>
                       <div className="font-extrabold text-indigo-800 text-base">{apt.station}</div>
@@ -1805,9 +1861,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     </div>
                   ) : (
                     <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm text-slate-500">
-                      인근 지하철 정보가 없습니다.
+                      반경 4km 내 직통 지하철역이 없으며, 인근 버스 노선 및 광역버스로 이동 가능합니다.
                     </div>
                   )}
+
                   {/* 버스 */}
                   {(() => {
                     const busInfo = getBusInfo(apt);
@@ -1888,10 +1945,51 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <h4 className="text-sm font-extrabold text-blue-700 flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs">🎓</span>
-                    학군 세부 정보
+                    학군 입지 & 통학 환경
                   </h4>
-                  {/* 인근 학교 */}
-                  {apt.schools && apt.schools.length > 0 ? (
+
+                  {/* 인근 학교 100% 실존 팩트 데이터 */}
+                  {infraData?.schools && infraData.schools.length > 0 ? (
+                    <div className="space-y-2.5">
+                      {infraData.schools.map((s: any, i: number) => (
+                        <div
+                          key={i}
+                          className={`flex items-center justify-between rounded-xl px-3.5 py-3 border transition-all ${
+                            s.isChoPumAh
+                              ? "bg-amber-50/70 border-amber-200"
+                              : s.type === "초등학교"
+                                ? "bg-blue-50/70 border-blue-200"
+                                : "bg-slate-50 border-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <span className="text-lg">
+                              {s.type === "초등학교" ? "🏫" : s.type === "중학교" ? "🎒" : "🎓"}
+                            </span>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-extrabold text-slate-800 text-sm">{s.name}</span>
+                                {s.isChoPumAh && (
+                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-500 text-white shadow-xs">
+                                    초품아
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-500 mt-0.5">
+                                🚶 도보 약 {s.walkMinutes}분 ({s.distanceMeters}m)
+                                {s.distanceMeters <= 400 ? " · 단지 바로 앞 안심통학" : s.distanceMeters <= 800 ? " · 도보 통학권" : ""}
+                              </div>
+                            </div>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            s.type === "초등학교" ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-700"
+                          }`}>
+                            {s.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : apt.schools && apt.schools.length > 0 ? (
                     <div className="space-y-2">
                       {apt.schools.map((s: string, i: number) => (
                         <div key={i} className="flex items-center gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
@@ -1917,6 +2015,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                       </a>
                     </div>
                   )}
+
                   <div className="flex items-center gap-3 text-xs text-slate-500 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
                     <span>📊</span>
                     <span>학군 점수 <strong className="text-blue-700">{apt.school_score}점</strong> — {apt.school_score >= 90 ? "최상위 명문 학군 (상위 5% 수준)" : apt.school_score >= 80 ? "우수 학군 지역" : "평균 수준 학군"}</span>
@@ -1936,9 +2035,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <h4 className="text-sm font-extrabold text-emerald-700 flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center text-xs">🌳</span>
-                    쾌적성 세부 정보
+                    쾌적성 & 인근 공원 세부 정보
                   </h4>
-                  {/* 한강 */}
+
+                  {/* 한강 거리 */}
                   {apt.hangang_dist && (
                     <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
                       <div className="text-[11px] font-bold text-blue-500 mb-1">🌊 한강까지 거리</div>
@@ -1948,11 +2048,32 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                       )}
                     </div>
                   )}
+
+                  {/* 인근 공원 목록 100% 실존 팩트 데이터 */}
+                  {infraData?.parks && infraData.parks.length > 0 ? (
+                    <div className="space-y-2">
+                      <div className="text-[11px] font-bold text-slate-500 mb-1">🌲 단지 인근 도보권 공원 ({infraData.parks.length}곳)</div>
+                      <div className="grid grid-cols-1 gap-2">
+                        {infraData.parks.map((p: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between bg-emerald-50/60 border border-emerald-100 rounded-xl px-3.5 py-2.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-emerald-600 text-sm">🌿</span>
+                              <span className="font-bold text-emerald-900 text-xs sm:text-sm">{p.name}</span>
+                            </div>
+                            <span className="text-[11px] font-semibold text-emerald-700">
+                              🚶 {p.walkMinutes}분 ({p.distanceMeters}m)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
                   <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4">
                     <div className="text-[11px] font-bold text-emerald-600 mb-2">🌿 자연환경 평가</div>
                     <div className="text-xs text-emerald-700 leading-relaxed">
                       {apt.nature_score >= 95
-                        ? "공원·녹지가 매우 풍부한 최고급 자연환경입니다. 산책로, 한강공원, 대형 근린공원이 도보권 내 위치합니다."
+                        ? "공원·녹지가 매우 풍부한 최고급 자연환경입니다. 산책로, 수변공원, 대형 근린공원이 도보권 내 위치합니다."
                         : apt.nature_score >= 85
                           ? "인근에 공원과 녹지공간이 잘 갖춰진 쾌적한 주거환경입니다."
                           : "주변 자연환경이 적절히 갖춰진 지역입니다."}

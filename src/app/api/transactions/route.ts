@@ -67,12 +67,20 @@ function stripRegionAndDong(norm: string, region = "", district = ""): string {
         res = res.slice(p.length);
       }
     }
-    // 다산/도농/지금/토평/교문/장자마을/가운 등 통합지역 및 택지지구 고유 접두사 반복 제거
-    res = res.replace(/^(지금동|지금|도농동|도농|다산동|다산|토평동|토평|교문동|교문|장자마을|장자|가운동|가운|한강|신도시|마을)/, "");
+    // 다산/도농/지금/토평/교문/가운 등 행정/법정동 지역 고유 접두사 반복 제거
+    res = res.replace(/^(지금동|지금|도농동|도농|다산동|다산|토평동|토평|교문동|교문|가운동|가운|신도시)/, "");
   }
 
   return res;
 }
+
+// 명백히 구분되어야 하는 고유 단지 서브명칭 (동일 브랜드 내 다른 단지 혼입 방지)
+const DISTINCT_SUB_NAMES = [
+  "메이플타운", "리버테라스", "아이비파크", "아이비플레이스", "퍼스트리버", "퍼스트포레",
+  "골든뷰", "리버펠리체", "황금산", "폴라리스", "더퍼스트", "유보라마크뷰", "해링턴타워",
+  "해링턴플레이스", "효성해링턴", "에일린의뜰", "센트럴파크", "파크뷰", "레이크",
+  "한강", "낙천대"
+];
 
 function isAptNameMatch(
   targetName: string,
@@ -84,22 +92,15 @@ function isAptNameMatch(
   if (!targetName || !candidateName) return false;
 
   // ─── 1. 법정동/읍면동 지역 필터 ────────────────────────────────────────────
-  //  핵심 개선:
-  //   - '동읍면리' 접미사 제거 후 2글자 이상인 경우 필터 적용 (기존 3글자에서 완화)
-  //   - 1글자짜리 cleanDist/cleanUmd는 필터 건너뜀 (원동→원, 교동→교 등 오탐 방지)
-  //   - 행정동 ≠ 법정동 불일치는 허용, 명백히 다른 생활권만 배제
   if (targetDistrict && candidateUmd) {
     const cleanDist = targetDistrict.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
     const cleanUmd = candidateUmd.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
 
-    // 둘 다 2글자 이상일 때만 필터 적용 (1글자면 오탐 위험)
     if (cleanDist.length >= 2 && cleanUmd.length >= 2) {
-      // 다산신도시 특수 처리 (다산동/지금동/가운동 = 같은 생활권)
       const isDasanArea =
         (targetDistrict.includes("다산") || targetDistrict.includes("지금") || targetDistrict.includes("가운")) &&
         (candidateUmd.includes("다산") || candidateUmd.includes("지금") || candidateUmd.includes("가운"));
 
-      // 구리 토평지구 특수 처리 (교문동/토평동/수택동 = 같은 구리 택지 생활권)
       const isGuriArea =
         (targetDistrict.includes("교문") || targetDistrict.includes("토평") || targetDistrict.includes("수택")) &&
         (candidateUmd.includes("교문") || candidateUmd.includes("토평") || candidateUmd.includes("수택"));
@@ -117,18 +118,26 @@ function isAptNameMatch(
   const tNorm = normalizeAptName(targetName);
   const cNorm = normalizeAptName(candidateName);
 
-  // ─── 2. 정규화 문자열 완전 일치 ────────────────────────────────────────────
+  // ─── 2. 고유 서브명칭(메이플타운, 한강, 퍼스트리버 등) 불일치 시 절대 매칭 거부 ───
+  for (const sub of DISTINCT_SUB_NAMES) {
+    const inT = tNorm.includes(sub);
+    const inC = cNorm.includes(sub);
+    if (inT !== inC) {
+      return false; // 한쪽에만 고유 서브 브랜드가 존재하면 명백히 다른 단지!
+    }
+  }
+
+  // ─── 3. 정규화 문자열 완전 일치 ────────────────────────────────────────────
   if (tNorm === cNorm) return true;
 
-  // ─── 2-1. 시/군/구 및 동/읍/면 접두사 제거 후 비교 (예: '남양주지금동부영' -> '부영') ───
+  // ─── 3-1. 시/군/구 및 동/읍/면 접두사 제거 후 비교 ───
   const tStripped = stripRegionAndDong(tNorm, targetRegion, targetDistrict);
   const cStripped = stripRegionAndDong(cNorm, targetRegion, candidateUmd);
 
   if (tStripped === cStripped) return true;
   if (tStripped === cNorm || cStripped === tNorm) return true;
 
-  // ─── 3. 차수/단지 번호 불일치 시 매칭 거부 ────────────────────────────────
-  //  양쪽 모두 번호가 있을 때만 엄격 비교 (1단지 vs 2단지 혼동 방지)
+  // ─── 4. 차수/단지 번호 불일치 시 매칭 거부 ────────────────────────────────
   const tNums = extractAptNums(tNorm);
   const cNums = extractAptNums(cNorm);
   if (tNums.length > 0 && cNums.length > 0) {
@@ -137,7 +146,7 @@ function isAptNameMatch(
     }
   }
 
-  // ─── 4. 브랜드 키워드 기반 Jaccard 유사도 매칭 ────────────────────────────
+  // ─── 5. 브랜드 키워드 기반 Jaccard 유사도 매칭 ────────────────────────────
   const tKws = extractKeywords(targetName);
   const cKws = extractKeywords(candidateName);
 
@@ -159,7 +168,7 @@ function isAptNameMatch(
     }
   }
 
-  // ─── 5. 일반 단지: 접두사 제거 후 포함 관계 검사 ──────────────────────────
+  // ─── 6. 일반 단지: 접두사 제거 후 포함 관계 검사 ──────────────────────────
   if (tStripped.length >= 2 && cStripped.length >= 2) {
     if (tStripped.includes(cStripped) || cStripped.includes(tStripped)) {
       if (tNums.length === 0 || cNums.length === 0 || tNums.join(",") === cNums.join(",")) {

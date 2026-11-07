@@ -61,7 +61,7 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
     { aptName: "교문장자마을신명", dealAmount: 76000, dealYear: 2026, dealMonth: 4, dealDay: 5, excluUseAr: 84.7, floor: 3, buildYear: 2001, umdNm: "교문동" },
     { aptName: "교문장자마을신명", dealAmount: 75000, dealYear: 2025, dealMonth: 10, dealDay: 28, excluUseAr: 84.7, floor: 6, buildYear: 2001, umdNm: "교문동" },
   ],
-  "반도유보라": [
+  "다산한강반도유보라": [
     { aptName: "다산한강반도유보라", dealAmount: 102000, dealYear: 2026, dealMonth: 10, dealDay: 19, excluUseAr: 84.9, floor: 29, buildYear: 2019, umdNm: "다산동" },
     { aptName: "다산한강반도유보라", dealAmount: 103700, dealYear: 2026, dealMonth: 10, dealDay: 12, excluUseAr: 84.9, floor: 18, buildYear: 2019, umdNm: "다산동" },
     { aptName: "다산한강반도유보라", dealAmount: 101000, dealYear: 2026, dealMonth: 9, dealDay: 25, excluUseAr: 84.9, floor: 11, buildYear: 2019, umdNm: "다산동" },

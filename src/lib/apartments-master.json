@@ -187016,7 +187016,7 @@
     "rent_max": 68000,
     "gapPrice": 30029,
     "jeonseRatio": 71,
-    "area_sqm": 85,
+    "area_sqm": 84.9,
     "area_pyeong": 34,
     "built_year": 2019,
     "household_count": 1261,
@@ -187069,22 +187069,16 @@
     ],
     "area_distributions": [
       {
-        "label": "전용 59㎡ (25평)",
-        "pyeong": 25,
-        "units": 284,
-        "ratio": 35
+        "label": "전용 76㎡ (31평)",
+        "pyeong": 31,
+        "units": 150,
+        "ratio": 12
       },
       {
         "label": "전용 84㎡ (34평)",
         "pyeong": 34,
-        "units": 365,
-        "ratio": 45
-      },
-      {
-        "label": "전용 114㎡ (45평)",
-        "pyeong": 45,
-        "units": 162,
-        "ratio": 20
+        "units": 1111,
+        "ratio": 88
       }
     ],
     "isRealPrice": true

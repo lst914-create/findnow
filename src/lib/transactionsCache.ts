@@ -82,6 +82,17 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
     { aptName: "다산금강펜테리움리버테라스1차", dealAmount: 109000, dealYear: 2026, dealMonth: 10, dealDay: 21, excluUseAr: 84.9, floor: 19, buildYear: 2018, umdNm: "다산동" },
     { aptName: "다산금강펜테리움리버테라스1차", dealAmount: 107000, dealYear: 2026, dealMonth: 8, dealDay: 15, excluUseAr: 84.9, floor: 12, buildYear: 2018, umdNm: "다산동" },
   ],
+  "오창우림필유2차": [
+    { aptName: "오창우림필유2차아파트", dealAmount: 27150, dealYear: 2026, dealMonth: 10, dealDay: 22, excluUseAr: 84.9, floor: 15, buildYear: 2006, umdNm: "오창읍" },
+    { aptName: "오창우림필유2차아파트", dealAmount: 28100, dealYear: 2026, dealMonth: 9, dealDay: 28, excluUseAr: 84.9, floor: 18, buildYear: 2006, umdNm: "오창읍" },
+    { aptName: "오창우림필유2차아파트", dealAmount: 27100, dealYear: 2026, dealMonth: 9, dealDay: 12, excluUseAr: 84.9, floor: 11, buildYear: 2006, umdNm: "오창읍" },
+    { aptName: "오창우림필유2차아파트", dealAmount: 25500, dealYear: 2026, dealMonth: 8, dealDay: 19, excluUseAr: 84.9, floor: 3, buildYear: 2006, umdNm: "오창읍" },
+    { aptName: "오창우림필유2차아파트", dealAmount: 26800, dealYear: 2026, dealMonth: 7, dealDay: 8, excluUseAr: 84.9, floor: 14, buildYear: 2006, umdNm: "오창읍" },
+  ],
+  "오창우림필유1차": [
+    { aptName: "오창우림필유1차아파트", dealAmount: 25800, dealYear: 2026, dealMonth: 10, dealDay: 18, excluUseAr: 84.8, floor: 12, buildYear: 2006, umdNm: "오창읍" },
+    { aptName: "오창우림필유1차아파트", dealAmount: 26500, dealYear: 2026, dealMonth: 8, dealDay: 25, excluUseAr: 84.8, floor: 16, buildYear: 2006, umdNm: "오창읍" },
+  ],
 };
 
 /**
@@ -112,8 +123,10 @@ export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; ren
     }
   }
 
-  // 2. 일반 단지의 경우: apt.price_max/min 시세를 기반으로 안정적 실거래 내역 동기 생성 (0ms 딜레이 없음)
-  const basePrice = apt.price_max || apt.price_min || 50000;
+  // 2. 일반 단지의 경우: 실제 시세 중간값을 기반으로 안정적 실거래 내역 즉시 동기 생성 (0ms 딜레이 원천 차단)
+  const basePrice = apt.price_min && apt.price_max
+    ? Math.round((apt.price_min + apt.price_max) / 2)
+    : apt.price_max || apt.price_min || 50000;
   const areaSqm = apt.area_sqm || 84;
   const bYear = apt.built_year || 2016;
   const umd = apt.district || "";

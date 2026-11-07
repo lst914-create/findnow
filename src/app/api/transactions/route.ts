@@ -199,8 +199,8 @@ export async function GET(request: NextRequest) {
   const region = searchParams.get("region") || "";
   const district = searchParams.get("district") || "";
   const aptName = searchParams.get("aptName") || "";
-  // 12~24개월로 최적화 (대부분의 실거래 차트는 최근 1~2년이 핵심)
-  const months = Math.min(24, Math.max(6, parseInt(searchParams.get("months") || "12", 10)));
+  // 최근 12~18개월로 최적화 (차트 및 시세 분석의 핵심인 최근 1년 반 데이터를 초고속 응답)
+  const months = Math.min(18, Math.max(6, parseInt(searchParams.get("months") || "12", 10)));
 
   const apiKey =
     process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||

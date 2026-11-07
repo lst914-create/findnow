@@ -221,6 +221,44 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     };
   }, [apt.lat, apt.lng]);
 
+  // 100% 실존 인프라 기반 정량 점수 계산 (과거 고정 더미 점수 실시간 보정)
+  const computedTrafficScore = useMemo(() => {
+    if (infraData?.subways && infraData.subways.length > 0) {
+      const dist = infraData.subways[0].distanceMeters;
+      if (dist <= 500) return 96;
+      if (dist <= 800) return 92;
+      if (dist <= 1200) return 88;
+      if (dist <= 1800) return 84;
+      if (dist <= 2500) return 79;
+      return 73;
+    }
+    return apt.traffic_score || 75;
+  }, [infraData, apt.traffic_score]);
+
+  const computedSchoolScore = useMemo(() => {
+    if (infraData?.schools && infraData.schools.length > 0) {
+      const nearest = infraData.schools[0];
+      const hasChoPumAh = infraData.schools.some((s: any) => s.isChoPumAh);
+      if (hasChoPumAh) return 95;
+      if (nearest.distanceMeters <= 500) return 90;
+      if (nearest.distanceMeters <= 800) return 85;
+      return 78;
+    }
+    return apt.school_score || 75;
+  }, [infraData, apt.school_score]);
+
+  const computedNatureScore = useMemo(() => {
+    if (infraData?.parks) {
+      const count = infraData.parks.length;
+      if (apt.hangang_dist || apt.is_hangang_view) return 96;
+      if (count >= 4) return 93;
+      if (count >= 2) return 88;
+      if (count >= 1) return 83;
+      return 76;
+    }
+    return apt.nature_score || 75;
+  }, [infraData, apt.nature_score, apt.hangang_dist, apt.is_hangang_view]);
+
   // 평형별 필터 상태
   const [selectedArea, setSelectedArea] = useState<string>("전체");
 
@@ -1549,7 +1587,13 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     { label: "학교 통학 거리", value: info.school_dist, icon: "🎒" },
                     {
                       label: "인근 지하철 / 대중교통",
-                      value: info.subwayStation ? `${info.subwayLine || ""} ${info.subwayStation} (${info.subwayWalkTime})` : (apt.station ? `${apt.station} ${apt.station_dist || ""}` : "도보권 환승"),
+                      value: infraData?.subways && infraData.subways.length > 0
+                        ? `${infraData.subways[0].name} (도보 약 ${infraData.subways[0].walkMinutes}분, ${infraData.subways[0].distanceMeters.toLocaleString()}m)`
+                        : info.subwayStation
+                          ? `${info.subwayLine || ""} ${info.subwayStation} (${info.subwayWalkTime})`
+                          : apt.station
+                            ? `${apt.station} ${apt.station_dist || ""}`
+                            : "도보권 환승",
                       icon: "🚇",
                     },
                   ].map((item, idx) => (
@@ -1686,9 +1730,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             {/* 왼쪽: 스코어 바 (클릭 인터랙션) */}
             <div className="p-6 space-y-4">
               {([
-                { key: "교통" as const, label: "🚇 교통/역세권", score: apt.traffic_score, color: "bg-indigo-500", text: "text-indigo-600", ring: "ring-indigo-400" },
-                { key: "학군" as const, label: "🎓 학군 입지", score: apt.school_score, color: "bg-blue-600", text: "text-blue-600", ring: "ring-blue-400" },
-                { key: "쾌적성" as const, label: "🌳 쾌적성/공원", score: apt.nature_score, color: "bg-emerald-500", text: "text-emerald-600", ring: "ring-emerald-400" },
+                { key: "교통" as const, label: "🚇 교통/역세권", score: computedTrafficScore, color: "bg-indigo-500", text: "text-indigo-600", ring: "ring-indigo-400" },
+                { key: "학군" as const, label: "🎓 학군 입지", score: computedSchoolScore, color: "bg-blue-600", text: "text-blue-600", ring: "ring-blue-400" },
+                { key: "쾌적성" as const, label: "🌳 쾌적성/공원", score: computedNatureScore, color: "bg-emerald-500", text: "text-emerald-600", ring: "ring-emerald-400" },
               ]).map((item) => (
                 <button
                   key={item.key}
@@ -1716,7 +1760,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               <div className="pt-3 border-t border-slate-100 text-center">
                 <div className="text-xs text-slate-400 mb-1">종합 점수</div>
                 <div className="text-3xl font-black text-blue-600">
-                  {Math.round((apt.school_score + apt.traffic_score + apt.nature_score) / 3)}
+                  {Math.round((computedSchoolScore + computedTrafficScore + computedNatureScore) / 3)}
                   <span className="text-base font-medium text-slate-400 ml-1">/ 100</span>
                 </div>
               </div>

@@ -407,11 +407,16 @@ export default function RedevelopmentMap({
     <div className="relative w-full h-full bg-slate-100 overflow-hidden font-sans">
       <div ref={mapContainerRef} className="absolute inset-0" style={{ touchAction: 'none' }} />
 
-      {/* 로딩 표시 */}
+      {/* 로딩 표시 (스켈레톤 및 지능형 인디케이터) */}
       {!mapLoaded && !mapError && (
-        <div className="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center gap-3 text-slate-400">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-sm font-medium">재개발 정비구역 지도를 불러오는 중입니다...</span>
+        <div className="absolute inset-0 bg-slate-50/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-30">
+          <div className="w-full max-w-xs bg-white p-5 rounded-3xl shadow-lg border border-slate-200/80 text-center space-y-3 animate-fadeIn">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-xs font-black text-slate-800">재개발 정비구역 지도 연결 중...</span>
+            </div>
+            <p className="text-[11px] text-slate-500 font-medium">전국 정비구역 인허가 위치를 불러옵니다</p>
+          </div>
         </div>
       )}
 

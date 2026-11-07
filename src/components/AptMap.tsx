@@ -549,30 +549,27 @@ export default function AptMap({
         });
     };
 
-    if (center || highlightId) {
-      // center prop이나 highlightId가 있으면 바로 초기화
-      initMap(center || fallbackCenter, false);
-    } else if (geoResolvedRef.current) {
-      // 이미 geolocation 결과가 있으면 바로 사용
-      initMap(geoResolvedRef.current, true);
-    } else if (navigator.geolocation) {
-      // geolocation 먼저 시도 → 결과 받은 후 지도 초기화
-      setIsGeoLoading(true);
+    // [중요 개선: 사용자 이탈 방지] 위치 권한(GPS) 팝업 응답을 기다리지 않고 지도를 서울/수도권 거점으로 즉시 0초 표출!
+    const initialTargetCenter = center || (geoResolvedRef.current ?? fallbackCenter);
+    initMap(initialTargetCenter, !!geoResolvedRef.current);
+
+    // 백그라운드 비동기로 내 위치(GPS) 조회 → 지도가 이미 화면에 뜬 상태에서 부드럽게 내 위치로 이동(panTo)
+    if (!center && !highlightId && !geoResolvedRef.current && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (p) => {
           if (isCancelled) return;
           const pos = { lat: p.coords.latitude, lng: p.coords.longitude };
           geoResolvedRef.current = pos;
-          initMap(pos, true);
+          setUserPos(pos);
+          if (mapRef.current && window.kakao?.maps) {
+            mapRef.current.panTo(new window.kakao.maps.LatLng(pos.lat, pos.lng));
+          }
         },
         () => {
-          // 위치 실패 시 서울 기본값으로 초기화
-          if (!isCancelled) initMap(fallbackCenter, false);
+          // 실패 시에도 이미 초기 지도가 표출되어 있으므로 사용자 대기 0초 유지
         },
-        { timeout: 5000, maximumAge: 300000 }
+        { timeout: 4000, maximumAge: 300000 }
       );
-    } else {
-      initMap(fallbackCenter, false);
     }
 
     return () => {
@@ -1703,14 +1700,41 @@ export default function AptMap({
         </div>
       )}
 
-      {/* 지도 로딩 중 인디케이터 */}
+      {/* 지도 로딩 중 인디케이터 (시·도 프리뷰 및 빠른 탐색 스켈레톤) */}
       {!isMapReady && (
         <div
-          className="absolute inset-0 bg-slate-50 flex flex-col items-center justify-center gap-3 z-[50]"
+          className="absolute inset-0 bg-slate-50/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-[50]"
           style={{ height }}
         >
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-slate-500 font-semibold">카카오 지도를 로딩 중입니다...</p>
+          {/* 상단 빠른 시·도 칩 및 지능형 로더 (사용자 이탈 방지) */}
+          <div className="w-full max-w-sm bg-white p-5 rounded-3xl shadow-lg border border-slate-200/80 text-center space-y-3.5 animate-fadeIn">
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs font-black text-slate-800">전국 실거래 지도 연결 중...</p>
+            </div>
+            
+            <p className="text-[11px] text-slate-500 font-medium">원하시는 주요 지역을 누르시면 해당 권역으로 바로 이동합니다</p>
+
+            <div className="flex flex-wrap justify-center gap-1.5 pt-1">
+              {[
+                { name: "서울", lat: 37.5665, lng: 126.9780 },
+                { name: "경기", lat: 37.2636, lng: 127.0286 },
+                { name: "인천", lat: 37.4563, lng: 126.7052 },
+                { name: "부산", lat: 35.1796, lng: 129.0756 },
+                { name: "대구", lat: 35.8714, lng: 128.6014 },
+                { name: "대전", lat: 36.3504, lng: 127.3845 },
+                { name: "세종", lat: 36.4800, lng: 127.2890 },
+                { name: "광주", lat: 35.1595, lng: 126.8526 },
+              ].map((city) => (
+                <span
+                  key={city.name}
+                  className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 shadow-2xs"
+                >
+                  {city.name}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

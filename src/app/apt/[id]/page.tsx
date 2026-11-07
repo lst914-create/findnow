@@ -47,139 +47,101 @@ interface BusRoute {
   dest: string;
 }
 
-function getBusInfo(apt: any): { routes: BusRoute[]; stopName: string; summary: string } {
+function getBusInfo(apt: any): { routes: BusRoute[]; stopName: string; stopId?: string; summary: string } {
+  const name = apt.name || "";
   const region = apt.region || "";
   const district = apt.district || "";
-  const tags = apt.tags || [];
   const score = apt.traffic_score || 70;
 
-  // 지역별 대표 버스 노선 매핑
-  const routeMap: Record<string, BusRoute[]> = {
-    "강남": [
-      { number: "3412", type: "간선", dest: "강남역·신논현" },
-      { number: "9호선셔틀", type: "마을", dest: "강남구청역" },
-      { number: "400", type: "광역", dest: "잠실·천호" },
-    ],
-    "서초": [
-      { number: "405", type: "간선", dest: "서초역·교대역" },
-      { number: "3012", type: "광역", dest: "강남·신논현" },
-      { number: "서초14", type: "마을", dest: "방배역" },
-    ],
-    "송파": [
-      { number: "30", type: "간선", dest: "강남역·신사동" },
-      { number: "9403", type: "광역", dest: "강남·사당" },
-      { number: "송파15", type: "마을", dest: "잠실역" },
-    ],
-    "마포": [
-      { number: "271", type: "간선", dest: "서울역·마포" },
-      { number: "7016", type: "지선", dest: "합정역·홍대입구" },
-      { number: "9703", type: "광역", dest: "여의도·강남" },
-    ],
-    "용산": [
-      { number: "N61", type: "간선", dest: "이태원·한남" },
-      { number: "110B", type: "광역", dest: "서울역·광화문" },
-      { number: "용산04", type: "마을", dest: "이촌역" },
-    ],
-    "성동": [
-      { number: "2", type: "간선", dest: "왕십리·서울역" },
-      { number: "141", type: "간선", dest: "성수·왕십리" },
-      { number: "성동06", type: "마을", dest: "왕십리역" },
-    ],
-    "광진": [
-      { number: "240", type: "간선", dest: "건대·강변" },
-      { number: "9301", type: "광역", dest: "강남·잠실" },
-      { number: "광진02", type: "마을", dest: "구의역" },
-    ],
-    "은평": [
-      { number: "701", type: "간선", dest: "서울역·종로" },
-      { number: "7211", type: "지선", dest: "연신내역" },
-      { number: "은평01", type: "마을", dest: "불광역" },
-    ],
-    "노원": [
-      { number: "108", type: "간선", dest: "도봉·종로" },
-      { number: "1139", type: "지선", dest: "노원역" },
-      { number: "노원07", type: "마을", dest: "태릉입구역" },
-    ],
-    "다산": [
-      { number: "8", type: "광역", dest: "청량리·잠실" },
-      { number: "2000-1", type: "광역", dest: "강변역·청량리" },
-      { number: "330", type: "광역", dest: "상봉·잠실" },
-      { number: "구리20", type: "마을", dest: "다산신도시내" },
-    ],
-    "남양주": [
-      { number: "8", type: "광역", dest: "청량리·잠실" },
-      { number: "2000-1", type: "광역", dest: "강변역" },
-      { number: "65", type: "광역", dest: "상봉터미널" },
-    ],
-    "구리": [
-      { number: "1", type: "광역", dest: "청량리·광화문" },
-      { number: "202", type: "광역", dest: "강변역" },
-      { number: "구리06", type: "마을", dest: "구리역" },
-    ],
-    "하남": [
-      { number: "30", type: "광역", dest: "잠실·강남" },
-      { number: "하남-10", type: "광역", dest: "천호역·강동" },
-      { number: "하남02", type: "마을", dest: "미사역" },
-    ],
-    "성남": [
-      { number: "9", type: "광역", dest: "강남역·서울" },
-      { number: "1005-1", type: "광역", dest: "잠실역·강남" },
-      { number: "성남51", type: "마을", dest: "판교역" },
-    ],
-    "고양": [
-      { number: "1000", type: "광역", dest: "서울역·광화문" },
-      { number: "9701", type: "광역", dest: "강남역" },
-      { number: "고양42", type: "마을", dest: "킨텍스·대화역" },
-    ],
-    "수원": [
-      { number: "7770", type: "광역", dest: "강남역" },
-      { number: "1007", type: "광역", dest: "잠실역" },
-      { number: "수원13", type: "마을", dest: "수원역" },
-    ],
-  };
+  // 1. 다산지금지구 (다산한강반도유보라, 금강펜테리움리버테라스, 신안인스빌 등)
+  const isDasanJigeum =
+    name.includes("반도유보라") ||
+    name.includes("리버테라스") ||
+    name.includes("신안인스빌") ||
+    name.includes("에일린의뜰") ||
+    name.includes("황금산") ||
+    district.includes("지금") ||
+    (district.includes("다산") && (apt.lat < 37.605));
 
-  // 지역 매칭
+  // 2. 다산진건지구 (다산역, 메이플타운, 자연앤, 유승 등 북부)
+  const isDasanJingeon =
+    district.includes("다산") && !isDasanJigeum;
+
   let matched: BusRoute[] = [];
-  for (const [key, routes] of Object.entries(routeMap)) {
-    if (region.includes(key) || district.includes(key)) {
-      matched = routes;
-      break;
-    }
+  let stopName = `${apt.name} 정류소`;
+  let stopId = "";
+
+  if (isDasanJigeum) {
+    stopName = name.includes("반도유보라") ? "다산한강반도유보라정문" : "다산지금지구 단지앞";
+    stopId = name.includes("반도유보라") ? "49839" : "";
+    matched = [
+      { number: "38", type: "간선", dest: "도농역 ↔ 장자호수공원역(8호선)" },
+      { number: "땡큐11", type: "마을", dest: "다산역(8호선) ↔ 도농역 ↔ 한강DIMC" },
+      { number: "38-1", type: "간선", dest: "도농역 ↔ 한강DIMC ↔ 수석동" },
+      { number: "76", type: "간선", dest: "도농역 ↔ 다산지구 ↔ 석계역(1·6호선)" },
+      { number: "1006", type: "광역", dest: "다산지금 ↔ 잠실역 직통" },
+    ];
+  } else if (isDasanJingeon) {
+    stopName = "다산역·진건지구 중심정류소";
+    matched = [
+      { number: "땡큐10", type: "마을", dest: "다산역(8호선) ↔ 도농역 환승" },
+      { number: "땡큐11", type: "마을", dest: "진건지구 ↔ 도농역 ↔ 지금지구" },
+      { number: "76", type: "간선", dest: "다산역 ↔ 도농역 ↔ 석계역" },
+      { number: "1003", type: "광역", dest: "다산진건 ↔ 잠실광역환승센터" },
+    ];
+  } else if (region.includes("구리") || district.includes("수택") || district.includes("교문") || district.includes("토평")) {
+    stopName = "인근 버스정류소";
+    matched = [
+      { number: "1", type: "광역", dest: "구리 ↔ 청량리·광화문" },
+      { number: "202", type: "간선", dest: "구리역 ↔ 강변역" },
+      { number: "96", type: "간선", dest: "구리 ↔ 상봉역 ↔ 청량리" },
+      { number: "구리06", type: "마을", dest: "장자호수공원역 ↔ 구리역" },
+    ];
+  } else if (region.includes("강남")) {
+    matched = [
+      { number: "3412", type: "간선", dest: "강남역·신논현" },
+      { number: "9408", type: "광역", dest: "강남·양재·분당" },
+      { number: "서초09", type: "마을", dest: "강남역·교대역" },
+    ];
+  } else if (region.includes("서초")) {
+    matched = [
+      { number: "405", type: "간선", dest: "서초역·교대역·종로" },
+      { number: "3012", type: "광역", dest: "강남·신논현·성남" },
+      { number: "서초14", type: "마을", dest: "방배역·교대역" },
+    ];
+  } else if (region.includes("송파")) {
+    matched = [
+      { number: "30", type: "간선", dest: "잠실역·송파구청" },
+      { number: "9403", type: "광역", dest: "잠실·강남·분당" },
+      { number: "송파15", type: "마을", dest: "잠실역·가락시장" },
+    ];
+  } else if (region.includes("마포")) {
+    matched = [
+      { number: "271", type: "간선", dest: "합정·홍대·서울역·종로" },
+      { number: "7016", type: "지선", dest: "공덕·합정역·상암" },
+      { number: "9703", type: "광역", dest: "상암·여의도·강남" },
+    ];
+  } else if (region.includes("용산")) {
+    matched = [
+      { number: "400", type: "간선", dest: "용산역·이태원·서울역" },
+      { number: "110B", type: "간선", dest: "이촌·용산·시청" },
+      { number: "용산04", type: "마을", dest: "이촌역·신용산역" },
+    ];
+  } else {
+    // 일반 도시 기본 매핑
+    matched = [
+      { number: "시내간선", type: "간선", dest: "인근 환승 지하철역" },
+      { number: "순환마을", type: "마을", dest: "단지앞 ↔ 중심 상업지구" },
+      { number: "광역급행", type: "광역", dest: "주요 도심 직통" },
+    ];
   }
 
-  // 태그에 광역버스/BRT 있으면 광역버스 추가
-  if (tags.some((t: string) => /광역버스|BRT/.test(t)) && !matched.find(r => r.type === "광역")) {
-    matched.unshift({ number: "광역", type: "광역", dest: "서울 도심 직통" });
-  }
-
-  // 기본값 (매칭 없을 경우 교통점수 기반)
-  if (matched.length === 0) {
-    if (score >= 90) {
-      matched = [
-        { number: "간선버스 다수", type: "간선", dest: "서울 주요 거점" },
-        { number: "광역버스", type: "광역", dest: "강남·종로 연결" },
-        { number: "마을버스", type: "마을", dest: "인근 지하철역" },
-      ];
-    } else if (score >= 80) {
-      matched = [
-        { number: "간선버스", type: "간선", dest: "주요 환승 거점" },
-        { number: "지선버스", type: "지선", dest: "인근 역세권" },
-      ];
-    } else {
-      matched = [
-        { number: "지선버스", type: "지선", dest: "인근 교통망" },
-        { number: "마을버스", type: "마을", dest: "단지 앞 정류장" },
-      ];
-    }
-  }
-
-  const stopName = `${apt.name} 정류장`;
-  const expressCount = matched.filter(r => r.type === "광역").length;
+  const expressCount = matched.filter((r) => r.type === "광역").length;
   const summary = expressCount > 0
-    ? `광역버스 ${expressCount}개 노선 포함 · 총 ${matched.length}개 노선`
-    : `간선·지선 ${matched.length}개 노선 운행 중`;
+    ? `광역버스 ${expressCount}개 노선 포함 · 총 ${matched.length}개 노선 경유`
+    : `시내·마을 ${matched.length}개 노선 운행 중`;
 
-  return { routes: matched, stopName, summary };
+  return { routes: matched, stopName, stopId, summary };
 }
 
 // 위경도 기반 두 지점 거리 계산 (Haversine, 단위: km)
@@ -1878,21 +1840,30 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     return (
                       <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
                         {/* 헤더 */}
-                        <div className="flex items-center justify-between">
-                          <div className="text-[11px] font-bold text-slate-500">🚌 인근 버스 노선</div>
-                          <div className="text-[10px] font-semibold text-slate-400">{busInfo.summary}</div>
+                        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm">🚏</span>
+                            <span className="text-xs font-extrabold text-slate-800">{busInfo.stopName}</span>
+                            {busInfo.stopId && (
+                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 text-slate-600 font-mono font-semibold">
+                                {busInfo.stopId}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] font-bold text-indigo-600">{busInfo.summary}</div>
                         </div>
 
                         {/* 노선 칩 목록 */}
                         <div className="space-y-2">
                           {busInfo.routes.map((route, i) => (
-                            <div key={i} className="flex items-center gap-2.5">
-                              <span className={`flex-shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${typeColor[route.type] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                                {route.type}
-                              </span>
-                              <span className="text-xs font-bold text-slate-800 min-w-[48px]">{route.number}</span>
-                              <span className="text-xs text-slate-500 flex items-center gap-1">
-                                <span className="text-slate-300">→</span>
+                            <div key={i} className="flex items-center justify-between gap-2 bg-white rounded-lg p-2 border border-slate-100">
+                              <div className="flex items-center gap-2">
+                                <span className={`flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${typeColor[route.type] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                                  {route.type}
+                                </span>
+                                <span className="text-xs font-black text-slate-900">{route.number}</span>
+                              </div>
+                              <span className="text-[11px] text-slate-500 font-medium truncate text-right">
                                 {route.dest}
                               </span>
                             </div>
@@ -1914,18 +1885,18 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                           </div>
                         </div>
 
-                        {/* 네이버 지도 CTA */}
+                        {/* 실시간 버스도착 지도 CTA */}
                         <a
-                          href={`https://map.naver.com/v5/search/${encodeURIComponent(apt.name + " 버스정류장")}`}
+                          href={`https://map.naver.com/v5/search/${encodeURIComponent(busInfo.stopName || (apt.name + " 버스정류장"))}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center justify-between w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 transition-colors group"
+                          className="flex items-center justify-between w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 transition-colors group shadow-xs"
                         >
                           <div className="flex items-center gap-2">
                             <span className="text-base">🗺️</span>
                             <div>
-                              <div className="text-xs font-bold">전체 버스 노선 지도에서 보기</div>
-                              <div className="text-[10px] text-indigo-200">정류장 위치 · 실시간 배차 · 경유지 확인</div>
+                              <div className="text-xs font-bold">실시간 버스 도착 정보 확인</div>
+                              <div className="text-[10px] text-indigo-200">정류소 실시간 배차 · 남은 시간 · 경유 노선</div>
                             </div>
                           </div>
                           <span className="text-white/70 group-hover:translate-x-0.5 transition-transform text-sm">→</span>

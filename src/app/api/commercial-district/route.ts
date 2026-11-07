@@ -46,7 +46,13 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // 실시간 상권 점포 수집 및 로컬 저장소 색인
+  // 실시간 상권 점포 수집 및 로컬 저장소 색인 (카카오 로컬 + SDSC 복합)
+  try {
+    const { fetchKakaoStoresInRadius } = await import("@/lib/commercialApi");
+    await fetchKakaoStoresInRadius(baseLat, baseLng, radiusM);
+  } catch (e) {
+    console.warn("[API/commercial-district] fetchKakaoStoresInRadius failed:", e);
+  }
   await fetchSdscStoresFromOpenApi(baseLat, baseLng, radiusM);
 
   // 상가 데이터 저장소에서 반경 내 점포 집계 조회

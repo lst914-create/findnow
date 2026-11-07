@@ -45,7 +45,12 @@ export function NearbyLocationSummaryCard({ aptId, aptName, lat, lng }: Props) {
             redevTotalUnits: summary.redev_planned_units,
             redevActiveStage: summary.redev_count > 0 ? "인가·착공 등" : "-",
             supplyUnits: summary.supply_units,
-            topSupplyProject: summary.supply_units > 0 ? "인근 신규 단지" : undefined,
+            topSupplyProject:
+              summary.supply_units >= 2000
+                ? "왕숙2 공공주택지구 등"
+                : summary.supply_units > 0
+                ? "인근 분양·입주 예정 단지"
+                : undefined,
             storeCount: summary.store_count,
             topCategory:
               topCat?.code === "Q"

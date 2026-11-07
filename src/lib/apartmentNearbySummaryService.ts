@@ -57,7 +57,7 @@ export async function getOrComputeNearbySummary(
     }
   }
 
-  // 4. 반경 내 입주 예정 물량 집계 (한국부동산원 청약홈 분양공고 + 마스터 신축 통합)
+  // 4. 반경 내 입주 예정 물량 집계 (한국부동산원 청약홈 분양공고 + 마스터 신축 + 반경 내 공공주택·정비사업 공급계획)
   let supplyUnits = 0;
   try {
     const { getAllSubscriptionNotices } = await import("@/lib/applyhome");
@@ -65,8 +65,8 @@ export async function getOrComputeNearbySummary(
     const targetSido = apt.region.split(" ")[0] || "";
     for (const n of notices) {
       if (targetSido && !n.region.includes(targetSido) && !n.address.includes(targetSido)) continue;
-      // 동일 읍면동 또는 인접 아파트 매칭
-      if (n.address.includes(apt.district)) {
+      // 동일 읍면동 또는 인접 지역 매칭
+      if (n.address.includes(apt.district) || (apt.district && n.address.includes(apt.district.slice(0, 2)))) {
         supplyUnits += n.totalUnits || 0;
       }
     }
@@ -80,7 +80,23 @@ export async function getOrComputeNearbySummary(
     }
   }
 
-  // 5. 반경 내 상가·상권 집계 (commercialStoreStore)
+  // 반경 내 공공주택지구/분양예정 블록(왕숙2지구 등) 및 착공·사업승인 물량 집계
+  for (const zone of (masterZonesRaw as any[])) {
+    if (!zone.lat || !zone.lng) continue;
+    const dist = calculateDistanceMeters(center, { lat: zone.lat, lng: zone.lng });
+    if (dist <= radiusM && (zone.type === "공공주택" || zone.status === "착공" || zone.status === "사업승인" || zone.status === "사전청약")) {
+      supplyUnits += zone.totalUnits || 0;
+    }
+  }
+
+  // 5. 반경 내 상가·상권 집계 (카카오 로컬 실시간 API 수집 후 commercialStoreStore 연동)
+  try {
+    const { fetchKakaoStoresInRadius } = await import("@/lib/commercialApi");
+    await fetchKakaoStoresInRadius(apt.lat, apt.lng, radiusM);
+  } catch (e) {
+    console.error("[NearbySummary] fetchKakaoStoresInRadius error:", e);
+  }
+
   const commSummary = getCommercialDistrictSummary(apt.lat, apt.lng, radiusM);
   const topCategories = commSummary.categoryBreakdown.slice(0, 5).map((c) => ({
     code: c.code,

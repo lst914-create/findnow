@@ -37,6 +37,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    // 카카오 로컬 실시간 API를 통한 상권 점포 수집 및 로컬 인덱싱
+    try {
+      const { fetchKakaoStoresInRadius } = await import("@/lib/commercialApi");
+      await fetchKakaoStoresInRadius(lat, lng, radiusM);
+    } catch (e) {
+      console.warn("[API/commercial/stores] fetchKakaoStoresInRadius failed:", e);
+    }
+
     // 상권 요약 집계 생성
     const summary = getCommercialDistrictSummary(lat, lng, radiusM);
 

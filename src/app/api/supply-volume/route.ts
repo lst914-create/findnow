@@ -221,6 +221,48 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // 3. 반경 내 정비사업 및 공공주택지구(왕숙2지구, 도농·지금, 수택E 등) 공급 계획 병합
+  try {
+    const masterZones = require("@/lib/redevelopment-master.json");
+    for (const zone of masterZones) {
+      if (!zone.lat || !zone.lng) continue;
+      const distM = haversineM(baseLat, baseLng, zone.lat, zone.lng);
+      if (distM > maxRadiusM) continue;
+      if (
+        zone.type === "공공주택" ||
+        zone.status === "착공" ||
+        zone.status === "사업승인" ||
+        zone.status === "사전청약" ||
+        zone.status === "관리처분인가"
+      ) {
+        const normZ = normalizeAptName(zone.name);
+        const alreadyAdded = units.some((u) => {
+          const normU = normalizeAptName(u.name);
+          return normU === normZ || (normU.length >= 4 && normZ.includes(normU)) || (normZ.length >= 4 && normU.includes(normZ));
+        });
+        if (!alreadyAdded) {
+          units.push({
+            id: `redev-${zone.id}`,
+            name: zone.name,
+            supplyType: zone.type === "공공주택" ? ("분양" as SupplyType) : ("분양" as SupplyType),
+            totalUnits: zone.totalUnits || 0,
+            saleUnits: zone.generalUnits || zone.totalUnits || 0,
+            rentalUnits: zone.rentalUnits || 0,
+            expectedMoveIn: zone.status === "착공" ? "2026-12" : zone.status === "사업승인" ? "2029-06" : "2028-12",
+            address: zone.address || `${zone.region} ${zone.district}`,
+            lat: zone.lat,
+            lng: zone.lng,
+            distanceM: Math.round(distM),
+            radiusBucket: getRadiusBucket(distM),
+            developer: zone.builder || "시행사/LH",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[Supply Volume] Master zones merge failed:", err);
+  }
+
   units.sort((a, b) => a.distanceM - b.distanceM);
 
   // 반경별 집계

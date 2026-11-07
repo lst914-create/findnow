@@ -7797,65 +7797,6 @@
     "baseDate": "2026-10-31"
   },
   {
-    "id": "namyangju-dasan",
-    "name": "다산신도시재건축",
-    "bjdCode": "4136000000",
-    "sido": "경기",
-    "sigungu": "남양주시",
-    "projectType": "재건축",
-    "stage": "정비구역지정",
-    "stageDate": "2024-01-20",
-    "roadAddress": "경기도 남양주시 다산동 6512-1 일대",
-    "jibunAddress": "경기도 남양주시 다산동 6512-1 일대",
-    "lat": 37.5978,
-    "lng": 127.1742,
-    "boundaryGeoJson": {
-      "type": "Polygon",
-      "coordinates": [
-        [
-          [
-            127.17726,
-            37.597835
-          ],
-          [
-            127.176478,
-            37.599301
-          ],
-          [
-            127.174147,
-            37.599703
-          ],
-          [
-            127.171756,
-            37.599299
-          ],
-          [
-            127.17077,
-            37.597761
-          ],
-          [
-            127.171784,
-            37.596209
-          ],
-          [
-            127.174252,
-            37.595936
-          ],
-          [
-            127.176226,
-            37.596557
-          ]
-        ]
-      ]
-    },
-    "plannedUnits": 2134,
-    "hasLocation": true,
-    "dataTier": "PATCHED_LOCAL_GOV",
-    "lastUpdateCycle": "REALTIME_PATCH",
-    "updateSource": "서울시 정비사업 정보몽땅 (실시간/수시 보완 패치)",
-    "baseDate": "2026-10-31"
-  },
-  {
     "id": "siheung-jeongwang",
     "name": "정왕1구역",
     "bjdCode": "4139000000",

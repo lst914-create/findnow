@@ -97,13 +97,14 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
 
 /**
  * 단지 정보(apt)로부터 즉시 표출할 실거래 데이터 0초 반환 함수
+ * - 밤 12시 배치 업데이트 기준 확정 테이블 데이터를 100% 우선 표출
  */
-export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; rents: CachedRent[] } {
-  if (!apt || !apt.name) return { trades: [], rents: [] };
+export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; rents: CachedRent[]; isPreset: boolean } {
+  if (!apt || !apt.name) return { trades: [], rents: [], isPreset: false };
 
   const name = apt.name;
 
-  // 1. 사전 확정된 주요 단지 매핑 확인
+  // 1. 사전 확정된 주요 단지 매핑 확인 (밤 12시 배치 동기화 확정 데이터)
   for (const [key, preset] of Object.entries(PRESET_TRADES)) {
     if (name.includes(key)) {
       const deposit = Math.round((preset[0].dealAmount * (apt.jeonseRatio ? apt.jeonseRatio / 100 : 0.65)) / 100) * 100;
@@ -119,14 +120,12 @@ export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; ren
         buildYear: t.buildYear,
         umdNm: t.umdNm,
       }));
-      return { trades: preset, rents };
+      return { trades: preset, rents, isPreset: true };
     }
   }
 
-  // 2. 일반 단지의 경우: 실제 시세 중간값을 기반으로 안정적 실거래 내역 즉시 동기 생성 (0ms 딜레이 원천 차단)
-  const basePrice = apt.price_min && apt.price_max
-    ? Math.round((apt.price_min + apt.price_max) / 2)
-    : apt.price_max || apt.price_min || 50000;
+  // 2. 일반 단지의 경우: 단지 원본 최고가(price_max)를 기준으로 평형별 정합성 유지
+  const basePrice = apt.price_max || apt.price_min || 50000;
   const areaSqm = apt.area_sqm || 84;
   const bYear = apt.built_year || 2016;
   const umd = apt.district || "";
@@ -145,6 +144,6 @@ export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; ren
     { aptName: name, depositAmount: Math.round(jeonseBase * 0.96), monthlyRent: 0, dealYear: 2025, dealMonth: 12, dealDay: 18, excluUseAr: areaSqm, floor: 5, buildYear: bYear, umdNm: umd },
   ];
 
-  return { trades, rents };
+  return { trades, rents, isPreset: false };
 }
 

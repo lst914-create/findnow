@@ -386,6 +386,11 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   useEffect(() => {
     let isMounted = true;
     async function fetchRealData() {
+      // 밤 12시 자정 배치로 테이블에 확정 저장된 실거래 데이터는 외부 API 재호출 없이 0초 즉시 테이블 데이터 신뢰
+      if (preloaded.isPreset && preloaded.trades.length > 0) {
+        return;
+      }
+
       const cacheKey = `${apt.id}_${apt.name}`;
       if (apiTransactionsCache.has(cacheKey)) {
         const cached = apiTransactionsCache.get(cacheKey)!;

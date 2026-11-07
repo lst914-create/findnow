@@ -183,7 +183,7 @@ export default function AptMap({
   const [currentRegion, setCurrentRegion] = useState<string>("수도권 주요 단지");
   const [visibleCount, setVisibleCount] = useState<number>(0);
 
-  // 선택 단지 국토교통부 실거래가 실시간 연동 & K-apt 단지 정보(세대수, 준공연도) 연동
+  // 선택 단지 바텀시트 정보: DB 확정 데이터 기반 0초 즉시(0ms 지연) 고정 렌더링
   useEffect(() => {
     if (!selectedApt) {
       setRealtimeTx(null);
@@ -191,47 +191,14 @@ export default function AptMap({
       return;
     }
 
-    const normName = normalizeAptName(selectedApt.name);
-    const cachedLive = livePriceDetailCacheRef.current.get(normName);
+    // [사용자 핵심 요구사항] 마커 클릭 시 1초 뒤 세대수/준공연도가 바뀌는 현상 완전 제거
+    // 이미 검증된 단지 마스터의 세대수와 준공연도를 0초 즉시 고정 표출
+    setKaptInfo({
+      householdCount: selectedApt.householdCount,
+      builtYear: selectedApt.builtYear,
+    });
 
-    // K-apt 코드 추출
-    const match = selectedApt.id?.match(/A\d{6,10}/i);
-    const kaptCode = match ? match[0] : (selectedApt.id?.startsWith("kapt-") ? selectedApt.id.replace("kapt-", "") : null);
-
-    // 1. K-apt 정보 (단지 상세 분석보기와 동일한 실데이터)
-    if (kaptCode) {
-      const cachedKapt = kaptInfoCacheRef.current.get(kaptCode);
-      if (cachedKapt) {
-        setKaptInfo(cachedKapt);
-      } else {
-        fetch(`/api/kapt?kaptCode=${encodeURIComponent(kaptCode)}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then((json) => {
-            if (json?.success && json?.data) {
-              const d = json.data;
-              const hCount = d.household_count || selectedApt.householdCount;
-              let bYear = selectedApt.builtYear;
-              if (d.approval_date) {
-                const y = parseInt(d.approval_date.slice(0, 4), 10);
-                if (!isNaN(y) && y > 1960 && y < 2035) {
-                  bYear = y;
-                }
-              }
-              const info = { householdCount: hCount, builtYear: bYear };
-              kaptInfoCacheRef.current.set(kaptCode, info);
-              setKaptInfo(info);
-            }
-          })
-          .catch(() => {});
-      }
-    } else {
-      setKaptInfo({
-        householdCount: selectedApt.householdCount,
-        builtYear: selectedApt.builtYear,
-      });
-    }
-
-    // 2. 바텀시트 시세: 마커에 표시된 검증된 실거래가와 100% 동일하게 0초 즉시 반영 (불일치 및 깜빡임 제거)
+    // 바텀시트 시세: 마커에 표시된 검증된 실거래가와 100% 동일하게 0초 즉시 반영 (불일치 및 깜빡임 제거)
     const priceNum = selectedApt.priceNum || 0;
     const avgPriceStr = selectedApt.avgPrice;
     const ratio = selectedApt.jeonseRatio ?? 56;
@@ -1627,8 +1594,8 @@ export default function AptMap({
           const live = livePriceDetailCacheRef.current.get(normName);
           const displayPrice = live?.formatted || realtimeTx?.avgPriceStr || selectedApt.avgPrice;
           const displayPyeong = live?.pyeong || selectedApt.pyeong;
-          const currentHousehold = kaptInfo?.householdCount ?? (selectedApt.id?.match(/A\d{6,10}/i) ? kaptInfoCacheRef.current.get(selectedApt.id.match(/A\d{6,10}/i)![0])?.householdCount : null) ?? selectedApt.householdCount;
-          const currentBuiltYear = kaptInfo?.builtYear ?? (selectedApt.id?.match(/A\d{6,10}/i) ? kaptInfoCacheRef.current.get(selectedApt.id.match(/A\d{6,10}/i)![0])?.builtYear : null) ?? selectedApt.builtYear;
+          const currentHousehold = selectedApt.householdCount || kaptInfo?.householdCount;
+          const currentBuiltYear = selectedApt.builtYear || kaptInfo?.builtYear;
 
           return (
             <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-[25] bg-white rounded-3xl shadow-2xl border border-slate-200/90 p-5 sm:w-88 animate-slide-up">

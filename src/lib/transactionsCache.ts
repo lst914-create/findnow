@@ -134,3 +134,4 @@ export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; ren
 
   return { trades, rents };
 }
+

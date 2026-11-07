@@ -89,22 +89,30 @@ export default function PricingSection({
           return (
             <div
               key={plan.id}
-              className={`rounded-3xl flex flex-col justify-between transition-all duration-200 relative ${
-                isPro
+              id={`pricing-card-${plan.id}`}
+              className={`rounded-3xl flex flex-col justify-between transition-all duration-300 relative scroll-mt-28 ${
+                isSelected && plan.id === "realtor"
+                  ? "bg-[#101726] border-2 border-blue-400 ring-4 ring-blue-500/40 shadow-[0_0_45px_rgba(59,130,246,0.25)] scale-[1.01]"
+                  : isPro
                   ? "bg-[#161922] border-2 border-rose-500/80 shadow-[0_0_40px_rgba(225,29,72,0.18)] order-first md:order-none"
                   : isSelected
-                  ? "bg-[#141720] border-2 border-indigo-500 shadow-lg"
+                  ? "bg-[#141720] border-2 border-indigo-500 ring-2 ring-indigo-500/30 shadow-lg"
                   : "bg-[#12141a] border border-slate-800/80 hover:border-slate-700"
               }`}
             >
-              {/* 상단 하이라이트 배너 (가장 인기 있는) */}
-              {isPro && (
+              {/* 상단 하이라이트 배너 */}
+              {isSelected && plan.id === "realtor" ? (
+                <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 text-white text-xs font-black text-center py-2.5 rounded-t-[22px] tracking-wide shadow-md flex items-center justify-center gap-1.5 animate-pulse">
+                  <span>🏢</span>
+                  <span>단지 전담 공식 중개 파트너 신청</span>
+                </div>
+              ) : isPro ? (
                 <div className="bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 text-white text-xs font-black text-center py-2 rounded-t-[22px] tracking-wide shadow-sm">
                   🔥 가장 인기 있는 멤버십
                 </div>
-              )}
+              ) : null}
 
-              <div className={`p-5 sm:p-6 flex-1 flex flex-col justify-between ${!isPro ? "pt-6" : ""}`}>
+              <div className={`p-5 sm:p-6 flex-1 flex flex-col justify-between ${!isPro && !(isSelected && plan.id === "realtor") ? "pt-6" : ""}`}>
                 {/* 카드 상단 정보 */}
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-2">

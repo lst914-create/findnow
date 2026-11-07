@@ -152,4 +152,25 @@ export const REPORT_SECTIONS: ReportSection[] = [
     isPreview: false,
     description: "나이스(NEIS) 기반 배정 초·중학교 학업성취도 및 고등학교 진학 실적.",
   },
+  {
+    id: "gap_investment_risk",
+    title: "전세가율 추이 및 갭투자 리스크 진단 (역전세 방어력)",
+    type: "apt_location",
+    isPreview: false,
+    description: "최근 5개년 전세가율 변동 밴드와 HUG 보증한도, 매매·전세 갭 추이 및 깡통전세·역전세 위험도를 정밀 진단합니다.",
+  },
+  {
+    id: "holding_tax_calculator",
+    title: "취득세·보유세·양도세 다주택 세금 및 종부세 AI 시뮬레이션",
+    type: "apt_location",
+    isPreview: false,
+    description: "공시가격 현실화율과 1주택/다주택자 기준 연도별 재산세·종부세 및 보유 기간별 예상 양도세를 자동 계산합니다.",
+  },
+  {
+    id: "fair_value_model",
+    title: "AI 적정 가치 평가 및 고평가/저평가 적정 매수가 판정",
+    type: "apt_location",
+    isPreview: false,
+    description: "동일 생활권 랜드마크 대비 평당가 갭, 전세가 기반 내재가치, 금리 변동 시나리오별 AI 적정 매수가 밴드를 제시합니다.",
+  },
 ];

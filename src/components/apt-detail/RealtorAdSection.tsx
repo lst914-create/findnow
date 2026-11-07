@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { RealtorAd } from "@/types/report";
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function RealtorAdSection({ aptId, aptName }: Props) {
+  const router = useRouter();
   const [ads, setAds] = useState<RealtorAd[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -120,7 +122,7 @@ export function RealtorAdSection({ aptId, aptName }: Props) {
         <button
           type="button"
           onClick={() => {
-            alert("공인중개사 인증 등록 문의: chajwo-partner@example.com (고객센터 접수 준비 중)");
+            router.push("/pricing?role=realtor");
           }}
           className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors shrink-0 shadow-sm"
         >

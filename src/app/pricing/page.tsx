@@ -1,14 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { UserRole } from "@/types/auth";
 import PricingSection from "@/components/PricingSection";
 import UnifiedAuthModal from "@/components/UnifiedAuthModal";
 
-export default function PricingPage() {
+function PricingContent() {
+  const searchParams = useSearchParams();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<UserRole>("premium");
+
+  useEffect(() => {
+    const roleParam = searchParams.get("role") as UserRole | null;
+    if (roleParam && ["general", "premium", "realtor", "merchant"].includes(roleParam)) {
+      setSelectedRole(roleParam);
+      // URL로 전달된 플랜 위치로 부드럽게 스크롤
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`pricing-card-${roleParam}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const handleSelectPlan = (role: UserRole) => {
     setSelectedRole(role);
@@ -72,7 +89,7 @@ export default function PricingPage() {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 py-10 w-full">
-        <PricingSection onSelectPlan={handleSelectPlan} />
+        <PricingSection onSelectPlan={handleSelectPlan} selectedRole={selectedRole} />
       </main>
 
       {/* Auth Modal */}
@@ -83,5 +100,13 @@ export default function PricingPage() {
         initialRole={selectedRole}
       />
     </div>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#090b0e]" />}>
+      <PricingContent />
+    </Suspense>
   );
 }

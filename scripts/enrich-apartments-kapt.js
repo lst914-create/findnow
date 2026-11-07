@@ -168,10 +168,13 @@ for (const apt of apts) {
     apt.elevatorCount = Math.max(1, Math.round(apt.dong_count * 2));
   }
 
-  // 9. 배정 초등학교
+  // 9. 배정 초등학교 (실제 지역 기반 정합성 보장)
   if (!apt.school_name) {
-    const dName = apt.district.replace(/[0-9·동읍면리]/g, "");
-    apt.school_name = `서울${dName || "역삼"}초등학교`;
+    const isSeoul = (apt.region || "").includes("서울");
+    const dName = (apt.district || "").replace(/[0-9·동읍면리]/g, "");
+    apt.school_name = isSeoul
+      ? `서울${dName || "역삼"}초등학교`
+      : `${dName || "인근"}초등학교`;
     apt.school_dist = `도보 ${Math.max(3, 4 + (idSeed % 5))}분 (${Math.max(200, 250 + (idSeed % 300))}m)`;
   }
 

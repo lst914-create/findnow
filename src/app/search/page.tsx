@@ -759,7 +759,9 @@ export default function ApartmentSearchPage() {
                             )}
                           </div>
                           <div className="font-bold text-blue-900 text-xs mt-1 truncate">
-                            {apt.school_name || `${apt.district} 인근 초교`}
+                            {(!apt.region?.includes("서울") && apt.school_name?.startsWith("서울")
+                              ? apt.school_name.replace(/^서울/, "")
+                              : apt.school_name) || `${apt.district} 인근 초교`}
                           </div>
                           <div className="text-[11px] text-blue-700 font-medium mt-0.5">
                             {apt.school_dist || (apt.tags?.includes("초품아") ? "도보 3분 이내" : "도보 5~8분권")}

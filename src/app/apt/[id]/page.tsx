@@ -1384,6 +1384,27 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
         {/* ===== 국토교통부 K-apt 단지 기본 및 상세 정보 대시보드 ===== */}
         {(() => {
+          // 실시간 공간좌표 기반 최우선 배정 초등학교 산출 및 비서울 지역 서울 접두사 정제
+          const liveElementary = infraData?.schools?.find(
+            (s: any) => s.type === "초등학교" || s.name.includes("초등학교")
+          );
+          const sanitizeSchoolName = (rawName?: string) => {
+            if (!rawName) return null;
+            const isSeoul = (apt.region || "").includes("서울");
+            if (!isSeoul && rawName.startsWith("서울")) {
+              return rawName.replace(/^서울/, "");
+            }
+            return rawName;
+          };
+          const resolvedSchoolName =
+            liveElementary?.name ||
+            sanitizeSchoolName(apt.schools?.find((s: string) => s.includes("초등"))) ||
+            sanitizeSchoolName(apt.school_name) ||
+            (apt.district ? `${apt.district.replace(/[0-9·동읍면리]/g, "")}초등학교` : "인근 초등학교");
+          const resolvedSchoolDist = liveElementary
+            ? `도보 약 ${liveElementary.walkMinutes}분 (${liveElementary.distanceMeters.toLocaleString()}m)`
+            : (apt.school_dist || "도보 5분 (320m)");
+
           const info = {
             household_count: liveKapt?.household_count || apt.household_count,
             dong_count: liveKapt?.dong_count || apt.dong_count || 1,
@@ -1428,8 +1449,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                   { label: "전용 84㎡ (34평)", pyeong: 34, units: Math.round((apt.household_count || 500) * 0.45), ratio: 45 },
                   { label: "전용 114㎡ (45평)", pyeong: 45, units: Math.round((apt.household_count || 500) * 0.20), ratio: 20 },
                 ]),
-            school_name: apt.school_name || (apt.district ? `${apt.district.replace(/[0-9·동읍면리]/g, "")}초등학교` : "인근 초등학교"),
-            school_dist: apt.school_dist || "도보 5분 (320m)",
+            school_name: resolvedSchoolName,
+            school_dist: resolvedSchoolDist,
             subwayLine: liveKapt?.subwayLine || (apt.station ? apt.station.split(" ")[0] : null),
             subwayStation: liveKapt?.subwayStation || (apt.station ? apt.station.split(" ")[1] || apt.station : null),
             subwayWalkTime: liveKapt?.subwayWalkTime || (apt.station_dist || (apt.walk_minutes ? `도보 ${apt.walk_minutes}분` : "도보 7분")),

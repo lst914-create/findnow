@@ -84,9 +84,10 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
         filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
         ${isMain ? "transform: scale(1.15); transform-origin: bottom center; z-index: 999;" : ""}
       ">
-        <!-- 실시간 보는 중 뱃지 / 현재 단지 라벨 -->
+        <!-- 현재 단지만 상단 라벨 유지, 주변 단지는 상단 배지 제거 -->
+        ${isMain ? `
         <div style="
-          background: ${isMain ? "#be123c" : "rgba(30, 41, 59, 0.88)"};
+          background: #be123c;
           backdrop-filter: blur(4px);
           color: #ffffff;
           font-size: 10px;
@@ -98,8 +99,8 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
           box-shadow: 0 2px 6px rgba(0,0,0,0.25);
           letter-spacing: -0.3px;
         ">
-          ${isMain ? "⭐ 현재 단지" : `🔥 ${viewers}명 보는중`}
-        </div>
+          ⭐ 현재 단지
+        </div>` : ""}
 
         <!-- 오각형 집 모양 마커 본체 -->
         <div style="

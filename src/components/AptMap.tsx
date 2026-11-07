@@ -334,26 +334,6 @@ export default function AptMap({
         filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25));
         transition: transform 0.15s ease;
       ">
-        <!-- 상단 실거래 연동 배지 -->
-        <div style="
-          background: rgba(15, 23, 42, 0.9);
-          backdrop-filter: blur(4px);
-          color: #f8fafc;
-          font-size: 10px;
-          font-weight: 700;
-          padding: 2px 7px;
-          border-radius: 12px;
-          margin-bottom: 3px;
-          white-space: nowrap;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          letter-spacing: -0.3px;
-        ">
-          <span style="color:#38bdf8;">●</span> 실거래
-        </div>
-
         <!-- 오각형 집 모양 마커 본체 (실거래가 정밀 표출) -->
         <div style="
           background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
@@ -492,30 +472,6 @@ export default function AptMap({
         filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
         ${isMain ? "transform: scale(1.12); transform-origin: bottom center; z-index: 999;" : ""}
       ">
-        <div style="
-          background: rgba(30, 41, 59, 0.9);
-          color: #ffffff;
-          font-size: 10px;
-          font-weight: 700;
-          padding: 2px 7px;
-          border-radius: 12px;
-          margin-bottom: 3px;
-          white-space: nowrap;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-          display: flex;
-          align-items: center;
-          gap: 3px;
-        ">
-          ${hasLive
-            ? `<span style="color:#2dd4bf; font-size:9px;">●</span> ${
-                (liveDetail as any).isAverage
-                  ? "실거래(최근1개월)"
-                  : `실거래 ${liveDetail!.dealDate.slice(2).replace(".", "/")}`
-              }`
-            : `<span style="color:#2dd4bf; font-size:9px;">●</span> 실거래`
-          }
-        </div>
-
         <div style="
           background: ${bgGradient};
           color: #ffffff;

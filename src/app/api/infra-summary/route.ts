@@ -23,15 +23,24 @@ interface ParkInfo {
   walkMinutes: number;
 }
 
+interface ConvenienceInfo {
+  name: string;
+  category: "마트/쇼핑" | "병원/의료" | "기타";
+  distanceMeters: number;
+  walkMinutes: number;
+}
+
 interface InfraSummaryResponse {
   subways: SubwayInfo[];
   schools: SchoolInfo[];
   parks: ParkInfo[];
+  conveniences: ConvenienceInfo[];
   summary: {
     nearestSubway: string | null;
     nearestSchool: string | null;
     isChoPumAh: boolean;
     parkCount: number;
+    convenienceCount: number;
   };
 }
 
@@ -90,10 +99,24 @@ export async function GET(request: NextRequest) {
       { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
     ).then((r) => (r.ok ? r.json() : { documents: [] }));
 
-    const [subwayRes, schoolRes, parkRes] = await Promise.all([
+    // 4. 대형마트/슈퍼 (MT1, 반경 2.5km)
+    const martPromise = fetch(
+      `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=MT1&x=${lng}&y=${lat}&radius=2500&sort=distance`,
+      { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
+    ).then((r) => (r.ok ? r.json() : { documents: [] }));
+
+    // 5. 병원/의원 (HP8, 반경 1.5km)
+    const hospitalPromise = fetch(
+      `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=HP8&x=${lng}&y=${lat}&radius=1500&sort=distance`,
+      { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
+    ).then((r) => (r.ok ? r.json() : { documents: [] }));
+
+    const [subwayRes, schoolRes, parkRes, martRes, hospitalRes] = await Promise.all([
       subwayPromise,
       schoolPromise,
       parkPromise,
+      martPromise,
+      hospitalPromise,
     ]);
 
     // 지하철역 파싱
@@ -144,6 +167,25 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // 편의시설 파싱 (마트 + 병원)
+    const marts: ConvenienceInfo[] = (martRes.documents || []).slice(0, 3).map((d: any) => ({
+      name: d.place_name || "",
+      category: "마트/쇼핑" as const,
+      distanceMeters: parseInt(d.distance, 10),
+      walkMinutes: Math.round(parseInt(d.distance, 10) / 67),
+    }));
+
+    const hospitals: ConvenienceInfo[] = (hospitalRes.documents || []).slice(0, 3).map((d: any) => ({
+      name: d.place_name || "",
+      category: "병원/의료" as const,
+      distanceMeters: parseInt(d.distance, 10),
+      walkMinutes: Math.round(parseInt(d.distance, 10) / 67),
+    }));
+
+    const conveniences: ConvenienceInfo[] = [...marts, ...hospitals].sort(
+      (a, b) => a.distanceMeters - b.distanceMeters
+    );
+
     const isChoPumAh = schools.some((s) => s.isChoPumAh);
     const nearestSubway = subways.length > 0 ? `${subways[0].name} (${subways[0].distanceMeters}m)` : null;
     const nearestSchool = schools.length > 0 ? `${schools[0].name} (${schools[0].distanceMeters}m)` : null;
@@ -152,11 +194,13 @@ export async function GET(request: NextRequest) {
       subways,
       schools,
       parks,
+      conveniences,
       summary: {
         nearestSubway,
         nearestSchool,
         isChoPumAh,
         parkCount: parks.length,
+        convenienceCount: conveniences.length,
       },
     };
 

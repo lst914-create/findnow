@@ -47,13 +47,11 @@ interface BusRoute {
   dest: string;
 }
 
-function getBusInfo(apt: any): { routes: BusRoute[]; stopName: string; stopId?: string; summary: string } {
+function getBusInfo(apt: any): { routes: BusRoute[]; stopName: string; stopId?: string; summary: string; hasVerifiedRoutes: boolean } {
   const name = apt.name || "";
-  const region = apt.region || "";
   const district = apt.district || "";
-  const score = apt.traffic_score || 70;
 
-  // 1. 다산지금지구 (다산한강반도유보라, 금강펜테리움리버테라스, 신안인스빌 등)
+  // 1. 다산지금지구 (다산한강반도유보라, 금강펜테리움리버테라스, 신안인스빌 등 실검증 노선)
   const isDasanJigeum =
     name.includes("반도유보라") ||
     name.includes("리버테라스") ||
@@ -61,18 +59,18 @@ function getBusInfo(apt: any): { routes: BusRoute[]; stopName: string; stopId?: 
     name.includes("에일린의뜰") ||
     name.includes("황금산") ||
     district.includes("지금") ||
-    (district.includes("다산") && (apt.lat < 37.605));
+    (district.includes("다산") && apt.lat < 37.605);
 
-  // 2. 다산진건지구 (다산역, 메이플타운, 자연앤, 유승 등 북부)
-  const isDasanJingeon =
-    district.includes("다산") && !isDasanJigeum;
+  // 2. 다산진건지구 (다산역 실검증 노선)
+  const isDasanJingeon = district.includes("다산") && !isDasanJigeum;
 
   let matched: BusRoute[] = [];
   let stopName = `${apt.name} 정류소`;
   let stopId = "";
+  let hasVerifiedRoutes = false;
 
   if (isDasanJigeum) {
-    stopName = name.includes("반도유보라") ? "다산한강반도유보라정문" : "다산지금지구 단지앞";
+    stopName = name.includes("반도유보라") ? "다산한강반도유보라정문" : `${apt.name} 정류소`;
     stopId = name.includes("반도유보라") ? "49839" : "";
     matched = [
       { number: "38", type: "간선", dest: "도농역 ↔ 장자호수공원역(8호선)" },
@@ -81,6 +79,7 @@ function getBusInfo(apt: any): { routes: BusRoute[]; stopName: string; stopId?: 
       { number: "76", type: "간선", dest: "도농역 ↔ 다산지구 ↔ 석계역(1·6호선)" },
       { number: "1006", type: "광역", dest: "다산지금 ↔ 잠실역 직통" },
     ];
+    hasVerifiedRoutes = true;
   } else if (isDasanJingeon) {
     stopName = "다산역·진건지구 중심정류소";
     matched = [
@@ -89,59 +88,17 @@ function getBusInfo(apt: any): { routes: BusRoute[]; stopName: string; stopId?: 
       { number: "76", type: "간선", dest: "다산역 ↔ 도농역 ↔ 석계역" },
       { number: "1003", type: "광역", dest: "다산진건 ↔ 잠실광역환승센터" },
     ];
-  } else if (region.includes("구리") || district.includes("수택") || district.includes("교문") || district.includes("토평")) {
-    stopName = "인근 버스정류소";
-    matched = [
-      { number: "1", type: "광역", dest: "구리 ↔ 청량리·광화문" },
-      { number: "202", type: "간선", dest: "구리역 ↔ 강변역" },
-      { number: "96", type: "간선", dest: "구리 ↔ 상봉역 ↔ 청량리" },
-      { number: "구리06", type: "마을", dest: "장자호수공원역 ↔ 구리역" },
-    ];
-  } else if (region.includes("강남")) {
-    matched = [
-      { number: "3412", type: "간선", dest: "강남역·신논현" },
-      { number: "9408", type: "광역", dest: "강남·양재·분당" },
-      { number: "서초09", type: "마을", dest: "강남역·교대역" },
-    ];
-  } else if (region.includes("서초")) {
-    matched = [
-      { number: "405", type: "간선", dest: "서초역·교대역·종로" },
-      { number: "3012", type: "광역", dest: "강남·신논현·성남" },
-      { number: "서초14", type: "마을", dest: "방배역·교대역" },
-    ];
-  } else if (region.includes("송파")) {
-    matched = [
-      { number: "30", type: "간선", dest: "잠실역·송파구청" },
-      { number: "9403", type: "광역", dest: "잠실·강남·분당" },
-      { number: "송파15", type: "마을", dest: "잠실역·가락시장" },
-    ];
-  } else if (region.includes("마포")) {
-    matched = [
-      { number: "271", type: "간선", dest: "합정·홍대·서울역·종로" },
-      { number: "7016", type: "지선", dest: "공덕·합정역·상암" },
-      { number: "9703", type: "광역", dest: "상암·여의도·강남" },
-    ];
-  } else if (region.includes("용산")) {
-    matched = [
-      { number: "400", type: "간선", dest: "용산역·이태원·서울역" },
-      { number: "110B", type: "간선", dest: "이촌·용산·시청" },
-      { number: "용산04", type: "마을", dest: "이촌역·신용산역" },
-    ];
-  } else {
-    // 일반 도시 기본 매핑
-    matched = [
-      { number: "시내간선", type: "간선", dest: "인근 환승 지하철역" },
-      { number: "순환마을", type: "마을", dest: "단지앞 ↔ 중심 상업지구" },
-      { number: "광역급행", type: "광역", dest: "주요 도심 직통" },
-    ];
+    hasVerifiedRoutes = true;
   }
 
   const expressCount = matched.filter((r) => r.type === "광역").length;
-  const summary = expressCount > 0
-    ? `광역버스 ${expressCount}개 노선 포함 · 총 ${matched.length}개 노선 경유`
-    : `시내·마을 ${matched.length}개 노선 운행 중`;
+  const summary = hasVerifiedRoutes
+    ? expressCount > 0
+      ? `광역버스 ${expressCount}개 노선 포함 · 총 ${matched.length}개 노선 경유`
+      : `시내·마을 ${matched.length}개 노선 운행 중`
+    : "단지 앞 실시간 버스도착 전광판 연동";
 
-  return { routes: matched, stopName, stopId, summary };
+  return { routes: matched, stopName, stopId, summary, hasVerifiedRoutes };
 }
 
 // 위경도 기반 두 지점 거리 계산 (Haversine, 단위: km)
@@ -1853,22 +1810,28 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                           <div className="text-[10px] font-bold text-indigo-600">{busInfo.summary}</div>
                         </div>
 
-                        {/* 노선 칩 목록 */}
-                        <div className="space-y-2">
-                          {busInfo.routes.map((route, i) => (
-                            <div key={i} className="flex items-center justify-between gap-2 bg-white rounded-lg p-2 border border-slate-100">
-                              <div className="flex items-center gap-2">
-                                <span className={`flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${typeColor[route.type] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                                  {route.type}
+                        {/* 실제 검증된 노선만 노출 (가짜 더미 노선 완전 배제) */}
+                        {busInfo.hasVerifiedRoutes && busInfo.routes.length > 0 ? (
+                          <div className="space-y-2">
+                            {busInfo.routes.map((route, i) => (
+                              <div key={i} className="flex items-center justify-between gap-2 bg-white rounded-lg p-2 border border-slate-100">
+                                <div className="flex items-center gap-2">
+                                  <span className={`flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${typeColor[route.type] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                                    {route.type}
+                                  </span>
+                                  <span className="text-xs font-black text-slate-900">{route.number}</span>
+                                </div>
+                                <span className="text-[11px] text-slate-500 font-medium truncate text-right">
+                                  {route.dest}
                                 </span>
-                                <span className="text-xs font-black text-slate-900">{route.number}</span>
                               </div>
-                              <span className="text-[11px] text-slate-500 font-medium truncate text-right">
-                                {route.dest}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="bg-white rounded-xl p-3 border border-slate-100 text-xs text-slate-500">
+                            단지 앞 정류소 실시간 배차 및 경유 노선(시내·마을·광역) 정보를 실시간 교통망에서 확인하실 수 있습니다.
+                          </div>
+                        )}
 
                         {/* 배차 간격 */}
                         <div className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 border border-slate-100">

@@ -233,12 +233,15 @@ function CustomTooltip({ active, payload, label }: any) {
   return null;
 }
 
+// 클라이언트 전역 인메모리 실거래가 캐시 (동일 단지 재방문 시 0ms 즉시 표출 및 2~3초 딜레이 원천 차단)
+const apiTransactionsCache = new Map<string, { trades: any[]; rents: any[] }>();
+
 export default function ApartmentDetailPage({ params }: DetailProps) {
   const resolvedParams = use(params);
   const apt = APARTMENT_DATA[resolvedParams.id] || APARTMENT_DATA["1"];
 
   const [tradeType, setTradeType] = useState<"매매" | "전월세">("매매");
-  const [chartRange, setChartRange] = useState<"최근 1년" | "최근 3년" | "전체">("최근 3년");
+  const [chartRange, setChartRange] = useState<"최근 1년" | "최근 3년">("최근 3년");
   const [showCount, setShowCount] = useState(5);
   const [activeLocation, setActiveLocation] = useState<"학군" | "교통" | "쾌적성">("교통");
 
@@ -295,7 +298,13 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   useEffect(() => {
     let isMounted = true;
     async function fetchRealData() {
-      // 0초 즉시 렌더링 유지: 화면을 깜빡이지 않고 백그라운드 무음(Silent) 보강만 수행
+      const cacheKey = `${apt.id}_${apt.name}`;
+      if (apiTransactionsCache.has(cacheKey)) {
+        const cached = apiTransactionsCache.get(cacheKey)!;
+        if (cached.trades?.length > 0) setApiTrades(cached.trades);
+        if (cached.rents?.length > 0) setApiRents(cached.rents);
+        return;
+      }
       try {
         const apiRegion = apt.apiRegion || apt.region;
         const res = await fetch(
@@ -304,6 +313,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         if (res.ok) {
           const data = await res.json();
           if (isMounted) {
+            const finalTrades = data.trades && data.trades.length > 0 ? data.trades : preloaded.trades;
+            const finalRents = data.rents && data.rents.length > 0 ? data.rents : preloaded.rents;
+            apiTransactionsCache.set(cacheKey, { trades: finalTrades, rents: finalRents });
             if (data.trades && data.trades.length > 0) {
               setApiTrades(data.trades);
             }
@@ -424,79 +436,122 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return apiRents.filter((r) => normalizeAreaStr(r.excluUseAr) === selectedArea);
   }, [apiRents, selectedArea]);
 
-  // 국토부 실제 거래 기반 월별 가격 추이 (선택된 평형 반영)
-  const realSaleTrend = useMemo(() => {
-    if (filteredApiTrades.length === 0) return null;
-    const monthlyMap = new Map<string, number[]>();
-    filteredApiTrades.filter((t) => !t.floor || t.floor > 1).forEach((t) => {
-      const key = `${t.dealYear}.${String(t.dealMonth).padStart(2, "0")}`;
-      if (!monthlyMap.has(key)) monthlyMap.set(key, []);
-      monthlyMap.get(key)!.push(t.dealAmount);
-    });
-    const sortedKeys = Array.from(monthlyMap.keys()).sort();
-    return sortedKeys.map((k) => {
-      const amounts = monthlyMap.get(k)!;
-      const avg = Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length);
-      return {
-        date: k,
-        price: +(avg / 10000).toFixed(2),
-      };
-    });
-  }, [filteredApiTrades]);
-
-  const realRentTrend = useMemo(() => {
-    // 순수 전세 거래만 필터 (월세 및 반전세 제외하여 전세 시세 왜곡 차단)
-    const pureJeonseRents = filteredApiRents.filter((r) => (!r.monthlyRent || r.monthlyRent === 0) && (!r.floor || r.floor > 1));
-    if (pureJeonseRents.length === 0) return null;
-    const monthlyMap = new Map<string, number[]>();
-    pureJeonseRents.forEach((r) => {
-      const key = `${r.dealYear}.${String(r.dealMonth).padStart(2, "0")}`;
-      if (!monthlyMap.has(key)) monthlyMap.set(key, []);
-      monthlyMap.get(key)!.push(r.depositAmount);
-    });
-    const sortedKeys = Array.from(monthlyMap.keys()).sort();
-    return sortedKeys.map((k) => {
-      const amounts = monthlyMap.get(k)!;
-      const avg = Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length);
-      return {
-        date: k,
-        price: +(avg / 10000).toFixed(2),
-      };
-    });
-  }, [filteredApiRents]);
-
-  // 100% 국토교통부 실거래 데이터 기반 추이 (가짜 더미 추세 완전 배제)
+  // 36개월 풀 타임라인 기반 국토부 실거래가 월별 추이 (첫 화면 0초부터 완전한 곡선 보장 & 깜빡임 0)
   const activeTrend = useMemo(() => {
-    const trend = tradeType === "매매" ? realSaleTrend : realRentTrend;
-    if (trend && trend.length >= 2) return trend;
-
-    // 만약 국토부 API 응답 전이거나 2건 미만인 경우: 기본 DB 시세 기반 추세 즉시 렌더링 (로딩 지연/빈 화면 방지)
+    const rawTxs = tradeType === "매매" ? filteredApiTrades : filteredApiRents;
     const baseMin = tradeType === "매매" ? (apt.price_min || 50000) : (apt.rent_min || 30000);
     const baseMax = tradeType === "매매" ? (apt.price_max || baseMin) : (apt.rent_max || baseMin);
-    const center = (baseMin + baseMax) / 2;
+    const fallbackCenter = (baseMin + baseMax) / 2;
 
-    const fallbackMonths: { date: string; price: number }[] = [];
-    const now = new Date();
+    // 1. 유효 실거래 월별 평균 집계 (1층 제외 & 전월세는 순수 전세)
+    const validTxs = rawTxs.filter((t: any) => {
+      const amount = t.dealAmount || t.depositAmount;
+      if (!amount || amount <= 0) return false;
+      if (t.floor === 1 || t.floor === "1" || t.floor === "1층") return false;
+      if (tradeType === "전월세" && t.monthlyRent && t.monthlyRent > 0) return false;
+      return true;
+    });
+
+    const monthlyMap = new Map<string, number[]>();
+    for (const t of validTxs) {
+      const ym = `${t.dealYear}.${String(t.dealMonth).padStart(2, "0")}`;
+      const amount = t.dealAmount || t.depositAmount;
+      if (!monthlyMap.has(ym)) monthlyMap.set(ym, []);
+      monthlyMap.get(ym)!.push(amount);
+    }
+
+    const monthlyRealAvg = new Map<string, number>();
+    for (const [ym, amounts] of monthlyMap.entries()) {
+      const avg = Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length);
+      monthlyRealAvg.set(ym, avg);
+    }
+
+    // 2. 기준 종료 월 결정 (실제 거래 최신 월 또는 현재 기준)
+    let endYear = 2026;
+    let endMonth = 10;
+    if (monthlyRealAvg.size > 0) {
+      const sortedYms = Array.from(monthlyRealAvg.keys()).sort();
+      const lastYm = sortedYms[sortedYms.length - 1];
+      const [y, m] = lastYm.split(".").map(Number);
+      if (y && m) {
+        endYear = y;
+        endMonth = m;
+      }
+    }
+
+    // 3. 36개월 연속 타임라인 생성 (과거 35개월 전부터 최신 월까지)
+    const timeline: { ymKey: string }[] = [];
     for (let i = 35; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const d = new Date(endYear, endMonth - 1 - i, 1);
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
-      // 최근으로 올수록 점진적으로 실거래 기준가에 수렴하는 자연스러운 추세선
-      const factor = 0.94 + ((35 - i) / 35) * 0.06;
-      const p = Math.round((center * factor) / 100) / 100;
-      fallbackMonths.push({
-        date: `${y}.${m}`,
-        price: +(p / 10000).toFixed(2),
+      timeline.push({ ymKey: `${y}.${m}` });
+    }
+
+    // 최신 월의 실거래가 or 기본 중심가
+    const latestAvg = monthlyRealAvg.get(timeline[timeline.length - 1].ymKey) || fallbackCenter;
+
+    // 4. 보간용 앵커 포인트 수집
+    const anchors: { index: number; price: number }[] = [];
+    timeline.forEach((item, idx) => {
+      if (monthlyRealAvg.has(item.ymKey)) {
+        anchors.push({ index: idx, price: monthlyRealAvg.get(item.ymKey)! });
+      }
+    });
+
+    if (anchors.length === 0) {
+      anchors.push({ index: 0, price: Math.round(latestAvg * 0.91) });
+      anchors.push({ index: 12, price: Math.round(latestAvg * 0.94) });
+      anchors.push({ index: 24, price: Math.round(latestAvg * 0.97) });
+      anchors.push({ index: 35, price: latestAvg });
+    } else {
+      if (anchors[0].index > 0) {
+        const estPast = Math.round(anchors[0].price * (0.90 + (anchors[0].index / 35) * 0.10));
+        anchors.unshift({ index: 0, price: estPast });
+      }
+      if (anchors[anchors.length - 1].index < 35) {
+        anchors.push({ index: 35, price: anchors[anchors.length - 1].price });
+      }
+    }
+
+    // 5. 36개월 각 월 채우기 (실제 거래월은 100% 국토부 체결가, 없는 월은 연속 보간)
+    const result: { date: string; price: number }[] = [];
+    let anchorIdx = 0;
+
+    for (let i = 0; i < timeline.length; i++) {
+      const ym = timeline[i].ymKey;
+      if (monthlyRealAvg.has(ym)) {
+        result.push({
+          date: ym,
+          price: +(monthlyRealAvg.get(ym)! / 10000).toFixed(2),
+        });
+        continue;
+      }
+
+      while (anchorIdx < anchors.length - 1 && anchors[anchorIdx + 1].index < i) {
+        anchorIdx++;
+      }
+
+      const p0 = anchors[anchorIdx];
+      const p1 = anchors[anchorIdx + 1] || p0;
+      let interp = p0.price;
+      if (p1.index !== p0.index) {
+        const prog = (i - p0.index) / (p1.index - p0.index);
+        interp = Math.round(p0.price + (p1.price - p0.price) * prog);
+      }
+
+      result.push({
+        date: ym,
+        price: +(interp / 10000).toFixed(2),
       });
     }
-    return fallbackMonths;
-  }, [tradeType, realSaleTrend, realRentTrend, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
+
+    return result;
+  }, [tradeType, filteredApiTrades, filteredApiRents, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
 
   const chartData = chartRange === "최근 1년"
     ? activeTrend.slice(-12)
-    : chartRange === "최근 3년"
-      ? activeTrend.slice(-36)
-      : activeTrend;
+    : activeTrend.slice(-36);
 
   // 1층 제외 & 전월세는 순수 전세(월세=0)만 필터한 실제 체결 거래 목록
   const validPeriodTxs = useMemo(() => {
@@ -972,12 +1027,12 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                   📈 {tradeType} 가격 추이
                 </h3>
                 <div className="flex gap-1 shrink-0">
-                  {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
+                  {(["최근 1년", "최근 3년"] as const).map((r) => (
                     <button
                       key={r}
                       onClick={() => setChartRange(r)}
-                      className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${chartRange === r
-                          ? "bg-blue-600 text-white"
+                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${chartRange === r
+                          ? "bg-blue-600 text-white shadow-sm"
                           : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                         }`}
                     >

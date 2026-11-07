@@ -13,6 +13,7 @@ export function normalizeAptName(name: string): string {
     .replace(/아파트|마을/g, "")
     // 3. 전국 주요 신도시 / 택지지구 접두사 상호 표준화
     .replace(/다산지금|다산진건|다산신도시/g, "다산")
+    .replace(/교문장자|장자마을|토평/g, "") // 구리 교문/토평 택지지구 마을명 제거
     .replace(/동탄2신도시|동탄신도시|동탄2/g, "동탄")
     .replace(/미사강변도시|미사강변/g, "미사")
     .replace(/위례신도시/g, "위례")
@@ -39,7 +40,8 @@ export function normalizeAptName(name: string): string {
     .replace(/더샵|the\s*sharp/gi, "더샵")
     .replace(/아이파크|i\-park/gi, "아이파크")
     .replace(/두산위브|두산\s*위브/gi, "두산위브")
-    .replace(/한화꿈에그린|한화포레나/gi, "포레나")
+    .replace(/한화꿈에그린/gi, "꿈에그린")
+    .replace(/롯데낙천대/gi, "낙천대")
     .replace(/중흥에스클래스|중흥s\-클래스/gi, "중흥s클래스")
     .replace(/디에이치|the\s*h/gi, "디에이치")
     .replace(/아크로|acro/gi, "아크로")

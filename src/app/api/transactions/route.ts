@@ -13,9 +13,10 @@ const COMMON_KEYWORDS = [
   // 추가 건설사/브랜드명
   "더샵", "sk뷰", "호반써밋", "호반베르디움", "호반리젠시빌",
   "두산위브", "서희스타힐스", "한신더휴", "지웰", "엘크루", "엘시티",
-  "동원베네스트", "신동아파밀리에", "금호어울림", "포레나",
+  "동원베네스트", "신동아파밀리에", "금호어울림", "포레나", "꿈에그린",
   "대우이안", "대우푸르지오", "우방아이유쉘", "중흥에스클래스",
   "부영", "사랑으로", "플루리움", "한양수자인", "주공", "우미린",
+  "신명", "낙천대", "롯데낙천대", "제일", "창조", "동양",
 ];
 
 function extractKeywords(name: string): Set<string> {
@@ -31,8 +32,6 @@ function extractKeywords(name: string): Set<string> {
     }
   }
 
-  // ※ 숫자는 extractAptNums로 별도 처리 — keywords에 포함하지 않음
-  //   (단지 번호만 일치해 오탐되는 문제 방지)
   return words;
 }
 
@@ -64,8 +63,8 @@ function stripRegionAndDong(norm: string, region = "", district = ""): string {
       break;
     }
   }
-  // 다산/도농/지금 등 통합지역 고유 접두사
-  res = res.replace(/^(지금동|지금|도농동|도농|다산동|다산)/, "");
+  // 다산/도농/지금/토평/교문/장자마을 등 통합지역 및 택지지구 고유 접두사
+  res = res.replace(/^(지금동|지금|도농동|도농|다산동|다산|토평동|토평|교문동|교문|장자마을|장자)/, "");
   return res;
 }
 
@@ -85,7 +84,7 @@ function isAptNameMatch(
   //   - 행정동 ≠ 법정동 불일치는 허용, 명백히 다른 생활권만 배제
   if (targetDistrict && candidateUmd) {
     const cleanDist = targetDistrict.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
-    const cleanUmd  = candidateUmd.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
+    const cleanUmd = candidateUmd.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
 
     // 둘 다 2글자 이상일 때만 필터 적용 (1글자면 오탐 위험)
     if (cleanDist.length >= 2 && cleanUmd.length >= 2) {
@@ -248,7 +247,7 @@ export async function GET(request: NextRequest) {
   let cleanApiKey = apiKey.trim();
   try {
     cleanApiKey = decodeURIComponent(cleanApiKey);
-  } catch {}
+  } catch { }
   const encodedKey = encodeURIComponent(cleanApiKey);
 
   try {

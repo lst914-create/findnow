@@ -40,31 +40,37 @@ function extractAptNums(norm: string): string[] {
   return norm.match(/\d{1,3}/g) || [];
 }
 
-// 시군구 및 읍면동 접두사 제거 헬퍼
+// 시군구 및 읍면동 접두사 반복 제거 헬퍼
 function stripRegionAndDong(norm: string, region = "", district = ""): string {
   let res = norm;
+  let prev = "";
+
   const regParts = region
     .split(/\s+/)
     .map((p) => p.replace(/(특별시|광역시|특별자치시|시|군|구)$/, ""))
     .filter((p) => p.length >= 2);
-  for (const p of regParts) {
-    if (res.startsWith(p)) {
-      res = res.slice(p.length);
-      break;
-    }
-  }
+
   const distParts = district
     .split(/\s+/)
     .map((p) => p.replace(/(동|읍|면|리)$/, ""))
     .filter((p) => p.length >= 2);
-  for (const p of distParts) {
-    if (res.startsWith(p)) {
-      res = res.slice(p.length);
-      break;
+
+  while (res !== prev) {
+    prev = res;
+    for (const p of regParts) {
+      if (res.startsWith(p)) {
+        res = res.slice(p.length);
+      }
     }
+    for (const p of distParts) {
+      if (res.startsWith(p)) {
+        res = res.slice(p.length);
+      }
+    }
+    // 다산/도농/지금/토평/교문/장자마을/가운 등 통합지역 및 택지지구 고유 접두사 반복 제거
+    res = res.replace(/^(지금동|지금|도농동|도농|다산동|다산|토평동|토평|교문동|교문|장자마을|장자|가운동|가운|한강|신도시|마을)/, "");
   }
-  // 다산/도농/지금/토평/교문/장자마을 등 통합지역 및 택지지구 고유 접두사
-  res = res.replace(/^(지금동|지금|도농동|도농|다산동|다산|토평동|토평|교문동|교문|장자마을|장자)/, "");
+
   return res;
 }
 
@@ -93,7 +99,12 @@ function isAptNameMatch(
         (targetDistrict.includes("다산") || targetDistrict.includes("지금") || targetDistrict.includes("가운")) &&
         (candidateUmd.includes("다산") || candidateUmd.includes("지금") || candidateUmd.includes("가운"));
 
-      if (!isDasanArea) {
+      // 구리 토평지구 특수 처리 (교문동/토평동/수택동 = 같은 구리 택지 생활권)
+      const isGuriArea =
+        (targetDistrict.includes("교문") || targetDistrict.includes("토평") || targetDistrict.includes("수택")) &&
+        (candidateUmd.includes("교문") || candidateUmd.includes("토평") || candidateUmd.includes("수택"));
+
+      if (!isDasanArea && !isGuriArea) {
         const distInUmd = candidateUmd.includes(cleanDist);
         const umdInDist = targetDistrict.includes(cleanUmd);
         if (!distInUmd && !umdInDist) {

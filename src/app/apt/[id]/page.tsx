@@ -274,9 +274,30 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   // 평형별 필터 상태
   const [selectedArea, setSelectedArea] = useState<string>("전체");
 
-  // 전용면적 84형(83~85m2) 표준 표기 정규화 함수
+  // 단지 실제 평형 타입 목록 (area_distributions 기반)
+  const knownPyeongs: number[] = useMemo(() => {
+    if (!apt.area_distributions || apt.area_distributions.length === 0) return [];
+    return apt.area_distributions.map((d: any) => {
+      // "전용 76㎡ (31평)" → 76
+      const m = (d.label || "").match(/전용\s*([\d.]+)㎡/);
+      return m ? parseFloat(m[1]) : null;
+    }).filter(Boolean) as number[];
+  }, [apt.area_distributions]);
+
+  // 전용면적 정규화: 단지 실제 평형 중 가장 가까운 것으로 스냅핑 (±4㎡ 이내), 없으면 소수점 버림
   const normalizeAreaSqm = (sqm: number) => {
     const raw = Math.floor(sqm);
+    if (knownPyeongs.length > 0) {
+      let closest = knownPyeongs[0];
+      let minDiff = Math.abs(sqm - closest);
+      for (const p of knownPyeongs) {
+        const diff = Math.abs(sqm - p);
+        if (diff < minDiff) { minDiff = diff; closest = p; }
+      }
+      // ±4㎡ 이내인 경우에만 스냅핑
+      if (minDiff <= 4) return closest;
+    }
+    // fallback: 83~85 → 84 (기존 로직)
     return (raw >= 83 && raw <= 85) ? 84 : raw;
   };
   const normalizeAreaStr = (sqm: number) => `${normalizeAreaSqm(sqm)}㎡`;

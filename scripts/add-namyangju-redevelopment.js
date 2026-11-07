@@ -233,3 +233,4 @@ for (const nz of newZones) {
 
 fs.writeFileSync(filePath, JSON.stringify(zones, null, 2), 'utf-8');
 console.log(`정비구역 총 ${zones.length}개로 업데이트 완료! (남양주/왕숙2/덕소/구리 구역 추가)`);
+

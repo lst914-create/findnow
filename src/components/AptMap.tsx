@@ -847,43 +847,17 @@ export default function AptMap({
     renderMarkersForViewport();
     const initTimer = setTimeout(renderMarkersForViewport, 200);
 
-    // 뷰포트 변경 시 실거래가 디바운스 fetch (1초 지연)
-    const triggerPriceFetch = () => {
-      if (viewportPriceFetchTimerRef.current) clearTimeout(viewportPriceFetchTimerRef.current);
-      viewportPriceFetchTimerRef.current = setTimeout(() => {
-        if (!mapRef.current) return;
-        const b = mapRef.current.getBounds();
-        if (!b) return;
-        const sw2 = b.getSouthWest();
-        const ne2 = b.getNorthEast();
-        const inView = APT_MARKERS.filter(
-          (a) => a.lat >= sw2.getLat() && a.lat <= ne2.getLat() &&
-                 a.lng >= sw2.getLng() && a.lng <= ne2.getLng()
-        );
-        fetchViewportLivePrices.current(inView, filters.pyeong);
-      }, 1000);
-    };
-
-    // 초기 실행 후 실거래가 즉시 fetch 시도
-    triggerPriceFetch();
-
-    // 카카오 지도 이동(dragend, idle) 및 줄(zoom_changed) 이벤트 연동
+    // [사용자 핵심 요구사항] 지연 fetch 및 1초 뒤 깜빡임/가격 변경 현상 완전 제거
+    // 이미 DB/마스터에 저장된 실거래가로 0초 즉시 고정 렌더링하며, 불필요한 뷰포트 덮어쓰기 호출 차단
     kakaoMaps.event.addListener(map, "dragend", renderMarkersForViewport);
     kakaoMaps.event.addListener(map, "zoom_changed", renderMarkersForViewport);
     kakaoMaps.event.addListener(map, "idle", renderMarkersForViewport);
-    kakaoMaps.event.addListener(map, "dragend", triggerPriceFetch);
-    kakaoMaps.event.addListener(map, "zoom_changed", triggerPriceFetch);
-    kakaoMaps.event.addListener(map, "idle", triggerPriceFetch);
 
     return () => {
       clearTimeout(initTimer);
-      if (viewportPriceFetchTimerRef.current) clearTimeout(viewportPriceFetchTimerRef.current);
       kakaoMaps.event.removeListener(map, "dragend", renderMarkersForViewport);
       kakaoMaps.event.removeListener(map, "zoom_changed", renderMarkersForViewport);
       kakaoMaps.event.removeListener(map, "idle", renderMarkersForViewport);
-      kakaoMaps.event.removeListener(map, "dragend", triggerPriceFetch);
-      kakaoMaps.event.removeListener(map, "zoom_changed", triggerPriceFetch);
-      kakaoMaps.event.removeListener(map, "idle", triggerPriceFetch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, isMapReady, highlightId, livePriceLoaded]);

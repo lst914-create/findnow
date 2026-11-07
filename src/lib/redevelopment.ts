@@ -281,7 +281,7 @@ export const REDEVELOPMENT_STAGES_ORDER = [
   "준공",
 ] as const;
 
-export const REDEVELOPMENT_DATA: RedevelopmentZone[] = [
+const BASE_REDEVELOPMENT_DATA: RedevelopmentZone[] = [
   {
     id: "jangwi-14",
     name: "장위14구역",
@@ -1414,3 +1414,50 @@ export const REDEVELOPMENT_DATA: RedevelopmentZone[] = [
   ...NATIONWIDE_REDEVELOPMENT_DATA,
   ...NATIONWIDE_EXTRA_DATA,
 ];
+
+// masterZonesRaw(redevelopment-master.json)와의 완전 병합 (재개발 지도와 아파트 상세의 100% 동기화)
+const zoneMap = new Map<string, RedevelopmentZone>();
+for (const z of BASE_REDEVELOPMENT_DATA) {
+  if (z && z.id) zoneMap.set(z.id, z);
+}
+
+for (const mz of (masterZonesRaw as any[])) {
+  if (mz && mz.id && !zoneMap.has(mz.id)) {
+    zoneMap.set(mz.id, {
+      ...mz,
+      polygon: mz.polygon || [
+        { lat: mz.lat + 0.002, lng: mz.lng - 0.002 },
+        { lat: mz.lat + 0.002, lng: mz.lng + 0.002 },
+        { lat: mz.lat - 0.002, lng: mz.lng + 0.002 },
+        { lat: mz.lat - 0.002, lng: mz.lng - 0.002 },
+      ],
+      stages: mz.stages || [
+        { name: "정비구역지정", isCompleted: true, isCurrent: false },
+        { name: "조합설립인가", isCompleted: true, isCurrent: false },
+        {
+          name: "사업시행인가",
+          isCompleted: mz.status === "사업시행인가" || mz.status === "관리처분인가" || mz.status === "착공" || mz.status === "준공",
+          isCurrent: mz.status === "사업시행인가",
+        },
+        {
+          name: "관리처분인가",
+          isCompleted: mz.status === "관리처분인가" || mz.status === "착공" || mz.status === "준공",
+          isCurrent: mz.status === "관리처분인가",
+        },
+        { name: "착공", isCompleted: mz.status === "착공" || mz.status === "준공", isCurrent: mz.status === "착공" },
+        { name: "준공", isCompleted: mz.status === "준공", isCurrent: mz.status === "준공" },
+      ],
+      calcMetrics: mz.calcMetrics || {
+        estimatedProportionRate: 105,
+        avgOfficialPriceRatio: 130,
+        unionPrice59Manwon: Math.round((mz.totalUnits || 1000) > 1000 ? 55000 : 45000),
+        unionPrice84Manwon: Math.round((mz.totalUnits || 1000) > 1000 ? 75000 : 65000),
+        generalPrice59Manwon: Math.round((mz.totalUnits || 1000) > 1000 ? 70000 : 55000),
+        generalPrice84Manwon: Math.round((mz.totalUnits || 1000) > 1000 ? 95000 : 80000),
+        expectedNewAptPrice84Manwon: Math.round((mz.totalUnits || 1000) > 1000 ? 120000 : 100000),
+      },
+    } as RedevelopmentZone);
+  }
+}
+
+export const REDEVELOPMENT_DATA: RedevelopmentZone[] = Array.from(zoneMap.values());

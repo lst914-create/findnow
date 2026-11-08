@@ -1124,9 +1124,16 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     : "국토교통부 실거래 기준 (최근 거래 평균)"}
                 </p>
               </div>
-              <p className="text-4xl font-black text-slate-900 tracking-tight">
-                {tradeType === "전월세" ? currentRentAvgDisplay : currentAverageDisplay}
-              </p>
+              {((tradeType === "전월세" ? currentRentAvgDisplay : currentAverageDisplay) === "가격없음") ? (
+                <div>
+                  <p className="text-4xl font-black text-slate-900 tracking-tight leading-none">-</p>
+                  <p className="text-sm font-bold text-slate-500 mt-1.5">가격없음</p>
+                </div>
+              ) : (
+                <p className="text-4xl font-black text-slate-900 tracking-tight">
+                  {tradeType === "전월세" ? currentRentAvgDisplay : currentAverageDisplay}
+                </p>
+              )}
               <p className="text-xs text-slate-400 mt-1">
                 {tradeType === "전월세"
                   ? (realJeonseStats

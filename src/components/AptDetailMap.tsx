@@ -62,6 +62,8 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
     }
     const displayPyeong = apt.pyeong;
 
+    const isNoPrice = priceLabel === "가격없음";
+
     return `
       <div style="
         position: relative;
@@ -94,7 +96,7 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
         <div style="
           background: ${bgGradient};
           color: #ffffff;
-          padding: 6px 11px 5px;
+          padding: ${isNoPrice ? "5px 10px 4px" : "6px 11px 5px"};
           border-radius: 10px;
           border: 2.5px solid ${borderColor};
           white-space: nowrap;
@@ -104,12 +106,21 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
           min-width: 60px;
           ${isMain ? "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);" : ""}
         ">
-          <div style="font-size: 10px; font-weight: 600; opacity: 0.9; letter-spacing: -0.2px; margin-bottom: 1px;">
+          <div style="font-size: 10px; font-weight: 600; opacity: 0.9; letter-spacing: -0.2px; margin-bottom: ${isNoPrice ? "-1px" : "1px"};">
             ${displayPyeong}평
           </div>
-          <div style="font-size: ${isMain ? "15px" : "13.5px"}; font-weight: 800; letter-spacing: -0.4px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-            ${priceLabel}
-          </div>
+          ${isNoPrice ? `
+            <div style="font-size: ${isMain ? "16px" : "14.5px"}; font-weight: 800; letter-spacing: -0.4px; text-shadow: 0 1px 2px rgba(0,0,0,0.2); line-height: 1.05;">
+              -
+            </div>
+            <div style="font-size: 9px; font-weight: 700; opacity: 0.95; margin-top: 1px; letter-spacing: -0.3px;">
+              가격없음
+            </div>
+          ` : `
+            <div style="font-size: ${isMain ? "15px" : "13.5px"}; font-weight: 800; letter-spacing: -0.4px; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+              ${priceLabel}
+            </div>
+          `}
         </div>
 
         <!-- 하단 오각형 뾰족 꼬리 -->

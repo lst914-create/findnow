@@ -408,6 +408,8 @@ export default function AptMap({
       : "box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.35);";
     const arrowColor = isMain ? "#be123c" : "#0d5f57";
 
+    const isNoPrice = priceLabel === "가격없음";
+
     return `
       <div style="
         position: relative;
@@ -421,7 +423,7 @@ export default function AptMap({
         <div style="
           background: ${bgGradient};
           color: #ffffff;
-          padding: 6px 11px 5px;
+          padding: ${isNoPrice ? "5px 10px 4px" : "6px 11px 5px"};
           border-radius: 10px;
           border: 2.5px solid ${borderColor};
           white-space: nowrap;
@@ -431,12 +433,21 @@ export default function AptMap({
           min-width: 60px;
           ${glowStyle}
         ">
-          <div style="font-size: 10px; font-weight: 600; opacity: 0.9;">
+          <div style="font-size: 10px; font-weight: 600; opacity: 0.9; margin-bottom: ${isNoPrice ? "-1px" : "0"};">
             ${pyeongLabel}
           </div>
-          <div style="font-size: ${isMain ? "15px" : "13.5px"}; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
-            ${priceLabel}
-          </div>
+          ${isNoPrice ? `
+            <div style="font-size: ${isMain ? "16px" : "14.5px"}; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.2); line-height: 1.05;">
+              -
+            </div>
+            <div style="font-size: 9px; font-weight: 700; opacity: 0.95; margin-top: 1px; letter-spacing: -0.3px;">
+              가격없음
+            </div>
+          ` : `
+            <div style="font-size: ${isMain ? "15px" : "13.5px"}; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
+              ${priceLabel}
+            </div>
+          `}
         </div>
 
         <div style="
@@ -1508,10 +1519,10 @@ export default function AptMap({
                     매매 평균
                   </div>
                   <div className="text-base font-black text-rose-700 leading-tight">
-                    {selectedApt.priceNum > 0 || live ? displayPrice : "가격없음"}
+                    {selectedApt.priceNum > 0 || live ? displayPrice : "-"}
                   </div>
-                  <div className="text-[9px] text-rose-400 mt-0.5">
-                    {displayPyeong}평
+                  <div className="text-[9px] text-rose-500 mt-0.5 font-bold">
+                    {selectedApt.priceNum > 0 || live ? `${displayPyeong}평` : "가격없음"}
                   </div>
                 </div>
                 <div className="bg-blue-50/80 rounded-2xl p-2.5 border border-blue-100/90 text-center">
@@ -1519,10 +1530,10 @@ export default function AptMap({
                   <div className="text-base font-black text-blue-700 leading-tight">
                     {selectedApt.rentNum && selectedApt.rentNum > 0
                       ? (realtimeTx?.jeonsePriceStr || `${Math.round(selectedApt.rentNum / 10000)}억`)
-                      : "가격없음"}
+                      : "-"}
                   </div>
-                  <div className="text-[9px] text-blue-400 mt-0.5">
-                    {selectedApt.rentNum && selectedApt.rentNum > 0 ? `전세가율 ${selectedApt.jeonseRatio ?? 56}%` : "-"}
+                  <div className="text-[9px] text-blue-500 mt-0.5 font-bold">
+                    {selectedApt.rentNum && selectedApt.rentNum > 0 ? `전세가율 ${selectedApt.jeonseRatio ?? 56}%` : "가격없음"}
                   </div>
                 </div>
                 <div className="bg-emerald-50/80 rounded-2xl p-2.5 border border-emerald-100/90 text-center">

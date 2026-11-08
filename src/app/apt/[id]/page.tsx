@@ -469,9 +469,30 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     };
   }, [apt.id, apt.apiRegion, apt.region, apt.district, apt.name]);
 
-  // 국토부 실제 매매 거래 매핑 (면적도 84.xxm2의 경우 84m2로 정규화)
+  // 단지의 공식 등록 평형 전용면적 목록 (apt.area_distributions 기준)
+  const officialAreaDistributions = useMemo(() => {
+    if (!apt.area_distributions || apt.area_distributions.length === 0) return null;
+    const list: { sqm: number; label: string }[] = [];
+    apt.area_distributions.forEach((dist: any) => {
+      const m = dist.label?.match(/전용\s*(\d+)㎡/);
+      if (m) {
+        list.push({ sqm: parseInt(m[1], 10), label: `${m[1]}㎡` });
+      }
+    });
+    return list.length > 0 ? list : null;
+  }, [apt.area_distributions]);
+
+  // 국토부 실제 매매 거래 매핑 (단지의 공식 평형이 있다면 오차가 ±5㎡를 초과하는 외부 타 단지 거래는 오염 방지 위해 차단)
   const realSaleTxs = useMemo(() => {
-    return apiTrades.map((t) => {
+    let validTrades = apiTrades;
+    if (officialAreaDistributions && officialAreaDistributions.length > 0) {
+      validTrades = apiTrades.filter((t) => {
+        const ar = t.excluUseAr || 0;
+        return officialAreaDistributions.some((dist) => Math.abs(dist.sqm - ar) <= 5);
+      });
+    }
+
+    return validTrades.map((t) => {
       const uk = Math.floor(t.dealAmount / 10000);
       const man = t.dealAmount % 10000;
       const normArea = normalizeAreaSqm(t.excluUseAr);
@@ -486,11 +507,19 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         isReal: true,
       };
     });
-  }, [apiTrades]);
+  }, [apiTrades, officialAreaDistributions]);
 
   // 국토부 실제 전월세 거래 매핑
   const realRentTxs = useMemo(() => {
-    return apiRents.map((r) => {
+    let validRents = apiRents;
+    if (officialAreaDistributions && officialAreaDistributions.length > 0) {
+      validRents = apiRents.filter((r) => {
+        const ar = r.excluUseAr || 0;
+        return officialAreaDistributions.some((dist) => Math.abs(dist.sqm - ar) <= 5);
+      });
+    }
+
+    return validRents.map((r) => {
       const uk = Math.floor(r.depositAmount / 10000);
       const man = r.depositAmount % 10000;
       const depositText = `${uk > 0 ? `${uk}억 ` : ""}${man > 0 ? `${man.toLocaleString()}만` : ""}`;
@@ -507,32 +536,41 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         isReal: true,
       };
     });
-  }, [apiRents]);
+  }, [apiRents, officialAreaDistributions]);
 
   // 가짜 더미 데이터 배제 — 100% 실제 공공데이터 실거래 신고 건만 사용
   const allActiveTxs = tradeType === "매매" ? realSaleTxs : realRentTxs;
   const hasRealDataForCurrentTab = allActiveTxs.length > 0;
 
-  // 평형별 고유 면적 목록 추출 (실거래 데이터 기반)
+  // 평형별 고유 면적 목록 추출 (단지 공식 평형 우선, 없으면 실거래 데이터 기반)
   const areaOptions = useMemo(() => {
     const areas = new Set<string>();
-    allActiveTxs.forEach((tx: any) => {
-      if (tx.area) areas.add(tx.area);
-    });
-    // 최다 세대 주력 평형도 기본 옵션에 항상 포함
-    if (majorArea && majorArea !== "전체") {
-      areas.add(majorArea);
+
+    if (officialAreaDistributions && officialAreaDistributions.length > 0) {
+      // 1. 단지의 공식 평형(apt.area_distributions)이 있으면 그 평형들만 100% 정직하게 표출
+      officialAreaDistributions.forEach((dist) => {
+        areas.add(dist.label);
+      });
+    } else {
+      // 2. 공식 평형 데이터가 없는 경우 실거래 거래 내역 및 대표 면적 기반
+      allActiveTxs.forEach((tx: any) => {
+        if (tx.area) areas.add(tx.area);
+      });
+      if (majorArea && majorArea !== "전체") {
+        areas.add(majorArea);
+      }
+      if (areas.size === 0 && displayAreaSqm) {
+        areas.add(`${displayAreaSqm}㎡`);
+      }
     }
-    if (areas.size === 0 && displayAreaSqm) {
-      areas.add(`${displayAreaSqm}㎡`);
-    }
+
     const sorted = Array.from(areas).sort((a, b) => {
       const numA = parseFloat(a.replace("㎡", ""));
       const numB = parseFloat(b.replace("㎡", ""));
       return numA - numB;
     });
     return ["전체", ...sorted];
-  }, [allActiveTxs, displayAreaSqm, majorArea]);
+  }, [allActiveTxs, displayAreaSqm, majorArea, officialAreaDistributions]);
 
   // 평형 필터 적용된 거래 목록
   const activeTxs = useMemo(() => {
@@ -542,14 +580,28 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
   // 평형 필터 적용된 원본 API 데이터 (그래프 및 통계 계산용)
   const filteredApiTrades = useMemo(() => {
-    if (selectedArea === "전체") return apiTrades;
-    return apiTrades.filter((t) => normalizeAreaStr(t.excluUseAr) === selectedArea);
-  }, [apiTrades, selectedArea]);
+    let source = apiTrades;
+    if (officialAreaDistributions && officialAreaDistributions.length > 0) {
+      source = apiTrades.filter((t) => {
+        const ar = t.excluUseAr || 0;
+        return officialAreaDistributions.some((dist) => Math.abs(dist.sqm - ar) <= 5);
+      });
+    }
+    if (selectedArea === "전체") return source;
+    return source.filter((t) => normalizeAreaStr(t.excluUseAr) === selectedArea);
+  }, [apiTrades, selectedArea, officialAreaDistributions]);
 
   const filteredApiRents = useMemo(() => {
-    if (selectedArea === "전체") return apiRents;
-    return apiRents.filter((r) => normalizeAreaStr(r.excluUseAr) === selectedArea);
-  }, [apiRents, selectedArea]);
+    let source = apiRents;
+    if (officialAreaDistributions && officialAreaDistributions.length > 0) {
+      source = apiRents.filter((r) => {
+        const ar = r.excluUseAr || 0;
+        return officialAreaDistributions.some((dist) => Math.abs(dist.sqm - ar) <= 5);
+      });
+    }
+    if (selectedArea === "전체") return source;
+    return source.filter((r) => normalizeAreaStr(r.excluUseAr) === selectedArea);
+  }, [apiRents, selectedArea, officialAreaDistributions]);
 
   // 36개월 풀 타임라인 기반 국토부 실거래가 월별 추이 (첫 화면 0초부터 완전한 곡선 보장 & 깜빡임 0)
   const activeTrend = useMemo(() => {

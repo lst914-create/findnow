@@ -167,11 +167,24 @@ function isAptNameMatch(
     }
   }
 
-  // ─── 6. 일반 단지: 접두사 제거 후 포함 관계 검사 ──────────────────────────
+  // ─── 6. 일반 단지: 접두사/접미사 제거 후 정밀 동등 및 고유 단지명 검사 ──
   if (tStripped.length >= 2 && cStripped.length >= 2) {
-    if (tStripped.includes(cStripped) || cStripped.includes(tStripped)) {
+    const pureT = tStripped.replace(/(아파트|맨션|타운|빌리지|연립|주택|빌라)$/, "");
+    const pureC = cStripped.replace(/(아파트|맨션|타운|빌리지|연립|주택|빌라)$/, "");
+
+    // 1) 순수 단지명이 완전 일치하는 경우 (예: "대명아파트" vs "대명")
+    if (pureT.length >= 2 && pureT === pureC) {
       if (tNums.length === 0 || cNums.length === 0 || tNums.join(",") === cNums.join(",")) {
         return true;
+      }
+    }
+
+    // 2) 3글자 이상 고유 명칭의 포함 관계 (예: "신동흥101동" vs "신동흥")
+    if (pureT.length >= 3 && pureC.length >= 3) {
+      if (pureT.includes(pureC) || pureC.includes(pureT)) {
+        if (tNums.length === 0 || cNums.length === 0 || tNums.join(",") === cNums.join(",")) {
+          return true;
+        }
       }
     }
   }

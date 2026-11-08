@@ -1960516,11 +1960516,11 @@
     "name": "인창동아아파트",
     "region": "경기 구리시",
     "district": "인창동",
-    "price_min": 35000,
-    "price_max": 42500,
-    "rent_min": 22000,
-    "rent_max": 27000,
-    "gapPrice": 13000,
+    "price_min": 0,
+    "price_max": 0,
+    "rent_min": 0,
+    "rent_max": 0,
+    "gapPrice": 0,
     "jeonseRatio": 63,
     "area_sqm": 59,
     "area_pyeong": 24,
@@ -1960539,7 +1960539,7 @@
     "lat": 37.60205,
     "lng": 127.139584,
     "walk_minutes": 5,
-    "description": "경기 구리시 인창동 276-3에 위치한 소규모 아파트입니다. 국토교통부 실거래 데이터(2026.06 최신 체결 3.5억)가 연동되어 있습니다.",
+    "description": "경기 구리시 인창동에 위치한 단지입니다. 최근 국토교통부 아파트 매매 실거래 신고 내역이 확인되지 않는 단지입니다.",
     "dong_count": 1,
     "floor_top": 5,
     "floor_base": 1,
@@ -1960564,18 +1960564,18 @@
         "ratio": 52
       }
     ],
-    "isRealPrice": true
+    "isRealPrice": false
   },
   {
     "id": "kakao-inchang-daemyung",
     "name": "인창대명아파트",
     "region": "경기 구리시",
     "district": "인창동",
-    "price_min": 82000,
-    "price_max": 87000,
-    "rent_min": 52000,
-    "rent_max": 55000,
-    "gapPrice": 30000,
+    "price_min": 0,
+    "price_max": 0,
+    "rent_min": 0,
+    "rent_max": 0,
+    "gapPrice": 0,
     "jeonseRatio": 63,
     "area_sqm": 94,
     "area_pyeong": 36,
@@ -1960594,7 +1960594,7 @@
     "lat": 37.602536,
     "lng": 127.133416,
     "walk_minutes": 7,
-    "description": "경기 구리시 인창동 610-81에 위치한 공동주택입니다. 국토교통부 실거래 데이터(2026.09 최신 체결 8.7억)가 연동되어 있습니다.",
+    "description": "경기 구리시 인창동에 위치한 단지입니다. 최근 국토교통부 아파트 매매 실거래 신고 내역이 확인되지 않는 단지입니다.",
     "dong_count": 1,
     "floor_top": 4,
     "floor_base": 1,
@@ -1960613,18 +1960613,18 @@
         "ratio": 100
       }
     ],
-    "isRealPrice": true
+    "isRealPrice": false
   },
   {
     "id": "kakao-inchang-posphil",
     "name": "인창포스필아파트",
     "region": "경기 구리시",
     "district": "인창동",
-    "price_min": 19000,
-    "price_max": 19000,
-    "rent_min": 12000,
-    "rent_max": 13000,
-    "gapPrice": 7000,
+    "price_min": 0,
+    "price_max": 0,
+    "rent_min": 0,
+    "rent_max": 0,
+    "gapPrice": 0,
     "jeonseRatio": 65,
     "area_sqm": 54,
     "area_pyeong": 22,
@@ -1960642,7 +1960642,7 @@
     "lat": 37.602737,
     "lng": 127.134671,
     "walk_minutes": 6,
-    "description": "경기 구리시 인창동 605-36에 위치한 소규모 공동주택입니다. 국토교통부 실거래 데이터(1.9억)가 연동되어 있습니다.",
+    "description": "경기 구리시 인창동에 위치한 단지입니다. 최근 국토교통부 아파트 매매 실거래 신고 내역이 확인되지 않는 단지입니다.",
     "dong_count": 1,
     "floor_top": 4,
     "floor_base": 1,
@@ -1960661,7 +1960661,7 @@
         "ratio": 100
       }
     ],
-    "isRealPrice": true
+    "isRealPrice": false
   },
   {
     "id": "kakao-inchang-dongsan",

@@ -827,14 +827,14 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return `${price.toLocaleString()}만원`;
   };
 
-  // 실거래 가격 계산: [가상 데이터 배제] 실거래가 있으면 마지막 거래 반영, 확인되지 않으면 "최근 거래 없음" 표출
+  // 실거래 가격 계산: [가상 데이터 배제] 실거래가 있으면 마지막 거래 반영, 확인되지 않으면 "가격없음" 표출
   const currentAverageDisplay = useMemo(() => {
     if (priceStatsSummary.isFromRealTxs && priceStatsSummary.latest > 0) {
       const manwon = Math.round(priceStatsSummary.latest * 10000);
       return formatPrice(manwon);
     }
-    // 거래일/실거래가 확인되지 않는 경우 임의 시세를 대신 띄우지 않고 "최근 거래 없음" 표출
-    return "최근 거래 없음";
+    // 거래일/실거래가 확인되지 않는 경우 임의 시세를 대신 띄우지 않고 "가격없음" 표출
+    return "가격없음";
   }, [priceStatsSummary]);
 
   // 실거래 매매 대표가 (만원 단위, 지도 마커용) - priceStatsSummary와 완전 동기화
@@ -962,15 +962,16 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       // 월세만 있을 때: 보증금 평균 표시
       return formatPrice(Math.round((realMonthlyStats.minDeposit + realMonthlyStats.maxDeposit) / 2));
     }
+    const baseRent = Math.round(((apt.rent_min || 0) + (apt.rent_max || 0)) / 2);
+    if (baseRent <= 0) return "가격없음";
     if (selectedArea !== "전체") {
       const selectedNum = parseFloat(selectedArea.replace("㎡", ""));
       const baseArea = displayAreaSqm || 84;
-      const baseRent = Math.round((apt.rent_min + apt.rent_max) / 2);
       if (selectedNum && baseArea) {
         return formatPrice(Math.round(baseRent * (selectedNum / baseArea)));
       }
     }
-    return formatPrice(Math.round((apt.rent_min + apt.rent_max) / 2));
+    return formatPrice(baseRent);
   }, [realJeonseStats, realMonthlyStats, selectedArea, displayAreaSqm, apt.rent_min, apt.rent_max]);
 
 

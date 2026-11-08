@@ -54,11 +54,11 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
         const cheon = Math.floor((realAvgPriceNum % 10000) / 1000);
         priceLabel = uk > 0 ? (cheon > 0 ? `${uk}.${cheon}억` : `${uk}억`) : `${realAvgPriceNum.toLocaleString()}만`;
       } else {
-        // 주변 단지는 메인 지도와 100% 동일한 apt.avgPrice 사용 (미확인 시 "거래없음")
-        priceLabel = apt.priceNum > 0 ? apt.avgPrice : "거래없음";
+        // 주변 단지는 메인 지도와 100% 동일한 apt.avgPrice 사용 (미확인 시 "가격없음")
+        priceLabel = apt.priceNum > 0 ? apt.avgPrice : "가격없음";
       }
     } else {
-      priceLabel = rent > 0 ? `${rent}억` : "거래없음";
+      priceLabel = rent > 0 ? `${rent}억` : "가격없음";
     }
     const displayPyeong = apt.pyeong;
 

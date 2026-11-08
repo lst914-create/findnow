@@ -49,7 +49,7 @@ export interface AptMarker {
 export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
   // 중간값(min+max/2) 임의 생성 배제: 검증 실거래가 우선 적용
   const priceNum = apt.price_max || apt.price_min || 0;
-  const avgPriceStr = priceNum > 0 ? formatPrice(priceNum) : "거래없음";
+  const avgPriceStr = priceNum > 0 ? formatPrice(priceNum) : "가격없음";
 
   const jeonseRatio = apt.jeonseRatio ?? 56;
   const rentNum = apt.rent_max || apt.rent_min
@@ -383,17 +383,17 @@ export default function AptMap({
       livePriceDetailCacheRef.current.get(normName);
     const hasLive = !!liveDetail;
 
-    // 가격 표시: 실거래가 우선 (최근 1개월 평균 또는 마지막 실거래가), 없으면 마스터 데이터 (미확인 시 "거래없음")
+    // 가격 표시: 실거래가 우선 (최근 1개월 평균 또는 마지막 실거래가), 없으면 마스터 데이터 (미확인 시 "가격없음")
     let priceLabel: string;
     let pyeongLabel: string;
     if (filters.tradeType === "매매") {
       priceLabel = hasLive
         ? liveDetail!.formatted
-        : (apt.priceNum > 0 ? apt.avgPrice : "거래없음");
+        : (apt.priceNum > 0 ? apt.avgPrice : "가격없음");
       pyeongLabel = hasLive ? `${liveDetail!.pyeong}평` : `${apt.pyeong}평`;
     } else {
       const rent = Math.round((apt.rentNum || 0) / 10000);
-      priceLabel = rent > 0 ? `${rent}억` : "거래없음";
+      priceLabel = rent > 0 ? `${rent}억` : "가격없음";
       pyeongLabel = `${apt.pyeong}평`;
     }
     const viewers = apt.liveViewers || Math.floor(Math.random() * 80 + 20);
@@ -1508,7 +1508,7 @@ export default function AptMap({
                     매매 평균
                   </div>
                   <div className="text-base font-black text-rose-700 leading-tight">
-                    {selectedApt.priceNum > 0 || live ? displayPrice : "거래없음"}
+                    {selectedApt.priceNum > 0 || live ? displayPrice : "가격없음"}
                   </div>
                   <div className="text-[9px] text-rose-400 mt-0.5">
                     {displayPyeong}평
@@ -1519,7 +1519,7 @@ export default function AptMap({
                   <div className="text-base font-black text-blue-700 leading-tight">
                     {selectedApt.rentNum && selectedApt.rentNum > 0
                       ? (realtimeTx?.jeonsePriceStr || `${Math.round(selectedApt.rentNum / 10000)}억`)
-                      : "거래없음"}
+                      : "가격없음"}
                   </div>
                   <div className="text-[9px] text-blue-400 mt-0.5">
                     {selectedApt.rentNum && selectedApt.rentNum > 0 ? `전세가율 ${selectedApt.jeonseRatio ?? 56}%` : "-"}
@@ -1533,7 +1533,7 @@ export default function AptMap({
                       : "-"}
                   </div>
                   <div className="text-[9px] text-emerald-600 mt-0.5 font-bold">
-                    {selectedApt.priceNum > 0 ? `월 ${Math.round(displayPyeong * 4.5 + 40)}만` : "거래없음"}
+                    {selectedApt.priceNum > 0 ? `월 ${Math.round(displayPyeong * 4.5 + 40)}만` : "가격없음"}
                   </div>
                 </div>
               </div>

@@ -294,7 +294,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           setInfraData(data);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       isMounted = false;
     };
@@ -646,12 +646,26 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     ? activeTrend.slice(-12)
     : activeTrend.slice(-36);
 
-  // 1층 제외 & 전월세는 순수 전세(월세=0)만 필터한 실제 체결 거래 목록
+  // 1층 제외 & 비정상 저가 특수거래 제외 & 전월세는 순수 전세(월세=0)만 필터한 실제 체결 거래 목록
   const validPeriodTxs = useMemo(() => {
-    return activeTxs.filter((t: any) => {
+    const nonFirstFloor = activeTxs.filter((t: any) => {
       if (!t.rawPrice || t.rawPrice <= 0) return false;
-      if (t.floor === "1층" || t.floorNum === 1) return false;
+      if (t.floor === "1층" || t.floorNum === 1 || t.floor === 1 || t.floor === "1") return false;
       if (tradeType === "전월세" && t.monthlyRent && t.monthlyRent > 0) return false;
+      return true;
+    });
+
+    if (nonFirstFloor.length <= 1) return nonFirstFloor;
+
+    // 정상 거래가 2건 이상인 경우, 정상 시세의 절반(55% 미만) 수준으로 급락한 비정상/특수거래(직거래, 증여성 거래 등) 배제
+    const prices = nonFirstFloor.map((t: any) => t.rawPrice).sort((a: number, b: number) => a - b);
+    const medianPrice = prices[Math.floor(prices.length / 2)];
+
+    return nonFirstFloor.filter((t: any) => {
+      if (medianPrice >= 100000 && t.rawPrice < medianPrice * 0.6) {
+        // 예: 인창어반포레 정상 시세 13.5억인데 7억 직거래인 경우 대표 시세 산출에서 제외
+        return false;
+      }
       return true;
     });
   }, [activeTxs, tradeType]);
@@ -708,10 +722,11 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     if (recent1MonthTxs.length >= 2) {
       const rPrices = recent1MonthTxs.map((t: any) => t.rawPrice);
       displayMin = Math.min(...rPrices);
-      displayMax = Math.max(...rPrices); // 예: 10억 9,500만 -> 10.95억
+      displayMax = Math.max(...rPrices);
       displayLatest = Math.round(rPrices.reduce((a: number, b: number) => a + b, 0) / rPrices.length);
     } else {
-      displayMax = periodMax; // 최고가는 항상 실제 최고 체결가(10.95억)와 일치
+      displayMax = periodMax;
+      displayLatest = latestTx.rawPrice;
     }
 
     return {
@@ -735,91 +750,25 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return `${price.toLocaleString()}만원`;
   };
 
-  // 실거래 가격 계산: [사용자 핵심 규칙] 평형별 분류 -> 최근 1개월 실거래 평균 or 마지막 실거래가
+  // 실거래 가격 계산: [완전 일원화] priceStatsSummary와 100% 동기화하여 화면 내 자체 모순 원천 차단
   const currentAverageDisplay = useMemo(() => {
-    if (hasRealDataForCurrentTab && activeTxs.length > 0) {
-      // 전월세 탭인 경우 순수 전세 거래 우선 반영 (월세 보증금 왜곡 방지)
-      const pureJeonseTxs = tradeType === "전월세"
-        ? activeTxs.filter((t: any) => !t.monthlyRent || t.monthlyRent === 0)
-        : activeTxs;
-      const targetTxs = pureJeonseTxs.length > 0 ? pureJeonseTxs : activeTxs;
-
-      const latest = targetTxs[0];
-      const latestPrice = (latest as any).rawPrice;
-      const latestDateStr = (latest as any).date || (latest as any).dealDate; // "26.10.21" 등
-
-      let latestTime = 0;
-      if (latestDateStr) {
-        const parts = latestDateStr.split(".");
-        const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
-        const m = parseInt(parts[1] || "1", 10);
-        const d = parseInt(parts[2] || "1", 10);
-        latestTime = new Date(y, m - 1, d).getTime();
-      }
-
-      const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
-      const recent1Month = targetTxs.filter((t: any) => {
-        if (!t.rawPrice || t.rawPrice <= 0) return false;
-        if (!latestTime || !t.date) return false;
-        const parts = t.date.split(".");
-        const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
-        const m = parseInt(parts[1] || "1", 10);
-        const d = parseInt(parts[2] || "1", 10);
-        const tTime = new Date(y, m - 1, d).getTime();
-        return latestTime - tTime <= ONE_MONTH_MS;
-      });
-
-      // 최근 1개월 내 거래가 2건 이상이면 평균, 아니면 마지막 실거래가 1건 그대로!
-      if (recent1Month.length >= 2) {
-        const avg = Math.round(
-          recent1Month.reduce((acc: number, t: any) => acc + t.rawPrice, 0) / recent1Month.length
-        );
-        return formatPrice(avg);
-      } else if (latestPrice && latestPrice > 0) {
-        return formatPrice(latestPrice);
-      }
+    if (priceStatsSummary.isFromRealTxs && priceStatsSummary.latest > 0) {
+      const manwon = Math.round(priceStatsSummary.latest * 10000);
+      return formatPrice(manwon);
     }
     const fallbackPrice = tradeType === "매매"
       ? (apt.price_max || apt.price_min || 0)
       : (apt.rent_max || apt.rent_min || 0);
     return fallbackPrice > 0 ? formatPrice(fallbackPrice) : "-";
-  }, [hasRealDataForCurrentTab, activeTxs, tradeType, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
+  }, [priceStatsSummary, tradeType, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
 
-  // 실거래 매매 대표가 (만원 단위, 지도 마커용) - 최근 1개월 평균 or 마지막 실거래가
+  // 실거래 매매 대표가 (만원 단위, 지도 마커용) - priceStatsSummary와 완전 동기화
   const realSaleAvgManwon = useMemo(() => {
-    if (realSaleTxs.length > 0) {
-      const latest = realSaleTxs[0];
-      const latestPrice = (latest as any).rawPrice;
-      const latestDateStr = (latest as any).date;
-      let latestTime = 0;
-      if (latestDateStr) {
-        const parts = latestDateStr.split(".");
-        const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
-        const m = parseInt(parts[1] || "1", 10);
-        const d = parseInt(parts[2] || "1", 10);
-        latestTime = new Date(y, m - 1, d).getTime();
-      }
-
-      const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
-      const recent1Month = realSaleTxs.filter((t: any) => {
-        if (!t.rawPrice || t.rawPrice <= 0 || !latestTime || !t.date) return false;
-        const parts = t.date.split(".");
-        const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
-        const m = parseInt(parts[1] || "1", 10);
-        const d = parseInt(parts[2] || "1", 10);
-        return latestTime - new Date(y, m - 1, d).getTime() <= ONE_MONTH_MS;
-      });
-
-      if (recent1Month.length >= 2) {
-        return Math.round(
-          recent1Month.reduce((acc: number, t: any) => acc + t.rawPrice, 0) / recent1Month.length
-        );
-      } else if (latestPrice && latestPrice > 0) {
-        return latestPrice;
-      }
+    if (tradeType === "매매" && priceStatsSummary.isFromRealTxs && priceStatsSummary.latest > 0) {
+      return Math.round(priceStatsSummary.latest * 10000);
     }
-    return undefined;
-  }, [realSaleTxs]);
+    return apt.price_max || apt.price_min || 0;
+  }, [priceStatsSummary, tradeType, apt.price_min, apt.price_max]);
 
   // 실거래 매매가 밴드 (선택된 평형 기준 최근 실거래가 최소~최대 범위)
   const realSaleRange = useMemo(() => {
@@ -977,8 +926,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           <button
             onClick={handleToggleWatchlist}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 ${watched
-                ? "bg-rose-500 text-white shadow-sm"
-                : "bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-500"
+              ? "bg-rose-500 text-white shadow-sm"
+              : "bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-500"
               }`}
           >
             {watched ? "❤️ 관심 단지" : "🤍 관심 단지"}
@@ -997,10 +946,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 {apt.tags
                   .filter((t: string) => t !== "실거래가연동" && t !== "실거래인증")
                   .map((t: string) => (
-                  <span key={t} className="px-2.5 py-0.5 bg-white/25 backdrop-blur text-white text-xs font-bold rounded-full border border-white/30">
-                    #{t}
-                  </span>
-                ))}
+                    <span key={t} className="px-2.5 py-0.5 bg-white/25 backdrop-blur text-white text-xs font-bold rounded-full border border-white/30">
+                      #{t}
+                    </span>
+                  ))}
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold drop-shadow">{apt.name}</h1>
               <p className="text-slate-300 text-sm mt-1">📍 {apt.region}</p>
@@ -1011,8 +960,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         {/* P0: 단지 데이터 검증 이슈 패널 (이슈가 있을 때만 노출) */}
         {(!validationResult.isValid || validationResult.hasWarnings) && (
           <div className={`rounded-2xl border px-4 py-3 text-xs ${!validationResult.isValid
-              ? "bg-red-50 border-red-200"
-              : "bg-amber-50 border-amber-200"
+            ? "bg-red-50 border-red-200"
+            : "bg-amber-50 border-amber-200"
             }`}>
             <div className="flex items-center gap-2 mb-2">
               <span>{!validationResult.isValid ? "⚠️" : "⚡"}</span>
@@ -1025,7 +974,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             <ul className="space-y-1">
               {validationResult.issues.map((issue, i) => (
                 <li key={i} className={`flex items-start gap-2 ${issue.severity === "ERROR" ? "text-red-600" :
-                    issue.severity === "WARN" ? "text-amber-600" : "text-slate-500"
+                  issue.severity === "WARN" ? "text-amber-600" : "text-slate-500"
                   }`}>
                   <span className="mt-0.5 flex-shrink-0">
                     {issue.severity === "ERROR" ? "✕" : issue.severity === "WARN" ? "·" : "ℹ"}
@@ -1055,8 +1004,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 key={type}
                 onClick={() => { setTradeType(type); setShowCount(5); setSelectedArea("전체"); }}
                 className={`flex-1 py-4 text-base font-bold transition-all cursor-pointer ${tradeType === type
-                    ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/40"
-                    : "text-slate-400 hover:text-slate-700"
+                  ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/40"
+                  : "text-slate-400 hover:text-slate-700"
                   }`}
               >
                 {type}
@@ -1072,8 +1021,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                   key={area}
                   onClick={() => { setSelectedArea(area); setShowCount(5); }}
                   className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${selectedArea === area
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                 >
                   {area === "전체" ? "전체 평형" : area}
@@ -1127,8 +1076,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                       key={r}
                       onClick={() => setChartRange(r)}
                       className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${chartRange === r
-                          ? "bg-blue-600 text-white shadow-sm"
-                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                         }`}
                     >
                       {r}
@@ -1879,8 +1828,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                   key={item.key}
                   onClick={() => setActiveLocation(item.key)}
                   className={`w-full text-left p-3 rounded-2xl transition-all cursor-pointer border-2 ${activeLocation === item.key
-                      ? `border-slate-200 bg-slate-50 ring-2 ${item.ring}`
-                      : "border-transparent hover:bg-slate-50 hover:border-slate-100"
+                    ? `border-slate-200 bg-slate-50 ring-2 ${item.ring}`
+                    : "border-transparent hover:bg-slate-50 hover:border-slate-100"
                     }`}
                 >
                   <div className="flex justify-between text-sm font-semibold mb-2">
@@ -2106,13 +2055,12 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                       {infraData.schools.map((s: any, i: number) => (
                         <div
                           key={i}
-                          className={`flex items-center justify-between rounded-xl px-3.5 py-3 border transition-all ${
-                            s.isChoPumAh
+                          className={`flex items-center justify-between rounded-xl px-3.5 py-3 border transition-all ${s.isChoPumAh
                               ? "bg-amber-50/70 border-amber-200"
                               : s.type === "초등학교"
                                 ? "bg-blue-50/70 border-blue-200"
                                 : "bg-slate-50 border-slate-200"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-2.5">
                             <span className="text-lg">
@@ -2133,9 +2081,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                               </div>
                             </div>
                           </div>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            s.type === "초등학교" ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-700"
-                          }`}>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.type === "초등학교" ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-700"
+                            }`}>
                             {s.type}
                           </span>
                         </div>

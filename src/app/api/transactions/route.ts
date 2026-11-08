@@ -76,6 +76,7 @@ function stripRegionAndDong(norm: string, region = "", district = ""): string {
 
 // 명백히 구분되어야 하는 고유 단지 서브명칭 (동일 브랜드 내 다른 단지 혼입 방지)
 const DISTINCT_SUB_NAMES = [
+  "스카이뷰", "어반포레", "장자마을", "검배마을", "아름마을", "꽃뫼마을", "상록",
   "메이플타운", "리버테라스", "아이비파크", "아이비플레이스", "퍼스트리버", "퍼스트포레",
   "골든뷰", "리버펠리체", "황금산", "폴라리스", "더퍼스트", "유보라마크뷰", "해링턴타워",
   "해링턴플레이스", "효성해링턴", "에일린의뜰", "센트럴파크", "파크뷰", "레이크",
@@ -97,19 +98,16 @@ function isAptNameMatch(
     const cleanUmd = candidateUmd.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
 
     if (cleanDist.length >= 2 && cleanUmd.length >= 2) {
+      // 다산신도시만 행정통합 특수성 인정 (가운/지금/도농 -> 다산1,2동)
       const isDasanArea =
         (targetDistrict.includes("다산") || targetDistrict.includes("지금") || targetDistrict.includes("가운")) &&
         (candidateUmd.includes("다산") || candidateUmd.includes("지금") || candidateUmd.includes("가운"));
 
-      const isGuriArea =
-        (targetDistrict.includes("교문") || targetDistrict.includes("토평") || targetDistrict.includes("수택")) &&
-        (candidateUmd.includes("교문") || candidateUmd.includes("토평") || candidateUmd.includes("수택"));
-
-      if (!isDasanArea && !isGuriArea) {
+      if (!isDasanArea) {
         const distInUmd = candidateUmd.includes(cleanDist);
         const umdInDist = targetDistrict.includes(cleanUmd);
         if (!distInUmd && !umdInDist) {
-          return false; // 명백히 다른 지역 → 배제
+          return false; // 명백히 다른 법정동(예: 토평동 vs 교문동) → 절대 매칭 불가
         }
       }
     }

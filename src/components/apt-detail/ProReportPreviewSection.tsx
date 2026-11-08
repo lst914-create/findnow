@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { REPORT_SECTIONS } from "@/types/report";
 import FairValueProReportModal from "./FairValueProReport";
 import HoldingTaxProReportModal from "./HoldingTaxProReport";
+import GapRiskProReportModal from "./GapRiskProReport";
 
 interface Props {
   aptId: string;
@@ -21,12 +22,13 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
   };
 
   const handleCardClick = (secId: string) => {
-    if (secId === "holding_tax_calculator") {
+    if (secId === "gap_investment_risk") {
+      setActiveModalSection("gap_investment_risk");
+    } else if (secId === "holding_tax_calculator") {
       setActiveModalSection("holding_tax_calculator");
     } else if (secId === "fair_value_model") {
       setActiveModalSection("fair_value_model");
     } else {
-      // 그 외 항목도 현재 준비된 AI 적정가치 모달 안내
       setActiveModalSection("fair_value_model");
     }
   };
@@ -51,7 +53,7 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
                 {aptName} 심층 가치평가 분석 리포트
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                실거래가 괴리율, 재정비 사업성, 인근 공급 충격도, 취득/보유/양도세 및 적정 매수가 판정까지 AI 종합 분석 결과를 확인하세요.
+                실거래가 괴리율, 재정비 사업성, 인근 공급 충격도, 갭투자 리스크 및 적정 매수가 판정까지 AI 종합 분석 결과를 확인하세요.
               </p>
             </div>
 
@@ -80,14 +82,16 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
             {REPORT_SECTIONS.map((sec, idx) => {
               const isTarget08 = sec.id === "fair_value_model";
               const isTarget07 = sec.id === "holding_tax_calculator";
-              const isHot = isTarget08 || isTarget07;
+              const isTarget06 = sec.id === "gap_investment_risk";
 
               return (
                 <div
                   key={sec.id}
                   onClick={() => handleCardClick(sec.id)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                    isTarget07
+                    isTarget06
+                      ? "bg-gradient-to-b from-amber-950/40 to-slate-800/90 border-amber-500/50 hover:border-amber-400 shadow-md ring-1 ring-amber-500/20"
+                      : isTarget07
                       ? "bg-gradient-to-b from-emerald-950/40 to-slate-800/90 border-emerald-500/50 hover:border-emerald-400 shadow-md ring-1 ring-emerald-500/20"
                       : isTarget08
                       ? "bg-gradient-to-b from-blue-900/30 to-slate-800/80 border-blue-500/50 hover:border-blue-400 shadow-md ring-1 ring-blue-500/20"
@@ -98,7 +102,11 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
                 >
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-bold text-slate-400">0{idx + 1}</span>
-                    {isTarget07 ? (
+                    {isTarget06 ? (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-sm">
+                        리스크 진단
+                      </span>
+                    ) : isTarget07 ? (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-sm">
                         AI 시뮬
                       </span>
@@ -140,6 +148,14 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
       {/* 07번 모달 팝업 */}
       {activeModalSection === "holding_tax_calculator" && (
         <HoldingTaxProReportModal
+          apt={apt || { id: aptId, name: aptName }}
+          onClose={() => setActiveModalSection(null)}
+        />
+      )}
+
+      {/* 06번 모달 팝업 */}
+      {activeModalSection === "gap_investment_risk" && (
+        <GapRiskProReportModal
           apt={apt || { id: aptId, name: aptName }}
           onClose={() => setActiveModalSection(null)}
         />

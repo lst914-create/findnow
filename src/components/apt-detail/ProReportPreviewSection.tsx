@@ -8,15 +8,23 @@ import GapRiskProReportModal from "./GapRiskProReport";
 import SchoolDistrictProReportModal from "./SchoolDistrictProReport";
 import RedevelopmentSimProReportModal from "./RedevelopmentSimProReport";
 import SupplyVolumeProReportModal from "./SupplyVolumeProReport";
+import HistoricalPriceProReportModal from "./HistoricalPriceProReport";
 
 interface Props {
   aptId: string;
   aptName: string;
   apt?: any;
   infraSchools?: any[];
+  trades?: any[];
 }
 
-export function ProReportPreviewSection({ aptId, aptName, apt, infraSchools }: Props) {
+export function ProReportPreviewSection({
+  aptId,
+  aptName,
+  apt,
+  infraSchools,
+  trades = [],
+}: Props) {
   const [downloading, setDownloading] = useState(false);
   const [activeModalSection, setActiveModalSection] = useState<string | null>(null);
 
@@ -26,7 +34,9 @@ export function ProReportPreviewSection({ aptId, aptName, apt, infraSchools }: P
   };
 
   const handleCardClick = (secId: string) => {
-    if (secId === "supply_1km") {
+    if (secId === "price_trend_20y") {
+      setActiveModalSection("price_trend_20y");
+    } else if (secId === "supply_1km") {
       setActiveModalSection("supply_1km");
     } else if (secId === "redevelopment_sim") {
       setActiveModalSection("redevelopment_sim");
@@ -63,7 +73,7 @@ export function ProReportPreviewSection({ aptId, aptName, apt, infraSchools }: P
                 {aptName} 심층 가치평가 분석 리포트
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                실거래가 괴리율, 재정비 사업성, 인근 공급 충격도, 입주 예정 물량 및 적정 매수가 판정까지 AI 종합 분석 결과를 확인하세요.
+                실거래가 괴리율, 재정비 사업성, 20년 거래 이력, 역대 전고점 갭 및 적정 매수가 판정까지 AI 종합 분석 결과를 확인하세요.
               </p>
             </div>
 
@@ -96,13 +106,16 @@ export function ProReportPreviewSection({ aptId, aptName, apt, infraSchools }: P
               const isTarget05 = sec.id === "school_district_detail";
               const isTarget04 = sec.id === "redevelopment_sim";
               const isTarget03 = sec.id === "supply_1km";
+              const isTarget02 = sec.id === "price_trend_20y";
 
               return (
                 <div
                   key={sec.id}
                   onClick={() => handleCardClick(sec.id)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                    isTarget03
+                    isTarget02
+                      ? "bg-gradient-to-b from-rose-950/40 to-slate-800/90 border-rose-500/50 hover:border-rose-400 shadow-md ring-1 ring-rose-500/20"
+                      : isTarget03
                       ? "bg-gradient-to-b from-cyan-950/40 to-slate-800/90 border-cyan-500/50 hover:border-cyan-400 shadow-md ring-1 ring-cyan-500/20"
                       : isTarget04
                       ? "bg-gradient-to-b from-purple-950/40 to-slate-800/90 border-purple-500/50 hover:border-purple-400 shadow-md ring-1 ring-purple-500/20"
@@ -121,7 +134,11 @@ export function ProReportPreviewSection({ aptId, aptName, apt, infraSchools }: P
                 >
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-bold text-slate-400">0{idx + 1}</span>
-                    {isTarget03 ? (
+                    {isTarget02 ? (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-sm">
+                        20년 실거래
+                      </span>
+                    ) : isTarget03 ? (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500 text-white shadow-sm">
                         공급 충격
                       </span>
@@ -213,6 +230,15 @@ export function ProReportPreviewSection({ aptId, aptName, apt, infraSchools }: P
       {activeModalSection === "supply_1km" && (
         <SupplyVolumeProReportModal
           apt={apt || { id: aptId, name: aptName }}
+          onClose={() => setActiveModalSection(null)}
+        />
+      )}
+
+      {/* 02번 모달 팝업 */}
+      {activeModalSection === "price_trend_20y" && (
+        <HistoricalPriceProReportModal
+          apt={apt || { id: aptId, name: aptName }}
+          trades={trades}
           onClose={() => setActiveModalSection(null)}
         />
       )}

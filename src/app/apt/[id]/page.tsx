@@ -2426,6 +2426,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           aptName={apt.name}
           apt={apt}
           infraSchools={infraData?.schools}
+          trades={apiTrades && apiTrades.length > 0 ? apiTrades : preloaded.trades}
         />
 
         {/* ===== 단지별 커뮤니티 & 실시간 토론창구 (입지 분석 밑) ===== */}

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { REPORT_SECTIONS } from "@/types/report";
 import FairValueProReportModal from "./FairValueProReport";
+import HoldingTaxProReportModal from "./HoldingTaxProReport";
 
 interface Props {
   aptId: string;
@@ -15,12 +16,19 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
   const [activeModalSection, setActiveModalSection] = useState<string | null>(null);
 
   const handleOpenReport = (tier: "free" | "pro") => {
-    // 08번 AI 적정 가치 평가 모델 모달 오픈
+    // 기본 열람 시 08번 AI 적정 가치 평가 모델 모달 오픈
     setActiveModalSection("fair_value_model");
   };
 
   const handleCardClick = (secId: string) => {
-    setActiveModalSection("fair_value_model");
+    if (secId === "holding_tax_calculator") {
+      setActiveModalSection("holding_tax_calculator");
+    } else if (secId === "fair_value_model") {
+      setActiveModalSection("fair_value_model");
+    } else {
+      // 그 외 항목도 현재 준비된 AI 적정가치 모달 안내
+      setActiveModalSection("fair_value_model");
+    }
   };
 
   return (
@@ -43,7 +51,7 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
                 {aptName} 심층 가치평가 분석 리포트
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                실거래가 괴리율, 재정비 사업성, 인근 공급 충격도, 적정 매수가 판정까지 AI 종합 분석 결과를 한눈에 확인하세요.
+                실거래가 괴리율, 재정비 사업성, 인근 공급 충격도, 취득/보유/양도세 및 적정 매수가 판정까지 AI 종합 분석 결과를 확인하세요.
               </p>
             </div>
 
@@ -52,7 +60,7 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
                 type="button"
                 disabled={downloading}
                 onClick={() => handleOpenReport("free")}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors border border-white/15"
+                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors border border-white/15 cursor-pointer"
               >
                 기본 요약본
               </button>
@@ -71,12 +79,17 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {REPORT_SECTIONS.map((sec, idx) => {
               const isTarget08 = sec.id === "fair_value_model";
+              const isTarget07 = sec.id === "holding_tax_calculator";
+              const isHot = isTarget08 || isTarget07;
+
               return (
                 <div
                   key={sec.id}
                   onClick={() => handleCardClick(sec.id)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                    isTarget08
+                    isTarget07
+                      ? "bg-gradient-to-b from-emerald-950/40 to-slate-800/90 border-emerald-500/50 hover:border-emerald-400 shadow-md ring-1 ring-emerald-500/20"
+                      : isTarget08
                       ? "bg-gradient-to-b from-blue-900/30 to-slate-800/80 border-blue-500/50 hover:border-blue-400 shadow-md ring-1 ring-blue-500/20"
                       : !sec.isPreview
                       ? "bg-slate-800/60 border-slate-700/60 hover:border-slate-500"
@@ -85,7 +98,11 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
                 >
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-bold text-slate-400">0{idx + 1}</span>
-                    {isTarget08 ? (
+                    {isTarget07 ? (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-sm">
+                        AI 시뮬
+                      </span>
+                    ) : isTarget08 ? (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500 text-white shadow-sm animate-pulse">
                         HOT PRO
                       </span>
@@ -115,6 +132,14 @@ export function ProReportPreviewSection({ aptId, aptName, apt }: Props) {
       {/* 08번 모달 팝업 */}
       {activeModalSection === "fair_value_model" && (
         <FairValueProReportModal
+          apt={apt || { id: aptId, name: aptName }}
+          onClose={() => setActiveModalSection(null)}
+        />
+      )}
+
+      {/* 07번 모달 팝업 */}
+      {activeModalSection === "holding_tax_calculator" && (
+        <HoldingTaxProReportModal
           apt={apt || { id: aptId, name: aptName }}
           onClose={() => setActiveModalSection(null)}
         />

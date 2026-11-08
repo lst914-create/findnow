@@ -2426,6 +2426,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           aptName={apt.name}
           apt={apt}
           infraSchools={infraData?.schools}
+          infraData={infraData}
           trades={apiTrades && apiTrades.length > 0 ? apiTrades : preloaded.trades}
         />
 

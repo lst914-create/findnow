@@ -9,12 +9,14 @@ import SchoolDistrictProReportModal from "./SchoolDistrictProReport";
 import RedevelopmentSimProReportModal from "./RedevelopmentSimProReport";
 import SupplyVolumeProReportModal from "./SupplyVolumeProReport";
 import HistoricalPriceProReportModal from "./HistoricalPriceProReport";
+import LocationScoreProReportModal from "./LocationScoreProReport";
 
 interface Props {
   aptId: string;
   aptName: string;
   apt?: any;
   infraSchools?: any[];
+  infraData?: any;
   trades?: any[];
 }
 
@@ -23,6 +25,7 @@ export function ProReportPreviewSection({
   aptName,
   apt,
   infraSchools,
+  infraData,
   trades = [],
 }: Props) {
   const [downloading, setDownloading] = useState(false);
@@ -34,7 +37,9 @@ export function ProReportPreviewSection({
   };
 
   const handleCardClick = (secId: string) => {
-    if (secId === "price_trend_20y") {
+    if (secId === "location_score") {
+      setActiveModalSection("location_score");
+    } else if (secId === "price_trend_20y") {
       setActiveModalSection("price_trend_20y");
     } else if (secId === "supply_1km") {
       setActiveModalSection("supply_1km");
@@ -73,7 +78,7 @@ export function ProReportPreviewSection({
                 {aptName} 심층 가치평가 분석 리포트
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                실거래가 괴리율, 재정비 사업성, 20년 거래 이력, 역대 전고점 갭 및 적정 매수가 판정까지 AI 종합 분석 결과를 확인하세요.
+                입지 점수 산출 근거, 20년 거래 이력, 정비사업 분담금, 세금 시뮬레이션 및 적정 매수가 판정까지 AI 종합 분석 결과를 확인하세요.
               </p>
             </div>
 
@@ -107,13 +112,16 @@ export function ProReportPreviewSection({
               const isTarget04 = sec.id === "redevelopment_sim";
               const isTarget03 = sec.id === "supply_1km";
               const isTarget02 = sec.id === "price_trend_20y";
+              const isTarget01 = sec.id === "location_score";
 
               return (
                 <div
                   key={sec.id}
                   onClick={() => handleCardClick(sec.id)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-                    isTarget02
+                    isTarget01
+                      ? "bg-gradient-to-b from-blue-950/50 to-slate-800/90 border-blue-500/50 hover:border-blue-400 shadow-md ring-1 ring-blue-500/20"
+                      : isTarget02
                       ? "bg-gradient-to-b from-rose-950/40 to-slate-800/90 border-rose-500/50 hover:border-rose-400 shadow-md ring-1 ring-rose-500/20"
                       : isTarget03
                       ? "bg-gradient-to-b from-cyan-950/40 to-slate-800/90 border-cyan-500/50 hover:border-cyan-400 shadow-md ring-1 ring-cyan-500/20"
@@ -134,7 +142,11 @@ export function ProReportPreviewSection({
                 >
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-bold text-slate-400">0{idx + 1}</span>
-                    {isTarget02 ? (
+                    {isTarget01 ? (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500 text-white shadow-sm">
+                        입지 종합
+                      </span>
+                    ) : isTarget02 ? (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-500 text-white shadow-sm">
                         20년 실거래
                       </span>
@@ -239,6 +251,15 @@ export function ProReportPreviewSection({
         <HistoricalPriceProReportModal
           apt={apt || { id: aptId, name: aptName }}
           trades={trades}
+          onClose={() => setActiveModalSection(null)}
+        />
+      )}
+
+      {/* 01번 모달 팝업 */}
+      {activeModalSection === "location_score" && (
+        <LocationScoreProReportModal
+          apt={apt || { id: aptId, name: aptName }}
+          infraData={infraData}
           onClose={() => setActiveModalSection(null)}
         />
       )}

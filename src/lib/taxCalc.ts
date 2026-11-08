@@ -1,14 +1,13 @@
 /**
  * 세금 및 종합부동산세 AI 시뮬레이션 계산 엔진
  *
- * 세목:
- * 1. 취득세 (Acquisition Tax): 1주택(1~3%), 다주택 중과(8%, 12%), 지방교육세/농특세 포함
- * 2. 재산세 (Property Tax): 시가표준액(공시가격) × 공정시장가액비율(43~45%) × 4단계 누진세율
- * 3. 종합부동산세 (Comprehensive Real Estate Holding Tax): 공시가격 합산 - 기본공제(1주택 12억, 다주택 9억) × 공정시장가액비율(60%) × 종부세율
- * 4. 양도소득세 (Capital Gains Tax): 보유기간별 장기보유특별공제(최대 80%), 기본세율(6~45%)
+ * 세법 파라미터는 src/lib/taxPolicy.ts의 CURRENT_TAX_POLICY를 참조하여
+ * 매년 세법 개정 시 정책 파일만 수정하면 전 시스템에 일괄 반영됩니다.
  *
  * 모든 금액 단위: 만원 (10000 = 1억원)
  */
+
+import { CURRENT_TAX_POLICY, TaxPolicyConfig } from "./taxPolicy";
 
 export interface TaxSimulationInput {
   /** 매매 실거래가 (만원) */
@@ -21,13 +20,20 @@ export interface TaxSimulationInput {
   isAdjustedArea?: boolean;
   /** 보유 기간 (년 단위, 양도세 계산용, 기본 3년) */
   holdingYears?: number;
-  /** 예상 양도 차익 (만원, 기본: 매매가의 20% 가정 또는 사용자 입력) */
+  /** 예상 양도 차익 (만원) */
   expectedCapitalGain?: number;
+  /** 세법 정책 (기본값: CURRENT_TAX_POLICY) */
+  policy?: TaxPolicyConfig;
 }
 
 export interface TaxSimulationResult {
   hasData: boolean;
-  /** 공시가격 추정치 (현실화율 약 69% 적용) - 만원 */
+  /** 적용 세법 정보 */
+  policyInfo: {
+    effectiveYear: string;
+    lastUpdated: string;
+  };
+  /** 공시가격 추정치 (현실화율 적용) - 만원 */
   estimatedOfficialPrice: number;
   
   /** 1. 취득세 상세 */
@@ -43,9 +49,9 @@ export interface TaxSimulationResult {
   /** 2. 연간 보유세 상세 (재산세 + 종부세) */
   holdingTax: {
     annualTotal: number;
-    propertyTax: number; // 재산세 (도시지역분/지방교육세 포함 추정)
-    comprehensiveTax: number; // 종합부동산세 (1주택 12억 공제, 다주택 9억 공제)
-    isCompTaxTarget: boolean; // 종부세 과세 대상 여부
+    propertyTax: number;
+    comprehensiveTax: number;
+    isCompTaxTarget: boolean;
     details: string;
   };
 
@@ -54,9 +60,9 @@ export interface TaxSimulationResult {
     taxAmount: number;
     gainAmount: number;
     holdingYears: number;
-    specialDeductionRate: number; // 장기보유특별공제율 %
-    taxableIncome: number; // 과세표준
-    effectiveRate: number; // 실효세율 %
+    specialDeductionRate: number;
+    taxableIncome: number;
+    effectiveRate: number;
     details: string;
   };
 
@@ -65,43 +71,46 @@ export interface TaxSimulationResult {
 }
 
 /** 취득세 계산 */
-function calcAcquisitionTax(price: number, areaSqm: number, houseCount: 1 | 2 | 3, isAdjusted: boolean) {
+function calcAcquisitionTax(
+  price: number,
+  areaSqm: number,
+  houseCount: 1 | 2 | 3,
+  isAdjusted: boolean,
+  policy: TaxPolicyConfig
+) {
   const isOver85 = areaSqm > 85;
-  let baseRate = 0.01;
+  const acq = policy.acquisition;
+  let baseRate = acq.singleRateLow;
   let eduRate = 0.001;
   let ruralRate = isOver85 ? 0.002 : 0;
 
   if (houseCount === 1) {
-    // 1주택: 6억 이하 1%, 6억~9억 (취득가액×2/3 - 3)%, 9억 초과 3%
-    if (price <= 60000) {
-      baseRate = 0.01;
+    if (price <= acq.singleThresholdLow) {
+      baseRate = acq.singleRateLow;
       eduRate = 0.001;
-    } else if (price <= 90000) {
-      // (취득가액(억원) * 2/3 - 3) * 1/100
+    } else if (price <= acq.singleThresholdHigh) {
       const priceEok = price / 10000;
       baseRate = Math.round(((priceEok * (2 / 3) - 3) / 100) * 10000) / 10000;
       eduRate = Math.round((baseRate * 0.1) * 10000) / 10000;
     } else {
-      baseRate = 0.03;
+      baseRate = acq.singleRateHigh;
       eduRate = 0.003;
     }
   } else if (houseCount === 2) {
     if (isAdjusted) {
-      baseRate = 0.08;
+      baseRate = acq.multiAdjusted2Rate;
       eduRate = 0.004;
       ruralRate = isOver85 ? 0.006 : 0;
     } else {
-      // 비조정 2주택은 일반세율(1~3%)
-      if (price <= 60000) baseRate = 0.01;
-      else if (price <= 90000) {
+      if (price <= acq.singleThresholdLow) baseRate = acq.singleRateLow;
+      else if (price <= acq.singleThresholdHigh) {
         const priceEok = price / 10000;
         baseRate = ((priceEok * (2 / 3) - 3) / 100);
-      } else baseRate = 0.03;
+      } else baseRate = acq.singleRateHigh;
       eduRate = baseRate * 0.1;
     }
   } else {
-    // 3주택 이상: 조정 12%, 비조정 8%
-    baseRate = isAdjusted ? 0.12 : 0.08;
+    baseRate = isAdjusted ? acq.multiAdjusted3Rate : acq.multiNonAdjusted3Rate;
     eduRate = 0.004;
     ruralRate = isOver85 ? (isAdjusted ? 0.01 : 0.006) : 0;
   }
@@ -120,12 +129,17 @@ function calcAcquisitionTax(price: number, areaSqm: number, houseCount: 1 | 2 | 
 }
 
 /** 재산세 및 종부세 계산 */
-function calcHoldingTax(officialPrice: number, houseCount: 1 | 2 | 3) {
-  // 재산세 과세표준 = 공시가격 × 공정시장가액비율(1주택자 특례 43~45%, 다주택 60%)
-  const ratio = houseCount === 1 ? 0.45 : 0.60;
+function calcHoldingTax(
+  officialPrice: number,
+  houseCount: 1 | 2 | 3,
+  policy: TaxPolicyConfig
+) {
+  const ratio =
+    houseCount === 1
+      ? policy.propertyTaxMarketRatioSingle
+      : policy.propertyTaxMarketRatioMulti;
   const propBase = officialPrice * ratio;
 
-  // 1주택자 특례세율(0.05%~0.35%) vs 일반세율(0.1%~0.4%)
   let propTax = 0;
   if (houseCount === 1) {
     if (propBase <= 6000) propTax = propBase * 0.0005;
@@ -138,38 +152,44 @@ function calcHoldingTax(officialPrice: number, houseCount: 1 | 2 | 3) {
     else if (propBase <= 30000) propTax = 19.5 + (propBase - 15000) * 0.0025;
     else propTax = 57 + (propBase - 30000) * 0.004;
   }
-  // 도시지역분(0.14%) 및 지방교육세(재산세의 20%) 부가
   const totalPropTax = Math.round(propTax * 1.5);
 
-  // 종부세: 1주택 기본공제 12억원(120000만원), 다주택 9억원(90000만원)
-  const compDeduction = houseCount === 1 ? 120000 : 90000;
+  const compDeduction =
+    houseCount === 1
+      ? policy.compTaxDeductions.singleOwner
+      : policy.compTaxDeductions.multiOwner;
   const isCompTaxTarget = officialPrice > compDeduction;
   let compTax = 0;
 
   if (isCompTaxTarget) {
-    // 과세표준 = (공시가격 - 기본공제) × 공정시장가액비율 60%
-    const compBase = (officialPrice - compDeduction) * 0.6;
-    // 종부세 기본 누진세율 (0.5% ~ 2.7%)
+    const compBase = (officialPrice - compDeduction) * policy.compTaxMarketRatio;
     if (compBase <= 30000) compTax = compBase * 0.005;
     else if (compBase <= 60000) compTax = 150 + (compBase - 30000) * 0.007;
     else compTax = 360 + (compBase - 60000) * 0.01;
-    
-    // 농특세 20% 부가
     compTax = Math.round(compTax * 1.2);
   }
 
   const annualTotal = totalPropTax + compTax;
+  const deductionEok = compDeduction / 10000;
   const details = isCompTaxTarget
-    ? `공시가격 ${Math.round(officialPrice / 10000)}억원으로 종부세 부과 대상 (기본공제 ${compDeduction / 10000}억원 초과)`
-    : `공시가격 ${Math.round(officialPrice / 10000)}억원으로 종부세 비과세 (기본공제 ${compDeduction / 10000}억원 이하)`;
+    ? `공시가격 ${Math.round(officialPrice / 10000)}억원으로 종부세 부과 대상 (기본공제 ${deductionEok}억원 초과)`
+    : `공시가격 ${Math.round(officialPrice / 10000)}억원으로 종부세 비과세 (기본공제 ${deductionEok}억원 이하)`;
 
   return { annualTotal, propertyTax: totalPropTax, comprehensiveTax: compTax, isCompTaxTarget, details };
 }
 
 /** 양도소득세 시뮬레이션 */
-function calcCapitalGainsTax(price: number, gain: number, holdingYears: number, houseCount: 1 | 2 | 3) {
-  // 1주택 비과세 체크 (실거래가 12억원 이하 + 2년 이상 보유 시 비과세)
-  if (houseCount === 1 && price <= 120000 && holdingYears >= 2) {
+function calcCapitalGainsTax(
+  price: number,
+  gain: number,
+  holdingYears: number,
+  houseCount: 1 | 2 | 3,
+  policy: TaxPolicyConfig
+) {
+  const cg = policy.capitalGains;
+
+  // 1주택 비과세 체크
+  if (houseCount === 1 && price <= cg.singleExemptionLimit && holdingYears >= cg.holdingRequirementYears) {
     return {
       taxAmount: 0,
       gainAmount: gain,
@@ -177,34 +197,29 @@ function calcCapitalGainsTax(price: number, gain: number, holdingYears: number, 
       specialDeductionRate: 0,
       taxableIncome: 0,
       effectiveRate: 0,
-      details: "1세대 1주택 비과세 요건 충족 (실거래가 12억원 이하 & 2년 이상 보유)",
+      details: `1세대 1주택 비과세 요건 충족 (실거래가 ${cg.singleExemptionLimit / 10000}억원 이하 & ${cg.holdingRequirementYears}년 이상 보유)`,
     };
   }
 
   // 1주택 12억 초과분 과세 또는 다주택자 과세
   let taxableGain = gain;
-  if (houseCount === 1 && price > 120000) {
-    // 12억 초과분 비율만 과세: 양도차익 × (양도가액 - 12억) / 양도가액
-    taxableGain = Math.round(gain * ((price - 120000) / price));
+  if (houseCount === 1 && price > cg.singleExemptionLimit) {
+    taxableGain = Math.round(gain * ((price - cg.singleExemptionLimit) / price));
   }
 
   // 장기보유특별공제율
   let specialRate = 0;
   if (houseCount === 1) {
-    // 1주택 거주+보유 특례 (연 8%, 최대 80%)
-    specialRate = Math.min(holdingYears * 0.08, 0.80);
+    specialRate = Math.min(holdingYears * cg.singleSpecialDeductionPerYear, cg.singleSpecialDeductionMax);
   } else {
-    // 다주택 일반공제 (3년 이상부터 연 2%, 최대 30%)
     if (holdingYears >= 3) {
-      specialRate = Math.min((holdingYears - 2) * 0.02 + 0.06, 0.30);
+      specialRate = Math.min((holdingYears - 2) * 0.02 + 0.06, cg.multiSpecialDeductionMax);
     }
   }
 
   const deductionAmount = Math.round(taxableGain * specialRate);
-  // 과세표준 = 과세대상차익 - 장기보유특별공제 - 기본공제(250만원)
-  const taxableBase = Math.max(0, taxableGain - deductionAmount - 250);
+  const taxableBase = Math.max(0, taxableGain - deductionAmount - cg.basicDeduction);
 
-  // 일반 누진세율 (6% ~ 45%)
   let baseTax = 0;
   if (taxableBase <= 1400) baseTax = taxableBase * 0.06;
   else if (taxableBase <= 5000) baseTax = 84 + (taxableBase - 1400) * 0.15;
@@ -214,7 +229,6 @@ function calcCapitalGainsTax(price: number, gain: number, holdingYears: number, 
   else if (taxableBase <= 50000) baseTax = 9406 + (taxableBase - 30000) * 0.40;
   else baseTax = 17406 + (taxableBase - 50000) * 0.42;
 
-  // 지방소득세 10% 가산
   const taxAmount = Math.round(baseTax * 1.1);
   const effectiveRate = gain > 0 ? Math.round((taxAmount / gain) * 1000) / 10 : 0;
 
@@ -238,11 +252,18 @@ export function simulateApartmentTaxes(input: TaxSimulationInput): TaxSimulation
     isAdjustedArea = false,
     holdingYears = 3,
     expectedCapitalGain,
+    policy = CURRENT_TAX_POLICY,
   } = input;
+
+  const policyInfo = {
+    effectiveYear: policy.effectiveYear,
+    lastUpdated: policy.lastUpdated,
+  };
 
   if (!priceManwon || priceManwon <= 0) {
     return {
       hasData: false,
+      policyInfo,
       estimatedOfficialPrice: 0,
       acquisitionTax: { total: 0, baseTax: 0, localEducationTax: 0, ruralSpecialTax: 0, effectiveRate: 0, details: "데이터 없음" },
       holdingTax: { annualTotal: 0, propertyTax: 0, comprehensiveTax: 0, isCompTaxTarget: false, details: "데이터 없음" },
@@ -251,28 +272,30 @@ export function simulateApartmentTaxes(input: TaxSimulationInput): TaxSimulation
     };
   }
 
-  // 공시가격 현실화율 69% 추정
-  const estimatedOfficialPrice = Math.round(priceManwon * 0.69);
-  
-  // 양도차익 미입력 시 보수적 기준 (매매가의 15% 상승 가정)
+  // 공시가격 현실화율 추정
+  const estimatedOfficialPrice = Math.round(priceManwon * policy.officialPriceRealizationRate);
   const gain = expectedCapitalGain !== undefined ? expectedCapitalGain : Math.round(priceManwon * 0.15);
 
-  const acquisitionTax = calcAcquisitionTax(priceManwon, areaSqm, houseCount, isAdjustedArea);
-  const holdingTax = calcHoldingTax(estimatedOfficialPrice, houseCount);
-  const capitalGainsTax = calcCapitalGainsTax(priceManwon, gain, holdingYears, houseCount);
+  const acquisitionTax = calcAcquisitionTax(priceManwon, areaSqm, houseCount, isAdjustedArea, policy);
+  const holdingTax = calcHoldingTax(estimatedOfficialPrice, houseCount, policy);
+  const capitalGainsTax = calcCapitalGainsTax(priceManwon, gain, holdingYears, houseCount, policy);
 
   // AI 절세 전략 코멘트 생성
   const aiStrategyComment: string[] = [];
+  const singleExemptionEok = policy.capitalGains.singleExemptionLimit / 10000;
+  const singleCompDeductionEok = policy.compTaxDeductions.singleOwner / 10000;
+  const jointCompDeductionEok = policy.compTaxDeductions.jointOwner / 10000;
+
   if (houseCount === 1) {
-    if (priceManwon <= 120000) {
-      aiStrategyComment.push("1주택 12억원 이하로 실거주/보유 2년 충족 시 양도소득세가 전액 비과세됩니다.");
+    if (priceManwon <= policy.capitalGains.singleExemptionLimit) {
+      aiStrategyComment.push(`1주택 ${singleExemptionEok}억원 이하로 2년 보유/거주 요건 충족 시 양도소득세가 전액 비과세됩니다.`);
     } else {
-      aiStrategyComment.push("12억원 초과 고가주택으로, 12억 초과분에 대해서만 양도세가 과세되며 장특공제 최대 80%를 적용받을 수 있습니다.");
+      aiStrategyComment.push(`${singleExemptionEok}억원 초과 고가주택으로, ${singleExemptionEok}억 초과분에 대해서만 양도세가 과세되며 장특공제 최대 80%를 적용받을 수 있습니다.`);
     }
     if (holdingTax.isCompTaxTarget) {
-      aiStrategyComment.push("공시가격이 12억원을 초과하여 종합부동산세 과세 대상입니다. 부부 공동명의 변경 시 공제한도가 18억원으로 확대되어 종부세 전액 면제가 가능합니다.");
+      aiStrategyComment.push(`공시가격이 ${singleCompDeductionEok}억원을 초과하여 종합부동산세 과세 대상입니다. 부부 공동명의 변경 시 공제한도가 ${jointCompDeductionEok}억원으로 확대되어 종부세 전액 면제가 가능합니다.`);
     } else {
-      aiStrategyComment.push("공시가격이 1주택 기본공제(12억원) 이하로 종부세가 전혀 발생하지 않는 안전 구간입니다.");
+      aiStrategyComment.push(`공시가격이 1주택 기본공제(${singleCompDeductionEok}억원) 이하로 종부세가 전혀 발생하지 않는 안전 구간입니다.`);
     }
   } else {
     aiStrategyComment.push("다주택자 취득 시 취득세 중과(8~12%) 및 종부세 기본공제 9억원 축소로 보유 부담이 가중될 수 있습니다.");
@@ -281,6 +304,7 @@ export function simulateApartmentTaxes(input: TaxSimulationInput): TaxSimulation
 
   return {
     hasData: true,
+    policyInfo,
     estimatedOfficialPrice,
     acquisitionTax,
     holdingTax,

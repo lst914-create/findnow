@@ -57,6 +57,9 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
               PRO REPORT #07
             </span>
             <span className="text-xs text-slate-400 font-medium">부동산 세금 및 종합부동산세 AI 시뮬레이터</span>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
+              🟢 {simulation.policyInfo?.effectiveYear || "2026년 세법"} 기준
+            </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
             {apt.name} 취득·보유·양도세 통합 시뮬레이션
@@ -301,3 +304,4 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
   );
 }
 export default HoldingTaxProReportModal;
+

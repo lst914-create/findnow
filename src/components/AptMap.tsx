@@ -49,7 +49,7 @@ export interface AptMarker {
 export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
   // 중간값(min+max/2) 임의 생성 배제: 검증 실거래가 우선 적용
   const priceNum = apt.price_max || apt.price_min || 0;
-  const avgPriceStr = priceNum > 0 ? formatPrice(priceNum) : "-";
+  const avgPriceStr = priceNum > 0 ? formatPrice(priceNum) : "거래없음";
 
   const jeonseRatio = apt.jeonseRatio ?? 56;
   const rentNum = apt.rent_max || apt.rent_min
@@ -383,15 +383,17 @@ export default function AptMap({
       livePriceDetailCacheRef.current.get(normName);
     const hasLive = !!liveDetail;
 
-    // 가격 표시: 실거래가 우선 (최근 1개월 평균 또는 마지막 실거래가), 없으면 마스터 데이터
+    // 가격 표시: 실거래가 우선 (최근 1개월 평균 또는 마지막 실거래가), 없으면 마스터 데이터 (미확인 시 "거래없음")
     let priceLabel: string;
     let pyeongLabel: string;
     if (filters.tradeType === "매매") {
-      priceLabel = hasLive ? liveDetail!.formatted : apt.avgPrice;
+      priceLabel = hasLive
+        ? liveDetail!.formatted
+        : (apt.priceNum > 0 ? apt.avgPrice : "거래없음");
       pyeongLabel = hasLive ? `${liveDetail!.pyeong}평` : `${apt.pyeong}평`;
     } else {
-      const rent = Math.round((apt.rentNum || apt.priceNum * 0.55) / 10000);
-      priceLabel = `${rent}억`;
+      const rent = Math.round((apt.rentNum || 0) / 10000);
+      priceLabel = rent > 0 ? `${rent}억` : "거래없음";
       pyeongLabel = `${apt.pyeong}평`;
     }
     const viewers = apt.liveViewers || Math.floor(Math.random() * 80 + 20);
@@ -1499,14 +1501,14 @@ export default function AptMap({
               </div>
               <div className="text-lg font-extrabold text-slate-900 pr-6 leading-tight mb-2.5 truncate">{selectedApt.name}</div>
 
-              {/* 시세 3종: 매매 평균은 지도상 실거래가(최근 3개월 평균)와 동일하게 일치 */}
+              {/* 시세 3종: 매매 평균은 지도상 실거래가(최근 3개월 평균)와 동일하게 일치, 거래 없으면 "최근 거래 없음" */}
               <div className="grid grid-cols-3 gap-1.5 mb-2.5">
                 <div className="bg-rose-50/80 rounded-2xl p-2.5 border border-rose-100/90 text-center">
                   <div className="text-[10px] text-rose-500 font-bold mb-0.5">
                     매매 평균
                   </div>
                   <div className="text-base font-black text-rose-700 leading-tight">
-                    {displayPrice}
+                    {selectedApt.priceNum > 0 || live ? displayPrice : "거래없음"}
                   </div>
                   <div className="text-[9px] text-rose-400 mt-0.5">
                     {displayPyeong}평
@@ -1515,17 +1517,23 @@ export default function AptMap({
                 <div className="bg-blue-50/80 rounded-2xl p-2.5 border border-blue-100/90 text-center">
                   <div className="text-[10px] text-blue-500 font-bold mb-0.5">전세 시세</div>
                   <div className="text-base font-black text-blue-700 leading-tight">
-                    {realtimeTx?.jeonsePriceStr || `${Math.round((selectedApt.rentNum || selectedApt.priceNum * 0.56) / 10000)}억`}
+                    {selectedApt.rentNum && selectedApt.rentNum > 0
+                      ? (realtimeTx?.jeonsePriceStr || `${Math.round(selectedApt.rentNum / 10000)}억`)
+                      : "거래없음"}
                   </div>
-                  <div className="text-[9px] text-blue-400 mt-0.5">전세가율 {selectedApt.jeonseRatio ?? 56}%</div>
+                  <div className="text-[9px] text-blue-400 mt-0.5">
+                    {selectedApt.rentNum && selectedApt.rentNum > 0 ? `전세가율 ${selectedApt.jeonseRatio ?? 56}%` : "-"}
+                  </div>
                 </div>
                 <div className="bg-emerald-50/80 rounded-2xl p-2.5 border border-emerald-100/90 text-center">
                   <div className="text-[10px] text-emerald-600 font-bold mb-0.5">월세 추정</div>
                   <div className="text-xs font-black text-emerald-800 leading-tight mt-1">
-                    보 {Math.max(1, Math.round(((selectedApt.priceNum || 100000) * 0.1) / 10000))}억
+                    {selectedApt.priceNum > 0
+                      ? `보 ${Math.max(1, Math.round((selectedApt.priceNum * 0.1) / 10000))}억`
+                      : "-"}
                   </div>
                   <div className="text-[9px] text-emerald-600 mt-0.5 font-bold">
-                    월 {Math.round(displayPyeong * 4.5 + 40)}만
+                    {selectedApt.priceNum > 0 ? `월 ${Math.round(displayPyeong * 4.5 + 40)}만` : "거래없음"}
                   </div>
                 </div>
               </div>
@@ -1535,7 +1543,9 @@ export default function AptMap({
                 <span>
                   갭투자{" "}
                   <b className="text-indigo-600 font-bold">
-                    {realtimeTx?.gapPriceStr || `${Math.round((selectedApt.gapPrice || selectedApt.priceNum * 0.44) / 10000)}억`}
+                    {selectedApt.priceNum > 0
+                      ? (realtimeTx?.gapPriceStr || `${Math.round((selectedApt.gapPrice || selectedApt.priceNum * 0.44) / 10000)}억`)
+                      : "-"}
                   </b>
                 </span>
                 <span className="text-slate-300">|</span>

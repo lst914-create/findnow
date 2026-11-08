@@ -186,3 +186,4 @@ if (fs.existsSync(publicPath)) {
   fs.writeFileSync(publicPath, JSON.stringify(master, null, 2), 'utf8');
   console.log(`✅ ${publicPath} 동기화 완료`);
 }
+

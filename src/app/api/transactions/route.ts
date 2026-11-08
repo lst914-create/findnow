@@ -97,7 +97,8 @@ function isAptNameMatch(
     const cleanDist = targetDistrict.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
     const cleanUmd = candidateUmd.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
 
-    if (cleanDist.length >= 2 && cleanUmd.length >= 2) {
+    // 전국 1글자 법정동(우동, 중동, 삼동 등) 및 다글자 법정동 전수 지원
+    if (cleanDist.length >= 1 && cleanUmd.length >= 1) {
       // 다산신도시만 행정통합 특수성 인정 (가운/지금/도농 -> 다산1,2동)
       const isDasanArea =
         (targetDistrict.includes("다산") || targetDistrict.includes("지금") || targetDistrict.includes("가운")) &&
@@ -107,7 +108,7 @@ function isAptNameMatch(
         const distInUmd = candidateUmd.includes(cleanDist);
         const umdInDist = targetDistrict.includes(cleanUmd);
         if (!distInUmd && !umdInDist) {
-          return false; // 명백히 다른 법정동(예: 토평동 vs 교문동) → 절대 매칭 불가
+          return false; // 명백히 다른 법정동(예: 토평동 vs 교문동, 우동 vs 중동) → 절대 매칭 불가
         }
       }
     }

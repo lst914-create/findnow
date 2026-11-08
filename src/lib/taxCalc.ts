@@ -7,7 +7,7 @@
  * 모든 금액 단위: 만원 (10000 = 1억원)
  */
 
-import { CURRENT_TAX_POLICY, TaxPolicyConfig } from "./taxPolicy";
+import { CURRENT_TAX_POLICY, TaxPolicyConfig, checkTaxPolicyExpiration } from "./taxPolicy";
 
 export interface TaxSimulationInput {
   /** 매매 실거래가 (만원) */
@@ -32,6 +32,8 @@ export interface TaxSimulationResult {
   policyInfo: {
     effectiveYear: string;
     lastUpdated: string;
+    isExpired?: boolean;
+    expirationNotice?: string;
   };
   /** 공시가격 추정치 (현실화율 적용) - 만원 */
   estimatedOfficialPrice: number;
@@ -255,9 +257,12 @@ export function simulateApartmentTaxes(input: TaxSimulationInput): TaxSimulation
     policy = CURRENT_TAX_POLICY,
   } = input;
 
+  const expiration = checkTaxPolicyExpiration();
   const policyInfo = {
     effectiveYear: policy.effectiveYear,
     lastUpdated: policy.lastUpdated,
+    isExpired: expiration.isExpired,
+    expirationNotice: expiration.isExpired ? expiration.message : undefined,
   };
 
   if (!priceManwon || priceManwon <= 0) {

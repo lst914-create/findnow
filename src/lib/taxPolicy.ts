@@ -8,6 +8,8 @@
  */
 
 export interface TaxPolicyConfig {
+  /** 적용 세법 연도 (숫자) */
+  policyYear: number;
   /** 적용 세법 연도 표기 */
   effectiveYear: string;
   /** 기준일자 */
@@ -51,6 +53,7 @@ export interface TaxPolicyConfig {
 }
 
 export const CURRENT_TAX_POLICY: TaxPolicyConfig = {
+  policyYear: 2026,
   effectiveYear: "2026년 개정 세법",
   lastUpdated: "2026.01.01",
   version: "2026.1",
@@ -89,3 +92,27 @@ export const CURRENT_TAX_POLICY: TaxPolicyConfig = {
     multiNonAdjusted3Rate: 0.08,           // 8%
   },
 };
+
+/**
+ * 세법 연도 만료 여부 감지 (누락 방지 안전장치)
+ * - 현재 실제 연도가 적용 정책 연도보다 크면 만료 경고 반환
+ */
+export function checkTaxPolicyExpiration(): {
+  isExpired: boolean;
+  currentYear: number;
+  policyYear: number;
+  message: string;
+} {
+  const currentYear = new Date().getFullYear();
+  const policyYear = CURRENT_TAX_POLICY.policyYear;
+  const isExpired = currentYear > policyYear;
+
+  return {
+    isExpired,
+    currentYear,
+    policyYear,
+    message: isExpired
+      ? `현재 ${currentYear}년 세법 개정안이 적용되지 않았습니다. (현재 적용: ${CURRENT_TAX_POLICY.effectiveYear})`
+      : `${CURRENT_TAX_POLICY.effectiveYear}이 최신 상태로 유지되고 있습니다.`,
+  };
+}

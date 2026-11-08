@@ -57,8 +57,12 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
               PRO REPORT #07
             </span>
             <span className="text-xs text-slate-400 font-medium">부동산 세금 및 종합부동산세 AI 시뮬레이터</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-500/30">
-              🟢 {simulation.policyInfo?.effectiveYear || "2026년 세법"} 기준
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              simulation.policyInfo?.isExpired
+                ? "bg-amber-950/80 text-amber-400 border-amber-500/40 animate-pulse"
+                : "bg-emerald-950/80 text-emerald-400 border-emerald-500/30"
+            }`}>
+              {simulation.policyInfo?.isExpired ? "⚠️ 세법 갱신 필요" : "🟢 최신 세법 반영"} ({simulation.policyInfo?.effectiveYear})
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">

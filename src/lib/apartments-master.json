@@ -187556,11 +187556,11 @@
     "name": "더힐포레(3단지)",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 66000,
+    "price_min": 64000,
     "price_max": 66000,
     "rent_min": 38280,
     "rent_max": 38280,
-    "area_sqm": 85,
+    "area_sqm": 84,
     "area_pyeong": 34,
     "built_year": 2008,
     "household_count": 300,
@@ -187611,22 +187611,16 @@
     ],
     "area_distributions": [
       {
-        "label": "전용 59㎡ (25평)",
-        "pyeong": 25,
-        "units": 105,
-        "ratio": 35
+        "label": "전용 75㎡ (30평)",
+        "pyeong": 30,
+        "units": 100,
+        "ratio": 33
       },
       {
         "label": "전용 84㎡ (34평)",
         "pyeong": 34,
-        "units": 135,
-        "ratio": 45
-      },
-      {
-        "label": "전용 114㎡ (45평)",
-        "pyeong": 45,
-        "units": 60,
-        "ratio": 20
+        "units": 200,
+        "ratio": 67
       }
     ],
     "isRealPrice": true
@@ -187636,8 +187630,8 @@
     "name": "더힐포레",
     "region": "경기 남양주시",
     "district": "다산동",
-    "price_min": 66000,
-    "price_max": 66000,
+    "price_min": 59000,
+    "price_max": 70000,
     "rent_min": 40260,
     "rent_max": 40260,
     "gapPrice": 25740,
@@ -187689,22 +187683,16 @@
     ],
     "area_distributions": [
       {
-        "label": "전용 59㎡ (25평)",
-        "pyeong": 25,
-        "units": 74,
-        "ratio": 35
+        "label": "전용 75㎡ (30평)",
+        "pyeong": 30,
+        "units": 70,
+        "ratio": 33
       },
       {
         "label": "전용 84㎡ (34평)",
         "pyeong": 34,
-        "units": 95,
-        "ratio": 45
-      },
-      {
-        "label": "전용 114㎡ (45평)",
-        "pyeong": 45,
-        "units": 42,
-        "ratio": 20
+        "units": 140,
+        "ratio": 67
       }
     ],
     "isRealPrice": true

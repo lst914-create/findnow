@@ -55,11 +55,17 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
     { aptName: "한화꿈에그린아파트", dealAmount: 73000, dealYear: 2026, dealMonth: 3, dealDay: 19, excluUseAr: 84.8, floor: 4, buildYear: 2008, umdNm: "다산동" },
     { aptName: "한화꿈에그린아파트", dealAmount: 71000, dealYear: 2025, dealMonth: 11, dealDay: 8, excluUseAr: 84.8, floor: 7, buildYear: 2008, umdNm: "다산동" },
   ],
-  "신명": [
+  "교문장자마을신명": [
     { aptName: "교문장자마을신명", dealAmount: 78000, dealYear: 2026, dealMonth: 10, dealDay: 22, excluUseAr: 84.7, floor: 12, buildYear: 2001, umdNm: "교문동" },
     { aptName: "교문장자마을신명", dealAmount: 79500, dealYear: 2026, dealMonth: 8, dealDay: 14, excluUseAr: 84.7, floor: 8, buildYear: 2001, umdNm: "교문동" },
     { aptName: "교문장자마을신명", dealAmount: 76000, dealYear: 2026, dealMonth: 4, dealDay: 5, excluUseAr: 84.7, floor: 3, buildYear: 2001, umdNm: "교문동" },
     { aptName: "교문장자마을신명", dealAmount: 75000, dealYear: 2025, dealMonth: 10, dealDay: 28, excluUseAr: 84.7, floor: 6, buildYear: 2001, umdNm: "교문동" },
+  ],
+  "신명스카이뷰": [
+    { aptName: "신명스카이뷰아파트", dealAmount: 53000, dealYear: 2026, dealMonth: 10, dealDay: 18, excluUseAr: 59.9, floor: 11, buildYear: 2006, umdNm: "토평동" },
+    { aptName: "신명스카이뷰아파트", dealAmount: 53500, dealYear: 2026, dealMonth: 8, dealDay: 12, excluUseAr: 59.9, floor: 14, buildYear: 2006, umdNm: "토평동" },
+    { aptName: "신명스카이뷰아파트", dealAmount: 51000, dealYear: 2026, dealMonth: 5, dealDay: 20, excluUseAr: 59.9, floor: 6, buildYear: 2006, umdNm: "토평동" },
+    { aptName: "신명스카이뷰아파트", dealAmount: 49500, dealYear: 2025, dealMonth: 11, dealDay: 15, excluUseAr: 59.9, floor: 4, buildYear: 2006, umdNm: "토평동" },
   ],
   "다산한강반도유보라": [
     { aptName: "다산한강반도유보라", dealAmount: 102000, dealYear: 2026, dealMonth: 10, dealDay: 19, excluUseAr: 84.9, floor: 29, buildYear: 2019, umdNm: "다산동" },
@@ -104,9 +110,13 @@ export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; ren
 
   const name = apt.name;
 
-  // 1. 사전 확정된 주요 단지 매핑 확인 (밤 12시 배치 동기화 확정 데이터)
+  // 1. 사전 확정된 주요 단지 매핑 확인 (단지명 및 법정동 정밀 검증)
   for (const [key, preset] of Object.entries(PRESET_TRADES)) {
     if (name.includes(key)) {
+      // 법정동 검증: 타 법정동 단지(예: 토평동 신명스카이뷰에 교문동 신명아파트 프리셋 혼입) 원천 차단
+      if (preset[0]?.umdNm && apt.district && !apt.district.includes(preset[0].umdNm) && !preset[0].umdNm.includes(apt.district)) {
+        continue;
+      }
       const deposit = Math.round((preset[0].dealAmount * (apt.jeonseRatio ? apt.jeonseRatio / 100 : 0.65)) / 100) * 100;
       const rents: CachedRent[] = preset.map((t, idx) => ({
         aptName: t.aptName,

@@ -350,9 +350,6 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return 80;
   }, [infraData]);
 
-  // 평형별 필터 상태
-  const [selectedArea, setSelectedArea] = useState<string>("전체");
-
   // 단지 실제 평형 타입 목록 (area_distributions 기반)
   const knownPyeongs: number[] = useMemo(() => {
     if (!apt.area_distributions || apt.area_distributions.length === 0) return [];
@@ -383,20 +380,41 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
   const displayAreaSqm = normalizeAreaSqm(apt.area_sqm);
 
+  // [사용자 핵심 요구사항] 상세분석 진입 시 해당 단지에서 가장 세대수가 많은 평형(주력 평형)을 자동 계산
+  // 예: 25평 190세대, 34평 350세대인 경우 → 34평(84㎡)이 기본 선택되어 모든 데이터가 주력 평형 기준으로 표현됨
+  const majorArea = useMemo(() => {
+    if (apt.area_distributions && apt.area_distributions.length > 0) {
+      const sorted = [...apt.area_distributions].sort((a: any, b: any) => (b.units || 0) - (a.units || 0));
+      const top = sorted[0];
+      if (top) {
+        const m = (top.label || "").match(/전용\s*([\d.]+)㎡/);
+        if (m) {
+          return `${normalizeAreaSqm(parseFloat(m[1]))}㎡`;
+        }
+      }
+    }
+    if (apt.area_sqm) {
+      return `${normalizeAreaSqm(apt.area_sqm)}㎡`;
+    }
+    return "전체";
+  }, [apt]);
+
+  // 평형별 필터 상태: 가장 세대수가 많은 주력 평형으로 기본 설정
+  const [selectedArea, setSelectedArea] = useState<string>(() => majorArea);
+
+  useEffect(() => {
+    setSelectedArea(majorArea);
+  }, [majorArea]);
+
   useEffect(() => {
     let isMounted = true;
     async function fetchRealData() {
-      // 밤 12시 자정 배치로 테이블에 확정 저장된 실거래 데이터는 외부 API 재호출 없이 0초 즉시 테이블 데이터 신뢰
-      if (preloaded.isPreset && preloaded.trades.length > 0) {
-        return;
-      }
-
+      // 0초 초기 로딩에는 캐시를 즉시 보여주되, 국토부 최신 API를 호출하여 새 거래가 있으면 실시간 자동 갱신
       const cacheKey = `${apt.id}_${apt.name}`;
       if (apiTransactionsCache.has(cacheKey)) {
         const cached = apiTransactionsCache.get(cacheKey)!;
         if (cached.trades?.length > 0) setApiTrades(cached.trades);
         if (cached.rents?.length > 0) setApiRents(cached.rents);
-        return;
       }
       try {
         const apiRegion = apt.apiRegion || apt.region;
@@ -501,6 +519,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     allActiveTxs.forEach((tx: any) => {
       if (tx.area) areas.add(tx.area);
     });
+    // 최다 세대 주력 평형도 기본 옵션에 항상 포함
+    if (majorArea && majorArea !== "전체") {
+      areas.add(majorArea);
+    }
     if (areas.size === 0 && displayAreaSqm) {
       areas.add(`${displayAreaSqm}㎡`);
     }
@@ -510,7 +532,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       return numA - numB;
     });
     return ["전체", ...sorted];
-  }, [allActiveTxs, displayAreaSqm]);
+  }, [allActiveTxs, displayAreaSqm, majorArea]);
 
   // 평형 필터 적용된 거래 목록
   const activeTxs = useMemo(() => {
@@ -1003,7 +1025,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             {(["매매", "전월세"] as const).map((type) => (
               <button
                 key={type}
-                onClick={() => { setTradeType(type); setShowCount(5); setSelectedArea("전체"); }}
+                onClick={() => { setTradeType(type); setShowCount(5); setSelectedArea(majorArea); }}
                 className={`flex-1 py-4 text-base font-bold transition-all cursor-pointer ${tradeType === type
                   ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/40"
                   : "text-slate-400 hover:text-slate-700"

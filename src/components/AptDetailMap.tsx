@@ -235,11 +235,10 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
             <button
               key={t}
               onClick={() => setTradeType(t)}
-              className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
-                tradeType === t
+              className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${tradeType === t
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/60"
-              }`}
+                }`}
             >
               {t}
             </button>
@@ -249,11 +248,10 @@ export default function AptDetailMap({ aptId, aptName, realAvgPriceNum, height =
         {/* 스카이뷰 토글 버튼 */}
         <button
           onClick={toggleMapType}
-          className={`px-3 py-1.5 rounded-2xl shadow-lg border text-xs font-bold transition-all cursor-pointer ${
-            mapType === "HYBRID"
+          className={`px-3 py-1.5 rounded-2xl shadow-lg border text-xs font-bold transition-all cursor-pointer ${mapType === "HYBRID"
               ? "bg-amber-500 text-white border-amber-600 shadow-amber-200"
               : "bg-white/95 backdrop-blur-md text-slate-700 border-slate-200/80 hover:bg-slate-100"
-          }`}
+            }`}
         >
           {mapType === "HYBRID" ? "지도보기" : "스카이뷰"}
         </button>

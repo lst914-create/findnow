@@ -1416,20 +1416,27 @@ const BASE_REDEVELOPMENT_DATA: RedevelopmentZone[] = [
 ];
 
 // masterZonesRaw(redevelopment-master.json)와의 완전 병합 (재개발 지도와 아파트 상세의 100% 동기화)
+// 준공/입주가 이미 완료된 구역은 진행 중인 정비사업 목록에서 완전 배제
 const zoneMap = new Map<string, RedevelopmentZone>();
 for (const z of BASE_REDEVELOPMENT_DATA) {
-  if (z && z.id) zoneMap.set(z.id, z);
+  if (z && z.id && (z.status as string) !== "준공" && (z.status as string) !== "입주") {
+    zoneMap.set(z.id, z);
+  }
 }
 
 for (const mz of (masterZonesRaw as any[])) {
-  if (mz && mz.id && !zoneMap.has(mz.id)) {
+  if (mz && mz.id && (mz.status as string) !== "준공" && (mz.status as string) !== "입주" && !zoneMap.has(mz.id)) {
     zoneMap.set(mz.id, {
       ...mz,
       polygon: mz.polygon || [
-        { lat: mz.lat + 0.002, lng: mz.lng - 0.002 },
-        { lat: mz.lat + 0.002, lng: mz.lng + 0.002 },
-        { lat: mz.lat - 0.002, lng: mz.lng + 0.002 },
-        { lat: mz.lat - 0.002, lng: mz.lng - 0.002 },
+        { lat: mz.lat + 0.0022, lng: mz.lng - 0.0010 },
+        { lat: mz.lat + 0.0024, lng: mz.lng + 0.0012 },
+        { lat: mz.lat + 0.0012, lng: mz.lng + 0.0024 },
+        { lat: mz.lat - 0.0008, lng: mz.lng + 0.0025 },
+        { lat: mz.lat - 0.0022, lng: mz.lng + 0.0011 },
+        { lat: mz.lat - 0.0024, lng: mz.lng - 0.0009 },
+        { lat: mz.lat - 0.0011, lng: mz.lng - 0.0022 },
+        { lat: mz.lat + 0.0010, lng: mz.lng - 0.0023 },
       ],
       stages: mz.stages || [
         { name: "정비구역지정", isCompleted: true, isCurrent: false },

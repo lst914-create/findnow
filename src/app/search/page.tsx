@@ -429,7 +429,7 @@ function ApartmentSearchContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24 w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24 w-full">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between">
@@ -453,7 +453,7 @@ function ApartmentSearchContent() {
       </header>
 
       {/* Main Container */}
-      <main className="w-full max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-8 space-y-6 overflow-x-hidden">
+      <main className="w-full max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-8 space-y-6">
         {/* Title Banner */}
         <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden">
           <div className="relative z-10 space-y-2">
@@ -475,11 +475,10 @@ function ApartmentSearchContent() {
           <button
             type="button"
             onClick={() => setSearchMode("nlp")}
-            className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 ${
-              searchMode === "nlp"
+            className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 ${searchMode === "nlp"
                 ? "bg-white text-indigo-700 shadow-md shadow-slate-300 scale-[1.01]"
                 : "text-slate-600 hover:text-slate-900"
-            }`}
+              }`}
           >
             <span>💬</span>
             <span className="sm:hidden whitespace-nowrap">스마트 검색</span>
@@ -488,11 +487,10 @@ function ApartmentSearchContent() {
           <button
             type="button"
             onClick={() => setSearchMode("filter")}
-            className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 ${
-              searchMode === "filter"
+            className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 ${searchMode === "filter"
                 ? "bg-white text-indigo-700 shadow-md shadow-slate-300 scale-[1.01]"
                 : "text-slate-600 hover:text-slate-900"
-            }`}
+              }`}
           >
             <span>⚙️</span>
             <span className="sm:hidden whitespace-nowrap">조건 필터 검색</span>
@@ -502,7 +500,7 @@ function ApartmentSearchContent() {
 
         {/* ===== 방식 1: 검색어 조합 스마트 입력 UI (두번째 첨부 이미지 스타일) ===== */}
         {searchMode === "nlp" && (
-          <div className="bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/60 rounded-3xl border border-indigo-100 shadow-sm p-4 sm:p-10 text-center space-y-4 w-full max-w-full overflow-hidden">
+          <div className="bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/60 rounded-3xl border border-indigo-100 shadow-sm p-4 sm:p-10 text-center space-y-4 w-full">
             <h2 className="text-lg sm:text-3xl font-extrabold text-slate-900 leading-snug break-keep">
               내가 찾는 부동산 정보,<br className="sm:hidden" />
               <span className="text-indigo-600 ml-1">한 눈에 직관적으로 비교해줘</span>
@@ -799,14 +797,14 @@ function ApartmentSearchContent() {
                       const avgPrice = (apt.price_min + apt.price_max) / 2;
                       const tierImg =
                         avgPrice >= 300000 ? "/apt-tier-ultra.jpg"
-                        : avgPrice >= 200000 ? "/apt-tier-premium.jpg"
-                        : avgPrice >= 100000 ? "/apt-tier-mid.jpg"
-                        : "/apt-tier-standard.jpg";
+                          : avgPrice >= 200000 ? "/apt-tier-premium.jpg"
+                            : avgPrice >= 100000 ? "/apt-tier-mid.jpg"
+                              : "/apt-tier-standard.jpg";
                       const tierOverlay =
                         avgPrice >= 300000 ? "from-black/70 via-black/40 to-transparent"
-                        : avgPrice >= 200000 ? "from-slate-900/65 via-slate-800/35 to-transparent"
-                        : avgPrice >= 100000 ? "from-slate-800/60 via-slate-700/30 to-transparent"
-                        : "from-slate-700/55 via-slate-600/25 to-transparent";
+                          : avgPrice >= 200000 ? "from-slate-900/65 via-slate-800/35 to-transparent"
+                            : avgPrice >= 100000 ? "from-slate-800/60 via-slate-700/30 to-transparent"
+                              : "from-slate-700/55 via-slate-600/25 to-transparent";
                       return (
                         <div className="relative h-[140px] overflow-hidden">
                           <img

@@ -596,10 +596,8 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     });
 
     if (anchors.length === 0) {
-      anchors.push({ index: 0, price: Math.round(latestAvg * 0.91) });
-      anchors.push({ index: 12, price: Math.round(latestAvg * 0.94) });
-      anchors.push({ index: 24, price: Math.round(latestAvg * 0.97) });
-      anchors.push({ index: 35, price: latestAvg });
+      // 실거래 데이터가 0건이면 임의 가상 곡선을 만들지 않고 빈 배열 반환 ("최근 거래 없음" 상태 유지)
+      return [];
     } else {
       if (anchors[0].index > 0) {
         const estPast = Math.round(anchors[0].price * (0.90 + (anchors[0].index / 35) * 0.10));
@@ -677,19 +675,16 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     });
   }, [activeTxs, tradeType]);
 
-  // [사용자 요구사항] 실거래가 원본 기준 최고가 / 최저가 / 최근 거래가 (월평균 왜곡 배제)
+  // [사용자 요구사항] 실거래가 원본 기준 최고가 / 최저가 / 최근 거래가 (가상 거래 배제, 마지막 실거래 우선, 없으면 최근 거래 없음)
   const priceStatsSummary = useMemo(() => {
     if (validPeriodTxs.length === 0) {
-      const fallbackMin = tradeType === "매매" ? apt.price_min : apt.rent_min;
-      const fallbackMax = tradeType === "매매" ? apt.price_max : apt.rent_max;
-      const minVal = fallbackMin ? +(fallbackMin / 10000).toFixed(2) : 0;
-      const maxVal = fallbackMax ? +(fallbackMax / 10000).toFixed(2) : minVal;
       return {
-        min: minVal,
-        max: maxVal,
-        latest: maxVal,
+        min: 0,
+        max: 0,
+        latest: 0,
         isFromRealTxs: false,
         recent1MonthCount: 0,
+        latestTx: null as any,
       };
     }
 
@@ -697,7 +692,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     const allPrices = validPeriodTxs.map((t: any) => t.rawPrice);
     const periodMin = Math.min(...allPrices);
     const periodMax = Math.max(...allPrices);
-    const latestTx = validPeriodTxs[0];
+    const latestTx = validPeriodTxs[0]; // 가장 마지막 체결 거래
 
     // 최근 1개월(31일) 내 실거래 필터
     const latestDateStr = latestTx.date;
@@ -721,7 +716,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       return latestTime - tTime <= ONE_MONTH_MS;
     });
 
-    // 최근 1개월 내 거래가 2건 이상이면 그 범위의 min/max/avg, 1건이면 그 거래, 없으면 전체 실거래 기준
+    // 최근 1개월 내 거래가 2건 이상이면 그 범위의 평균, 그 외에는 가장 마지막 거래(latestTx) 반영
     let displayMin = periodMin;
     let displayMax = periodMax;
     let displayLatest = latestTx.rawPrice;
@@ -742,8 +737,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       latest: +(displayLatest / 10000).toFixed(2),
       isFromRealTxs: true,
       recent1MonthCount: recent1MonthTxs.length,
+      latestTx,
     };
-  }, [validPeriodTxs, tradeType, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
+  }, [validPeriodTxs]);
 
   const displayMinPrice = priceStatsSummary.min;
   const displayMaxPrice = priceStatsSummary.max;
@@ -757,17 +753,15 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return `${price.toLocaleString()}만원`;
   };
 
-  // 실거래 가격 계산: [완전 일원화] priceStatsSummary와 100% 동기화하여 화면 내 자체 모순 원천 차단
+  // 실거래 가격 계산: [가상 데이터 배제] 실거래가 있으면 마지막 거래 반영, 확인되지 않으면 "최근 거래 없음" 표출
   const currentAverageDisplay = useMemo(() => {
     if (priceStatsSummary.isFromRealTxs && priceStatsSummary.latest > 0) {
       const manwon = Math.round(priceStatsSummary.latest * 10000);
       return formatPrice(manwon);
     }
-    const fallbackPrice = tradeType === "매매"
-      ? (apt.price_max || apt.price_min || 0)
-      : (apt.rent_max || apt.rent_min || 0);
-    return fallbackPrice > 0 ? formatPrice(fallbackPrice) : "-";
-  }, [priceStatsSummary, tradeType, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
+    // 거래일/실거래가 확인되지 않는 경우 임의 시세를 대신 띄우지 않고 "최근 거래 없음" 표출
+    return "최근 거래 없음";
+  }, [priceStatsSummary]);
 
   // 실거래 매매 대표가 (만원 단위, 지도 마커용) - priceStatsSummary와 완전 동기화
   const realSaleAvgManwon = useMemo(() => {
@@ -1065,9 +1059,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     : selectedArea === "전체"
                       ? `전체 평형 (전용 ${displayAreaSqm}㎡ 기준)`
                       : `전용 ${selectedArea} 기준`)
-                  : (activeTxs.length > 0
-                    ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 최근 1개월 평균/최종 실거래`
-                    : `매매 기준 · ${apt.area_pyeong || 34}평형 · 국토교통부 최종 실거래`)}
+                  : (priceStatsSummary.isFromRealTxs && priceStatsSummary.latestTx
+                    ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 최종 실거래 (${priceStatsSummary.latestTx.date} 체결)`
+                    : `국토교통부 실거래가 공개시스템 기준 · 최근 신고 내역 없음`)}
               </p>
             </div>
 

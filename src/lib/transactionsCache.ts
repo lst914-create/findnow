@@ -134,26 +134,8 @@ export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; ren
     }
   }
 
-  // 2. 일반 단지의 경우: 단지 원본 최고가(price_max)를 기준으로 평형별 정합성 유지
-  const basePrice = apt.price_max || apt.price_min || 50000;
-  const areaSqm = apt.area_sqm || 84;
-  const bYear = apt.built_year || 2016;
-  const umd = apt.district || "";
-
-  const trades: CachedTrade[] = [
-    { aptName: name, dealAmount: basePrice, dealYear: 2026, dealMonth: 10, dealDay: 20, excluUseAr: areaSqm, floor: 12, buildYear: bYear, umdNm: umd },
-    { aptName: name, dealAmount: Math.round(basePrice * 1.03), dealYear: 2026, dealMonth: 8, dealDay: 14, excluUseAr: areaSqm, floor: 18, buildYear: bYear, umdNm: umd },
-    { aptName: name, dealAmount: Math.round(basePrice * 0.97), dealYear: 2026, dealMonth: 5, dealDay: 28, excluUseAr: areaSqm, floor: 7, buildYear: bYear, umdNm: umd },
-    { aptName: name, dealAmount: Math.round(basePrice * 0.95), dealYear: 2025, dealMonth: 11, dealDay: 9, excluUseAr: areaSqm, floor: 4, buildYear: bYear, umdNm: umd },
-  ];
-
-  const jeonseBase = apt.rent_max || apt.rent_min || Math.round(basePrice * 0.65);
-  const rents: CachedRent[] = [
-    { aptName: name, depositAmount: jeonseBase, monthlyRent: 0, dealYear: 2026, dealMonth: 9, dealDay: 15, excluUseAr: areaSqm, floor: 10, buildYear: bYear, umdNm: umd },
-    { aptName: name, depositAmount: Math.round(jeonseBase * 0.98), monthlyRent: 0, dealYear: 2026, dealMonth: 6, dealDay: 22, excluUseAr: areaSqm, floor: 15, buildYear: bYear, umdNm: umd },
-    { aptName: name, depositAmount: Math.round(jeonseBase * 0.96), monthlyRent: 0, dealYear: 2025, dealMonth: 12, dealDay: 18, excluUseAr: areaSqm, floor: 5, buildYear: bYear, umdNm: umd },
-  ];
-
-  return { trades, rents, isPreset: false };
+  // 2. 일반 단지의 경우: 임의 가상 거래 데이터 합성을 전면 금지하고 빈 배열 반환
+  // 국토교통부 실제 공공데이터가 없는 경우 임의 거래를 가짜로 생성하지 않고 "최근 거래 없음"으로 정직하게 표출
+  return { trades: [], rents: [], isPreset: false };
 }
 

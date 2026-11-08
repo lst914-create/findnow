@@ -2421,7 +2421,12 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         <RealtorAdSection aptId={apt.id} aptName={apt.name} />
 
         {/* P3: AI 심층 분석 유료 리포트 미리보기 */}
-        <ProReportPreviewSection aptId={apt.id} aptName={apt.name} apt={apt} />
+        <ProReportPreviewSection
+          aptId={apt.id}
+          aptName={apt.name}
+          apt={apt}
+          infraSchools={infraData?.schools}
+        />
 
         {/* ===== 단지별 커뮤니티 & 실시간 토론창구 (입지 분석 밑) ===== */}
         <AptCommunitySection

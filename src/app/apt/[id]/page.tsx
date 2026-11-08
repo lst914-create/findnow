@@ -2066,31 +2066,31 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     return (
                       <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
                         {/* 헤더 */}
-                        <div className="flex items-center justify-between pb-1 border-b border-slate-100">
-                          <div className="flex items-center gap-1.5">
+                        <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100 flex-wrap sm:flex-nowrap">
+                          <div className="flex items-center gap-1.5 shrink-0">
                             <span className="text-sm">🚏</span>
-                            <span className="text-xs font-extrabold text-slate-800">{busInfo.stopName}</span>
+                            <span className="text-xs font-extrabold text-slate-800 whitespace-nowrap">{busInfo.stopName}</span>
                             {busInfo.stopId && (
                               <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 text-slate-600 font-mono font-semibold">
                                 {busInfo.stopId}
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] font-bold text-indigo-600">{busInfo.summary}</div>
+                          <div className="text-[10px] font-bold text-indigo-600 whitespace-nowrap text-right">{busInfo.summary}</div>
                         </div>
 
                         {/* 실제 검증된 노선만 노출 (가짜 더미 노선 완전 배제) */}
                         {busInfo.hasVerifiedRoutes && busInfo.routes.length > 0 ? (
                           <div className="space-y-2">
                             {busInfo.routes.map((route, i) => (
-                              <div key={i} className="flex items-center justify-between gap-2 bg-white rounded-lg p-2 border border-slate-100">
-                                <div className="flex items-center gap-2">
-                                  <span className={`flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${typeColor[route.type] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
+                              <div key={i} className="flex items-center justify-between gap-2.5 bg-white rounded-lg p-2.5 border border-slate-100">
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className={`shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${typeColor[route.type] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
                                     {route.type}
                                   </span>
-                                  <span className="text-xs font-black text-slate-900">{route.number}</span>
+                                  <span className="text-xs font-black text-slate-900 whitespace-nowrap">{route.number}</span>
                                 </div>
-                                <span className="text-[11px] text-slate-500 font-medium truncate text-right">
+                                <span className="text-[11px] text-slate-500 font-medium truncate text-right min-w-0 flex-1">
                                   {route.dest}
                                 </span>
                               </div>

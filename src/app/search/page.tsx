@@ -429,20 +429,20 @@ function ApartmentSearchContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24 w-full max-w-full overflow-x-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 group shrink-0">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/25 group-hover:shadow-brand-500/40 transition-shadow">
               <span className="text-white text-base sm:text-lg font-bold">F</span>
             </div>
             <span className="text-lg sm:text-xl font-bold gradient-text">찾아줘</span>
           </Link>
 
-          <div className="flex items-center gap-4 text-sm font-semibold text-slate-600">
+          <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-semibold text-slate-600 shrink-0">
             <Link href="/" className="hover:text-indigo-600 transition-colors">홈</Link>
-            <span className="text-indigo-600 font-bold border-b-2 border-indigo-600 pb-0.5">🏢 아파트 찾기</span>
+            <span className="text-indigo-600 font-bold border-b-2 border-indigo-600 pb-0.5 whitespace-nowrap">🏢 아파트 찾기</span>
             <Link href="/redevelopment" className="hover:text-indigo-600 transition-colors hidden sm:inline">🔨 재개발</Link>
             <Link href="/subscriptions" className="hover:text-indigo-600 transition-colors hidden sm:inline">🏗️ 분양</Link>
             <Link href="/regional" className="hover:text-indigo-600 transition-colors hidden sm:inline">📍 지역정보</Link>
@@ -453,14 +453,14 @@ function ApartmentSearchContent() {
       </header>
 
       {/* Main Container */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      <main className="w-full max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-8 space-y-6 overflow-x-hidden">
         {/* Title Banner */}
-        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden">
           <div className="relative z-10 space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/30 text-indigo-200 text-xs font-bold backdrop-blur-sm border border-indigo-400/20">
               <span>⚡</span> 전국 24,000+ 아파트 실거래 데이터 완벽 연동
             </div>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+            <h1 className="text-xl sm:text-4xl font-extrabold tracking-tight">
               원하는 조건의 아파트를 찾아보세요
             </h1>
             <p className="text-indigo-200 text-xs sm:text-sm max-w-xl">
@@ -471,37 +471,39 @@ function ApartmentSearchContent() {
         </div>
 
         {/* 🌟 2가지 검색 방식 선택 탭 바 (스마트 조합 검색 VS 상세 조건 설정) */}
-        <div className="flex items-center gap-2 p-1.5 bg-slate-200/70 rounded-2xl max-w-md mx-auto sm:mx-0 shadow-inner">
+        <div className="flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 bg-slate-200/70 rounded-2xl max-w-md mx-auto sm:mx-0 shadow-inner w-full">
           <button
             type="button"
             onClick={() => setSearchMode("nlp")}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 ${
               searchMode === "nlp"
-                ? "bg-white text-indigo-700 shadow-md shadow-slate-300 scale-[1.02]"
+                ? "bg-white text-indigo-700 shadow-md shadow-slate-300 scale-[1.01]"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <span>💬</span>
-            <span>검색어 직접 입력 (스마트 조합)</span>
+            <span className="sm:hidden whitespace-nowrap">스마트 검색</span>
+            <span className="hidden sm:inline whitespace-nowrap">검색어 직접 입력 (스마트 조합)</span>
           </button>
           <button
             type="button"
             onClick={() => setSearchMode("filter")}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-1 sm:gap-2 cursor-pointer min-w-0 ${
               searchMode === "filter"
-                ? "bg-white text-indigo-700 shadow-md shadow-slate-300 scale-[1.02]"
+                ? "bg-white text-indigo-700 shadow-md shadow-slate-300 scale-[1.01]"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
             <span>⚙️</span>
-            <span>상세 조건 설정 (필터 검색)</span>
+            <span className="sm:hidden whitespace-nowrap">조건 필터 검색</span>
+            <span className="hidden sm:inline whitespace-nowrap">상세 조건 설정 (필터 검색)</span>
           </button>
         </div>
 
         {/* ===== 방식 1: 검색어 조합 스마트 입력 UI (두번째 첨부 이미지 스타일) ===== */}
         {searchMode === "nlp" && (
-          <div className="bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/60 rounded-3xl border border-indigo-100 shadow-sm p-6 sm:p-10 text-center space-y-4">
-            <h2 className="text-xl sm:text-3xl font-extrabold text-slate-900 leading-snug">
+          <div className="bg-gradient-to-br from-indigo-50/80 via-white to-blue-50/60 rounded-3xl border border-indigo-100 shadow-sm p-4 sm:p-10 text-center space-y-4 w-full max-w-full overflow-hidden">
+            <h2 className="text-lg sm:text-3xl font-extrabold text-slate-900 leading-snug break-keep">
               내가 찾는 부동산 정보,<br className="sm:hidden" />
               <span className="text-indigo-600 ml-1">한 눈에 직관적으로 비교해줘</span>
             </h2>
@@ -511,10 +513,10 @@ function ApartmentSearchContent() {
             </p>
 
             {/* 통합 검색창 */}
-            <form onSubmit={handleNlpFormSubmit} className="max-w-2xl mx-auto pt-2">
-              <div className="relative flex items-center bg-white rounded-2xl border-2 border-indigo-200/90 hover:border-indigo-500 focus-within:border-indigo-600 focus-within:ring-4 focus-within:ring-indigo-100 shadow-md p-1.5 sm:p-2 transition-all">
-                <div className="pl-3.5 text-slate-400 shrink-0">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <form onSubmit={handleNlpFormSubmit} className="max-w-2xl mx-auto pt-2 w-full">
+              <div className="relative flex items-center bg-white rounded-2xl border-2 border-indigo-200/90 hover:border-indigo-500 focus-within:border-indigo-600 focus-within:ring-4 focus-within:ring-indigo-100 shadow-md p-1 sm:p-2 transition-all w-full">
+                <div className="pl-2.5 sm:pl-3.5 text-slate-400 shrink-0">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
@@ -522,17 +524,17 @@ function ApartmentSearchContent() {
                   type="text"
                   value={nlpQuery}
                   onChange={(e) => setNlpQuery(e.target.value)}
-                  placeholder="예: 잠실역 5억대 아파트 / 구리 토평동 25평 / 마포 10억 이하"
-                  className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-transparent outline-none text-slate-900 placeholder:text-slate-400 font-medium"
+                  placeholder="예: 잠실역 5억대 / 구리 토평동 25평"
+                  className="flex-1 min-w-0 px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-base bg-transparent outline-none text-slate-900 placeholder:text-slate-400 font-medium"
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="shrink-0 px-5 sm:px-8 py-2.5 sm:py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-80"
+                  className="shrink-0 px-3.5 sm:px-8 py-2 sm:py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all cursor-pointer flex items-center justify-center gap-1 disabled:opacity-80 text-xs sm:text-base whitespace-nowrap"
                 >
                   {loading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       <span>검색중</span>
                     </>
                   ) : (
@@ -543,8 +545,8 @@ function ApartmentSearchContent() {
             </form>
 
             {/* 추천 검색어 칩 */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-2">
-              <span className="text-xs text-slate-400 font-semibold mr-1">💡 추천 키워드:</span>
+            <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 pt-2 max-w-full">
+              <span className="text-xs text-slate-400 font-semibold mr-1 shrink-0">💡 추천 키워드:</span>
               {[
                 "잠실역 5억대 아파트",
                 "구리 토평동 25평",
@@ -557,7 +559,7 @@ function ApartmentSearchContent() {
                   key={keyword}
                   type="button"
                   onClick={() => triggerQuickSearch(keyword)}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/60 transition-all shadow-2xs cursor-pointer"
+                  className="text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-700 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50/60 transition-all shadow-2xs cursor-pointer break-keep"
                 >
                   #{keyword}
                 </button>
@@ -566,9 +568,9 @@ function ApartmentSearchContent() {
 
             {/* 검색 파싱 분석 결과 배지 */}
             {nlpSummary && (
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200/80 rounded-2xl text-indigo-900 text-xs sm:text-sm font-semibold shadow-2xs animate-fadeIn">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200/80 rounded-2xl text-indigo-900 text-xs sm:text-sm font-semibold shadow-2xs animate-fadeIn max-w-full">
                 <span>🎯</span>
-                <span>{nlpSummary}</span>
+                <span className="break-keep">{nlpSummary}</span>
               </div>
             )}
           </div>

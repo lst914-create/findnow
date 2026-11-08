@@ -540,7 +540,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     const validTxs = rawTxs.filter((t: any) => {
       const amount = t.dealAmount || t.depositAmount;
       if (!amount || amount <= 0) return false;
-      if (t.floor === 1 || t.floor === "1" || t.floor === "1층") return false;
+      // 1층 제외: 숫자/문자열/NaN층 등 모든 형식 견고 처리
+      const floorRaw = t.floor;
+      const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
+      if (!isNaN(floorNum) && floorNum <= 1) return false;
       if (tradeType === "전월세" && t.monthlyRent && t.monthlyRent > 0) return false;
       return true;
     });
@@ -650,19 +653,23 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const validPeriodTxs = useMemo(() => {
     const nonFirstFloor = activeTxs.filter((t: any) => {
       if (!t.rawPrice || t.rawPrice <= 0) return false;
-      if (t.floor === "1층" || t.floorNum === 1 || t.floor === 1 || t.floor === "1") return false;
+      // 1층 제외: floor 형식(숫자/문자열/"1층"/NaN층 등) 모두 견고 처리
+      const floorRaw = t.floorNum ?? t.floor;
+      const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
+      if (!isNaN(floorNum) && floorNum <= 1) return false;
       if (tradeType === "전월세" && t.monthlyRent && t.monthlyRent > 0) return false;
       return true;
     });
 
     if (nonFirstFloor.length <= 1) return nonFirstFloor;
 
-    // 정상 거래가 2건 이상인 경우, 정상 시세의 절반(55% 미만) 수준으로 급락한 비정상/특수거래(직거래, 증여성 거래 등) 배제
+    // 정상 거래가 2건 이상인 경우, 정상 시세의 60% 미만으로 급락한 비정상/특수거래(직거래, 증여성 거래 등) 배제
+    // 임계값: 가격대 무관하게 전국 모든 아파트에 적용 (10억 이상 한정 조건 제거)
     const prices = nonFirstFloor.map((t: any) => t.rawPrice).sort((a: number, b: number) => a - b);
     const medianPrice = prices[Math.floor(prices.length / 2)];
 
     return nonFirstFloor.filter((t: any) => {
-      if (medianPrice >= 100000 && t.rawPrice < medianPrice * 0.6) {
+      if (medianPrice > 0 && t.rawPrice < medianPrice * 0.6) {
         // 예: 인창어반포레 정상 시세 13.5억인데 7억 직거래인 경우 대표 시세 산출에서 제외
         return false;
       }
@@ -1195,14 +1202,30 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {activeTxs.slice(0, showCount).map((tx: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-blue-50/30 transition-colors">
+                        {activeTxs.slice(0, showCount).map((tx: any, idx: number) => {
+                          // 1층 여부 판별 (대표시세 제외 대상)
+                          const floorRaw = tx.floorNum ?? tx.floor;
+                          const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
+                          const isFirstFloor = !isNaN(floorNum) && floorNum <= 1;
+                          // 비정상 저가 거래 여부 (1층 아닌데 중간가 대비 60% 미만)
+                          const validMedian = validPeriodTxs.length > 0
+                            ? validPeriodTxs.map((v: any) => v.rawPrice).sort((a: number, b: number) => a - b)[Math.floor(validPeriodTxs.length / 2)]
+                            : 0;
+                          const isAbnormalLow = !isFirstFloor && validMedian > 0 && tx.rawPrice > 0 && tx.rawPrice < validMedian * 0.6;
+                          const isExcludedFromAvg = isFirstFloor || isAbnormalLow;
+                          return (
+                          <tr key={idx} className={`hover:bg-blue-50/30 transition-colors ${isExcludedFromAvg ? "opacity-60" : ""}`}>
                             <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">
-                              <div className="flex items-center gap-1 whitespace-nowrap">
+                              <div className="flex items-center gap-1 whitespace-nowrap flex-wrap">
                                 <span className="font-medium text-slate-600 text-[11px] sm:text-xs">{tx.date}</span>
                                 {tx.isReal && (
                                   <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
                                     실거래
+                                  </span>
+                                )}
+                                {isExcludedFromAvg && (
+                                  <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-slate-100 text-slate-400 border border-slate-200 whitespace-nowrap">
+                                    {isFirstFloor ? "1층제외" : "특수거래"}
                                   </span>
                                 )}
                               </div>
@@ -1213,11 +1236,14 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                             <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-500 text-center text-xs sm:text-sm whitespace-nowrap">
                               {tx.floor}
                             </td>
-                            <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 font-bold text-blue-600 text-right text-xs sm:text-sm tracking-tight whitespace-nowrap">
-                              {tx.price}
+                            <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 font-bold text-right text-xs sm:text-sm tracking-tight whitespace-nowrap">
+                              <span className={isExcludedFromAvg ? "text-slate-400" : "text-blue-600"}>
+                                {tx.price}
+                              </span>
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>

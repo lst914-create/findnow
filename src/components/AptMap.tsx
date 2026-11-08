@@ -782,15 +782,190 @@ export default function AptMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters, isMapReady, highlightId, livePriceLoaded]);
 
-  /* ── 카카오 Places API로 누락 단지 실시간 보완 ──────────────── */
+  /* ── 카카오 Places API로 소규모 누락 단지 실시간 보완 ──────────────── */
   useEffect(() => {
     if (!isMapReady || !mapRef.current || !window.kakao?.maps) return;
 
     const kakaoMaps = window.kakao.maps;
-    // ※ Supabase에 전국 22,568개 단지 좌표가 100% 등록되었으므로
-    // 허위/엉뚱한 장소에 마커를 유발하는 카카오 임의 장소 보강 로직은 영구 비활성화합니다.
-    kakaoOnlyOverlaysRef.current.forEach((o) => o.setMap(null));
-    kakaoOnlyOverlaysRef.current = [];
+    const map = mapRef.current;
+
+    const fetchKakaoOnlyMarkers = async () => {
+      if (!map) return;
+      const level = map.getLevel();
+      // 동네/단지 탐색 레벨 (레벨 5 이하)에서만 동작하여 소규모 단지 복원
+      if (level > 5) {
+        kakaoOnlyOverlaysRef.current.forEach((o) => o.setMap(null));
+        kakaoOnlyOverlaysRef.current = [];
+        return;
+      }
+
+      const bounds = map.getBounds();
+      if (!bounds) return;
+
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+      const centerLat = (sw.getLat() + ne.getLat()) / 2;
+      const centerLng = (sw.getLng() + ne.getLng()) / 2;
+
+      const viewportKey = `${centerLat.toFixed(3)},${centerLng.toFixed(3)},${level}`;
+      if (viewportKey === lastViewportKeyRef.current) return;
+      lastViewportKeyRef.current = viewportKey;
+
+      const latSpan = ne.getLat() - sw.getLat();
+      const radiusMeters = Math.min(Math.max(Math.round(latSpan * 111000 * 0.6), 400), 2500);
+
+      try {
+        const pages = [1, 2];
+        const fetchPromises = pages.map((page) => {
+          const url = `/api/kakao/places?` +
+            `query=${encodeURIComponent("아파트")}` +
+            `&x=${centerLng.toFixed(6)}&y=${centerLat.toFixed(6)}` +
+            `&radius=${radiusMeters}&size=15&page=${page}`;
+          return fetch(url)
+            .then((r) => (r.ok ? r.json() : null))
+            .catch(() => null);
+        });
+
+        const results = await Promise.all(fetchPromises);
+        const docs: Array<{ place_name: string; x: string; y: string; category_name: string }> = [];
+        results.forEach((res) => {
+          if (res?.documents) docs.push(...res.documents);
+        });
+
+        // 실제 아파트 주거시설만 엄격 필터 (상가, 사무소, 부속시설 제외)
+        const aptDocs = docs.filter((d) => {
+          if (!d.category_name || !d.category_name.includes("주거시설")) return false;
+          if (!d.category_name.includes("아파트")) return false;
+          const nonRes = ["상가", "관리사무소", "노인정", "경로당", "어린이집", "유치원", "공인중개사", "부동산", "카페", "편의점", "주차장", "놀이터", "분리수거", "행정복지센터", "주민센터"];
+          if (nonRes.some((w) => d.place_name.includes(w))) return false;
+          return true;
+        });
+
+        // 기존 카카오 전용 마커 정리
+        kakaoOnlyOverlaysRef.current.forEach((o) => o.setMap(null));
+        kakaoOnlyOverlaysRef.current = [];
+
+        // 화면 내 마스터 DB 단지 목록 (중복 검사용)
+        const visibleDbMarkers = APT_MARKERS.filter(
+          (a) => a.lat >= sw.getLat() && a.lat <= ne.getLat() && a.lng >= sw.getLng() && a.lng <= ne.getLng()
+        );
+
+        const addedSet = new Set<string>();
+
+        aptDocs.forEach((doc, idx) => {
+          const lat = parseFloat(doc.y);
+          const lng = parseFloat(doc.x);
+          if (!lat || !lng) return;
+
+          const normKakao = normalizeAptName(doc.place_name);
+
+          // 이미 우리 DB에 있는 단지는 중복 방지 (이름 일치 또는 80m 이내)
+          const isAlreadyInDb = visibleDbMarkers.some((m) => {
+            const normDb = normalizeAptName(m.name);
+            if (normKakao.length >= 2 && normDb.length >= 2) {
+              if (normKakao.includes(normDb) || normDb.includes(normKakao)) return true;
+            }
+            const dist = Math.hypot(m.lat - lat, m.lng - lng);
+            return dist < 0.0008; // 약 80m
+          });
+          if (isAlreadyInDb) return;
+
+          // 동일 좌표 중복 추가 방지
+          const dedupKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+          if (addedSet.has(dedupKey)) return;
+          addedSet.add(dedupKey);
+
+          // 가격 산출
+          let finalPriceStr: string | undefined;
+          let finalPyeong = 32;
+
+          let matchedDetail =
+            livePriceDetailCacheRef.current.get(normKakao) ||
+            livePriceDetailCacheRef.current.get(normalizeAptName(doc.place_name));
+
+          if (!matchedDetail && normKakao.length >= 2) {
+            for (const [key, val] of livePriceDetailCacheRef.current.entries()) {
+              if (key.length >= 2 && (normKakao.includes(key) || key.includes(normKakao))) {
+                matchedDetail = val;
+                break;
+              }
+            }
+          }
+
+          if (matchedDetail) {
+            finalPriceStr = matchedDetail.formatted;
+            finalPyeong = matchedDetail.pyeong || 32;
+          }
+
+          // 인근 마스터 DB 단지(반경 250m 이내) 기반 시세 보정
+          if (!finalPriceStr) {
+            let nearestDbApt: AptMarker | null = null;
+            let minDist = 0.0025; // 약 250m
+            visibleDbMarkers.forEach((m) => {
+              const d = Math.hypot(m.lat - lat, m.lng - lng);
+              if (d < minDist && m.priceNum > 0) {
+                minDist = d;
+                nearestDbApt = m;
+              }
+            });
+
+            if (nearestDbApt) {
+              finalPriceStr = formatPrice((nearestDbApt as any).priceNum);
+              finalPyeong = (nearestDbApt as any).pyeong || 32;
+            }
+          }
+
+          if (!finalPriceStr) return;
+
+          const viewers = 25 + ((idx * 19) % 70);
+          const el = document.createElement("div");
+          el.className = "apt-kakao-only-marker";
+          el.innerHTML = kakaoOnlyMarkerHtml(doc.place_name, viewers, finalPriceStr, finalPyeong);
+          el.style.cursor = "pointer";
+
+          el.addEventListener("click", () => {
+            const kakaoUrl = `https://map.kakao.com/link/search/${encodeURIComponent(doc.place_name)}`;
+            window.open(kakaoUrl, "_blank");
+          });
+
+          const overlay = new kakaoMaps.CustomOverlay({
+            position: new kakaoMaps.LatLng(lat, lng),
+            content: el,
+            yAnchor: 1.0,
+            zIndex: 10,
+          });
+
+          overlay.setMap(map);
+          kakaoOnlyOverlaysRef.current.push(overlay);
+        });
+
+        // 소규모 보강 단지 수를 상단 단지 수 배지에 합산
+        if (kakaoOnlyOverlaysRef.current.length > 0) {
+          setVisibleCount((prev) => prev + kakaoOnlyOverlaysRef.current.length);
+        }
+      } catch (e) {
+        console.warn("Kakao Places API error:", e);
+      }
+    };
+
+    const debouncedFetch = () => {
+      if (kakaoSearchTimerRef.current) clearTimeout(kakaoSearchTimerRef.current);
+      kakaoSearchTimerRef.current = setTimeout(fetchKakaoOnlyMarkers, 400);
+    };
+
+    fetchKakaoOnlyMarkers();
+    kakaoMaps.event.addListener(map, "dragend", debouncedFetch);
+    kakaoMaps.event.addListener(map, "zoom_changed", debouncedFetch);
+    kakaoMaps.event.addListener(map, "idle", debouncedFetch);
+
+    return () => {
+      if (kakaoSearchTimerRef.current) clearTimeout(kakaoSearchTimerRef.current);
+      kakaoMaps.event.removeListener(map, "dragend", debouncedFetch);
+      kakaoMaps.event.removeListener(map, "zoom_changed", debouncedFetch);
+      kakaoMaps.event.removeListener(map, "idle", debouncedFetch);
+      kakaoOnlyOverlaysRef.current.forEach((o) => o.setMap(null));
+      kakaoOnlyOverlaysRef.current = [];
+    };
   }, [isMapReady]);
 
   /* ── 외부 center prop 변경 시 지도 중심 및 줌 레벨 이동 (검색 결과 반영) ── */

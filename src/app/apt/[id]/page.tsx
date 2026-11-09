@@ -6,6 +6,10 @@ import dynamic from "next/dynamic";
 import {
   LineChart,
   Line,
+  ComposedChart,
+  Bar,
+  ReferenceDot,
+  ReferenceLine,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -218,13 +222,31 @@ const APARTMENT_DATA: Record<string, any> = Object.fromEntries(
   ])
 );
 
-// 커스텀 툴팁
+// 호갱노노 스타일 정밀 툴팁 (가격 + 월간 거래량 표시)
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
+    const pricePayload = payload.find((p: any) => p.dataKey === "price");
+    const volumePayload = payload.find((p: any) => p.dataKey === "volume");
+    const priceVal = pricePayload ? pricePayload.value : null;
+    const volVal = volumePayload ? volumePayload.value : (pricePayload?.payload?.volume || 0);
+    const isReal = pricePayload?.payload?.isReal;
+
     return (
-      <div className="bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-lg text-sm">
-        <p className="text-slate-500 text-xs mb-1">{label}</p>
-        <p className="font-bold text-blue-600">{payload[0].value}억원</p>
+      <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/60 rounded-xl px-3.5 py-2.5 shadow-2xl text-xs z-50">
+        <p className="text-slate-400 font-medium text-[11px] mb-1">{label}</p>
+        {priceVal ? (
+          <p className="font-extrabold text-indigo-300 text-sm tracking-tight">{priceVal}억원</p>
+        ) : null}
+        {volVal > 0 ? (
+          <p className="text-emerald-400 text-[11px] mt-1 font-semibold flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            월간 실거래 {volVal}건 체결
+          </p>
+        ) : (
+          <p className="text-slate-400 text-[10px] mt-0.5">
+            {isReal ? "실거래 체결" : "신고 거래 없음 (직전 시세 유지)"}
+          </p>
+        )}
       </div>
     );
   }
@@ -603,18 +625,17 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return source.filter((r) => normalizeAreaStr(r.excluUseAr) === selectedArea);
   }, [apiRents, selectedArea, officialAreaDistributions]);
 
-  // 36개월 풀 타임라인 기반 국토부 실거래가 월별 추이 (첫 화면 0초부터 완전한 곡선 보장 & 깜빡임 0)
+  // 36개월 풀 타임라인 기반 국토부 실거래가 월별 추이 (호갱노노 스타일: 가격 계단/곡선 + 월별 거래량 볼륨)
   const activeTrend = useMemo(() => {
     const rawTxs = tradeType === "매매" ? filteredApiTrades : filteredApiRents;
     const baseMin = tradeType === "매매" ? (apt.price_min || 50000) : (apt.rent_min || 30000);
     const baseMax = tradeType === "매매" ? (apt.price_max || baseMin) : (apt.rent_max || baseMin);
     const fallbackCenter = (baseMin + baseMax) / 2;
 
-    // 1. 유효 실거래 월별 평균 집계 (1층 제외 & 전월세는 순수 전세)
+    // 1. 유효 실거래 월별 집계 (1층 제외 & 전월세는 순수 전세)
     const validTxs = rawTxs.filter((t: any) => {
       const amount = t.dealAmount || t.depositAmount;
       if (!amount || amount <= 0) return false;
-      // 1층 제외: 숫자/문자열/NaN층 등 모든 형식 견고 처리
       const floorRaw = t.floor;
       const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
       if (!isNaN(floorNum) && floorNum <= 1) return false;
@@ -631,9 +652,11 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     }
 
     const monthlyRealAvg = new Map<string, number>();
+    const monthlyCount = new Map<string, number>();
     for (const [ym, amounts] of monthlyMap.entries()) {
       const avg = Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length);
       monthlyRealAvg.set(ym, avg);
+      monthlyCount.set(ym, amounts.length);
     }
 
     // 2. 기준 종료 월 결정 (실제 거래 최신 월 또는 현재 기준)
@@ -649,7 +672,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       }
     }
 
-    // 3. 36개월 연속 타임라인 생성 (과거 35개월 전부터 최신 월까지)
+    // 3. 36개월 연속 타임라인 생성
     const timeline: { ymKey: string }[] = [];
     for (let i = 35; i >= 0; i--) {
       const d = new Date(endYear, endMonth - 1 - i, 1);
@@ -658,60 +681,35 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       timeline.push({ ymKey: `${y}.${m}` });
     }
 
-    // 최신 월의 실거래가 or 기본 중심가
-    const latestAvg = monthlyRealAvg.get(timeline[timeline.length - 1].ymKey) || fallbackCenter;
-
-    // 4. 보간용 앵커 포인트 수집
-    const anchors: { index: number; price: number }[] = [];
-    timeline.forEach((item, idx) => {
-      if (monthlyRealAvg.has(item.ymKey)) {
-        anchors.push({ index: idx, price: monthlyRealAvg.get(item.ymKey)! });
-      }
-    });
-
-    if (anchors.length === 0) {
-      // 실거래 데이터가 0건이면 임의 가상 곡선을 만들지 않고 빈 배열 반환 ("최근 거래 없음" 상태 유지)
+    if (monthlyRealAvg.size === 0) {
       return [];
-    } else {
-      if (anchors[0].index > 0) {
-        const estPast = Math.round(anchors[0].price * (0.90 + (anchors[0].index / 35) * 0.10));
-        anchors.unshift({ index: 0, price: estPast });
-      }
-      if (anchors[anchors.length - 1].index < 35) {
-        anchors.push({ index: 35, price: anchors[anchors.length - 1].price });
-      }
     }
 
-    // 5. 36개월 각 월 채우기 (실제 거래월은 100% 국토부 체결가, 없는 월은 연속 보간)
-    const result: { date: string; price: number }[] = [];
-    let anchorIdx = 0;
+    // 4. 호갱노노 스타일 연속 가격 궤적 및 거래량 생성 (거래 없는 월은 직전 실거래가 유지)
+    const sortedRealEntries = Array.from(monthlyRealAvg.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    const firstRealPrice = sortedRealEntries[0][1];
 
-    for (let i = 0; i < timeline.length; i++) {
-      const ym = timeline[i].ymKey;
+    let currentHoldingPrice = firstRealPrice;
+    const result: { date: string; price: number; volume: number; isReal: boolean }[] = [];
+
+    for (const item of timeline) {
+      const ym = item.ymKey;
       if (monthlyRealAvg.has(ym)) {
+        currentHoldingPrice = monthlyRealAvg.get(ym)!;
         result.push({
           date: ym,
-          price: +(monthlyRealAvg.get(ym)! / 10000).toFixed(2),
+          price: +(currentHoldingPrice / 10000).toFixed(2),
+          volume: monthlyCount.get(ym) || 1,
+          isReal: true,
         });
-        continue;
+      } else {
+        result.push({
+          date: ym,
+          price: +(currentHoldingPrice / 10000).toFixed(2),
+          volume: 0,
+          isReal: false,
+        });
       }
-
-      while (anchorIdx < anchors.length - 1 && anchors[anchorIdx + 1].index < i) {
-        anchorIdx++;
-      }
-
-      const p0 = anchors[anchorIdx];
-      const p1 = anchors[anchorIdx + 1] || p0;
-      let interp = p0.price;
-      if (p1.index !== p0.index) {
-        const prog = (i - p0.index) / (p1.index - p0.index);
-        interp = Math.round(p0.price + (p1.price - p0.price) * prog);
-      }
-
-      result.push({
-        date: ym,
-        price: +(interp / 10000).toFixed(2),
-      });
     }
 
     return result;
@@ -720,6 +718,41 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const chartData = chartRange === "최근 1년"
     ? activeTrend.slice(-12)
     : activeTrend.slice(-36);
+
+  // 호갱노노 스타일 최고가 / 최저가 / 최신 거래 핀포인트 계산
+  const chartHighlights = useMemo(() => {
+    if (!chartData || chartData.length === 0) {
+      return { maxPoint: null, minPoint: null, latestPoint: null, maxVolume: 1, turnoverRatio: "0" };
+    }
+
+    const realPoints = chartData.filter((d) => d.isReal);
+    const targetPoints = realPoints.length > 0 ? realPoints : chartData;
+
+    let maxP = targetPoints[0];
+    let minP = targetPoints[0];
+
+    for (const p of targetPoints) {
+      if (p.price > maxP.price) maxP = p;
+      if (p.price < minP.price) minP = p;
+    }
+
+    const latestP = realPoints.length > 0 ? realPoints[realPoints.length - 1] : chartData[chartData.length - 1];
+    const maxVol = Math.max(...chartData.map((d) => d.volume), 1);
+
+    // 단지 총 세대수 대비 실거래 회전율 계산
+    const totalTxs = tradeType === "매매" ? filteredApiTrades.length : filteredApiRents.length;
+    const households = apt.household_count || 500;
+    const turnover = ((totalTxs / households) * 100).toFixed(1);
+
+    return {
+      maxPoint: maxP,
+      minPoint: minP,
+      latestPoint: latestP,
+      maxVolume: maxVol,
+      turnoverRatio: turnover,
+      totalTxs,
+    };
+  }, [chartData, tradeType, filteredApiTrades.length, filteredApiRents.length, apt.household_count]);
 
   // 1층 제외 & 비정상 저가 특수거래 제외 & 전월세는 순수 전세(월세=0)만 필터한 실제 체결 거래 목록
   const validPeriodTxs = useMemo(() => {
@@ -1169,48 +1202,147 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 </div>
               </div>
 
-              {/* 최고/최저/현재 요약 (신고 실거래가 원본 기준, 1층 제외) */}
+              {/* 호갱노노 스타일 실거래 요약 메트릭 (최고/최저/실거래 건수/회전율) */}
               {(displayMaxPrice > 0 || chartData.length > 0) && (
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-xs text-slate-500">
-                  <span>최저 <strong className="text-slate-800 font-semibold">{displayMinPrice}억</strong></span>
-                  <span>최고 <strong className="text-slate-800 font-semibold">{displayMaxPrice}억</strong></span>
-                  <span>최근 실거래 <strong className="text-blue-600 font-bold">{displayLatestPrice}억</strong></span>
-                  {priceStatsSummary.recent1MonthCount > 0 && (
-                    <span className="text-[11px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full font-medium">
-                      최근 1개월 내 {priceStatsSummary.recent1MonthCount}건 체결
+                <div className="flex flex-wrap items-center justify-between gap-y-1.5 mb-2.5 text-xs">
+                  <div className="flex items-center gap-x-3 text-slate-500">
+                    <span>최저 <strong className="text-blue-600 font-bold">{displayMinPrice}억</strong></span>
+                    <span className="text-slate-300">|</span>
+                    <span>최고 <strong className="text-red-500 font-bold">{displayMaxPrice}억</strong></span>
+                    <span className="text-slate-300">|</span>
+                    <span>최근 <strong className="text-indigo-600 font-bold">{displayLatestPrice}억</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
+                      실거래 {chartHighlights.totalTxs}건 / 회전율 {chartHighlights.turnoverRatio}%
                     </span>
-                  )}
+                    {priceStatsSummary.recent1MonthCount > 0 && (
+                      <span className="text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-md font-semibold">
+                        최근 1개월 {priceStatsSummary.recent1MonthCount}건
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
 
               {chartData.length >= 2 ? (
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 10, fill: "#94a3b8" }}
-                      tickLine={false}
-                      interval={Math.floor(chartData.length / 5)}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 10, fill: "#94a3b8" }}
-                      tickLine={false}
-                      axisLine={false}
-                      tickFormatter={(v) => `${v}억`}
-                      domain={["auto", "auto"]}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Line
-                      type="monotone"
-                      dataKey="price"
-                      stroke="#2563eb"
-                      strokeWidth={2.5}
-                      dot={false}
-                      activeDot={{ r: 5, fill: "#2563eb" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <div className="relative">
+                  <ResponsiveContainer width="100%" height={230}>
+                    <ComposedChart data={chartData} margin={{ top: 22, right: 14, left: -10, bottom: 0 }}>
+                      <CartesianGrid stroke="#f1f5f9" vertical={false} />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 10, fill: "#94a3b8" }}
+                        tickLine={false}
+                        interval={Math.floor(chartData.length / 5)}
+                      />
+                      {/* 가격 Y축 */}
+                      <YAxis
+                        yAxisId="price"
+                        tick={{ fontSize: 10, fill: "#94a3b8" }}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `${v}억`}
+                        domain={["auto", "auto"]}
+                      />
+                      {/* 거래량 Y축 (하단 25% 영역에 안착되도록 스케일링) */}
+                      <YAxis
+                        yAxisId="volume"
+                        domain={[0, (chartHighlights.maxVolume || 3) * 3.8]}
+                        hide={true}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      
+                      {/* 1. 하단 월간 거래량 볼륨 바 */}
+                      <Bar
+                        yAxisId="volume"
+                        dataKey="volume"
+                        fill="#cbd5e1"
+                        maxBarSize={6}
+                        radius={[2, 2, 0, 0]}
+                      />
+
+                      {/* 2. 호갱노노 스타일 가격 궤적 곡선 */}
+                      <Line
+                        yAxisId="price"
+                        type="monotone"
+                        dataKey="price"
+                        stroke="#4f46e5"
+                        strokeWidth={2.8}
+                        dot={false}
+                        activeDot={{ r: 6, fill: "#4f46e5", stroke: "#ffffff", strokeWidth: 2 }}
+                      />
+
+                      {/* 3. 최고가 핀포인트 */}
+                      {chartHighlights.maxPoint && (
+                        <ReferenceDot
+                          yAxisId="price"
+                          x={chartHighlights.maxPoint.date}
+                          y={chartHighlights.maxPoint.price}
+                          r={4.5}
+                          fill="#ef4444"
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                          label={{
+                            value: "최고",
+                            position: "top",
+                            fill: "#ef4444",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            offset: 6,
+                          }}
+                        />
+                      )}
+
+                      {/* 4. 최저가 핀포인트 */}
+                      {chartHighlights.minPoint && chartHighlights.minPoint.price !== chartHighlights.maxPoint?.price && (
+                        <ReferenceDot
+                          yAxisId="price"
+                          x={chartHighlights.minPoint.date}
+                          y={chartHighlights.minPoint.price}
+                          r={4.5}
+                          fill="#3b82f6"
+                          stroke="#ffffff"
+                          strokeWidth={2}
+                          label={{
+                            value: "최저",
+                            position: "bottom",
+                            fill: "#3b82f6",
+                            fontSize: 10,
+                            fontWeight: 700,
+                            offset: 6,
+                          }}
+                        />
+                      )}
+
+                      {/* 5. 최신 실거래 기준선 및 큰 닷 */}
+                      {chartHighlights.latestPoint && (
+                        <>
+                          <ReferenceLine
+                            yAxisId="price"
+                            x={chartHighlights.latestPoint.date}
+                            stroke="#cbd5e1"
+                            strokeDasharray="3 3"
+                          />
+                          <ReferenceDot
+                            yAxisId="price"
+                            x={chartHighlights.latestPoint.date}
+                            y={chartHighlights.latestPoint.price}
+                            r={5.5}
+                            fill="#4338ca"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                          />
+                        </>
+                      )}
+                    </ComposedChart>
+                  </ResponsiveContainer>
+
+                  {/* 호갱노노 스타일 좌측 하단 '거래량' 워터마크 레이블 */}
+                  <div className="absolute left-1 bottom-6 text-[10px] font-semibold text-slate-400 select-none pointer-events-none">
+                    거래량
+                  </div>
+                </div>
               ) : chartData.length === 1 ? (
                 <div className="h-[180px] flex flex-col items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 text-center px-4">
                   <span className="text-2xl mb-1">📈</span>

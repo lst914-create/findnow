@@ -216,3 +216,4 @@ export function LocationScoreProReportModal({
   );
 }
 export default LocationScoreProReportModal;
+

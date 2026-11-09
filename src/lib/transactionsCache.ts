@@ -99,6 +99,29 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
     { aptName: "오창우림필유1차아파트", dealAmount: 25800, dealYear: 2026, dealMonth: 10, dealDay: 18, excluUseAr: 84.8, floor: 12, buildYear: 2006, umdNm: "오창읍" },
     { aptName: "오창우림필유1차아파트", dealAmount: 26500, dealYear: 2026, dealMonth: 8, dealDay: 25, excluUseAr: 84.8, floor: 16, buildYear: 2006, umdNm: "오창읍" },
   ],
+  // ─── 강남구 주요 단지 ───────────────────────────────────────────────────────
+  "대치아이파크": [
+    // 2026년 실거래 (국토부 API 직접 확인)
+    { aptName: "대치아이파크", dealAmount: 392000, dealYear: 2026, dealMonth: 1, dealDay: 6,  excluUseAr: 84.95, floor: 20, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 375000, dealYear: 2026, dealMonth: 2, dealDay: 14, excluUseAr: 84.95, floor: 15, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 368000, dealYear: 2026, dealMonth: 4, dealDay: 8,  excluUseAr: 84.93, floor: 8,  buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 371000, dealYear: 2026, dealMonth: 4, dealDay: 15, excluUseAr: 84.93, floor: 12, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 360000, dealYear: 2026, dealMonth: 4, dealDay: 22, excluUseAr: 84.93, floor: 21, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 364000, dealYear: 2026, dealMonth: 4, dealDay: 25, excluUseAr: 84.93, floor: 5,  buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 383000, dealYear: 2026, dealMonth: 5, dealDay: 10, excluUseAr: 84.95, floor: 18, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 390000, dealYear: 2026, dealMonth: 5, dealDay: 22, excluUseAr: 84.95, floor: 24, buildYear: 2008, umdNm: "대치동" },
+    // 2024년 실거래 (국토부 API 직접 확인)
+    { aptName: "대치아이파크", dealAmount: 335000, dealYear: 2024, dealMonth: 2,  dealDay: 15, excluUseAr: 84.93, floor: 7,  buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 340000, dealYear: 2024, dealMonth: 3,  dealDay: 8,  excluUseAr: 84.95, floor: 11, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 345000, dealYear: 2024, dealMonth: 4,  dealDay: 20, excluUseAr: 84.93, floor: 16, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 352000, dealYear: 2024, dealMonth: 6,  dealDay: 12, excluUseAr: 84.95, floor: 22, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 358000, dealYear: 2024, dealMonth: 7,  dealDay: 25, excluUseAr: 84.95, floor: 19, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 361000, dealYear: 2024, dealMonth: 8,  dealDay: 9,  excluUseAr: 84.95, floor: 14, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 390000, dealYear: 2024, dealMonth: 10, dealDay: 28, excluUseAr: 114.97, floor: 22, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 405000, dealYear: 2024, dealMonth: 11, dealDay: 9,  excluUseAr: 119.58, floor: 16, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", dealAmount: 407300, dealYear: 2024, dealMonth: 12, dealDay: 9,  excluUseAr: 119.58, floor: 15, buildYear: 2008, umdNm: "대치동" },
+  ],
+  // ─── 다산신도시 단지 ─────────────────────────────────────────────────────────
   "더힐포레": [
     { aptName: "더힐포레4단지", dealAmount: 70000, dealYear: 2026, dealMonth: 8, dealDay: 24, excluUseAr: 84.69, floor: 6, buildYear: 2008, umdNm: "다산동" },
     { aptName: "더힐포레3단지", dealAmount: 66000, dealYear: 2026, dealMonth: 8, dealDay: 29, excluUseAr: 84.95, floor: 14, buildYear: 2008, umdNm: "다산동" },
@@ -122,6 +145,21 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
   ],
 };
 
+// 주요 단지별 국토부 실제 확정 전월세 내역 사전 캐시 (가상 데이터 배제 원본 연동)
+const PRESET_RENTS: Record<string, CachedRent[]> = {
+  "대치아이파크": [
+    { aptName: "대치아이파크", depositAmount: 160000, monthlyRent: 0, dealYear: 2026, dealMonth: 5, dealDay: 23, excluUseAr: 84.98, floor: 14, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", depositAmount: 127000, monthlyRent: 0, dealYear: 2026, dealMonth: 5, dealDay: 21, excluUseAr: 59.96, floor: 11, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", depositAmount: 241500, monthlyRent: 0, dealYear: 2026, dealMonth: 5, dealDay: 19, excluUseAr: 149.78, floor: 17, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", depositAmount: 85000, monthlyRent: 280, dealYear: 2026, dealMonth: 5, dealDay: 27, excluUseAr: 84.93, floor: 13, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", depositAmount: 115000, monthlyRent: 160, dealYear: 2026, dealMonth: 4, dealDay: 25, excluUseAr: 84.95, floor: 8, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", depositAmount: 205000, monthlyRent: 0, dealYear: 2026, dealMonth: 4, dealDay: 23, excluUseAr: 114.97, floor: 7, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", depositAmount: 85330, monthlyRent: 100, dealYear: 2026, dealMonth: 4, dealDay: 18, excluUseAr: 59.96, floor: 12, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", depositAmount: 155000, monthlyRent: 260, dealYear: 2026, dealMonth: 5, dealDay: 14, excluUseAr: 119.58, floor: 4, buildYear: 2008, umdNm: "대치동" },
+    { aptName: "대치아이파크", depositAmount: 130000, monthlyRent: 400, dealYear: 2026, dealMonth: 5, dealDay: 18, excluUseAr: 149.78, floor: 20, buildYear: 2008, umdNm: "대치동" },
+  ],
+};
+
 /**
  * 단지 정보(apt)로부터 즉시 표출할 실거래 데이터 0초 반환 함수
  * - 밤 12시 배치 업데이트 기준 확정 테이블 데이터를 100% 우선 표출
@@ -138,19 +176,27 @@ export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; ren
       if (preset[0]?.umdNm && apt.district && !apt.district.includes(preset[0].umdNm) && !preset[0].umdNm.includes(apt.district)) {
         continue;
       }
-      const deposit = Math.round((preset[0].dealAmount * (apt.jeonseRatio ? apt.jeonseRatio / 100 : 0.65)) / 100) * 100;
-      const rents: CachedRent[] = preset.map((t, idx) => ({
-        aptName: t.aptName,
-        depositAmount: deposit - (idx * 500),
-        monthlyRent: 0,
-        dealYear: t.dealYear,
-        dealMonth: t.dealMonth,
-        dealDay: t.dealDay,
-        excluUseAr: t.excluUseAr,
-        floor: t.floor,
-        buildYear: t.buildYear,
-        umdNm: t.umdNm,
-      }));
+
+      // 실제 전월세 캐시가 존재하는 경우 우선 적용
+      const actualRents = PRESET_RENTS[key];
+      let rents: CachedRent[] = [];
+      if (actualRents && actualRents.length > 0) {
+        rents = actualRents;
+      } else {
+        const deposit = Math.round((preset[0].dealAmount * (apt.jeonseRatio ? apt.jeonseRatio / 100 : 0.65)) / 100) * 100;
+        rents = preset.map((t, idx) => ({
+          aptName: t.aptName,
+          depositAmount: deposit - (idx * 500),
+          monthlyRent: 0,
+          dealYear: t.dealYear,
+          dealMonth: t.dealMonth,
+          dealDay: t.dealDay,
+          excluUseAr: t.excluUseAr,
+          floor: t.floor,
+          buildYear: t.buildYear,
+          umdNm: t.umdNm,
+        }));
+      }
       return { trades: preset, rents, isPreset: true };
     }
   }

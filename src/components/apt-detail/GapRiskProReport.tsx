@@ -288,3 +288,4 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
   );
 }
 export default GapRiskProReportModal;
+

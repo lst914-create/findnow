@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { LAWD_CODES, findLawdCode } from "@/lib/publicDataApi";
 import { normalizeAptName } from "@/lib/normalizeAptName";
+import { getPreloadedTransactions } from "@/lib/transactionsCache";
 
 const COMMON_KEYWORDS = [
   "펜테리움", "리버테라스", "아이비플레이스", "메이플타운", "에일린의뜰",
@@ -235,6 +236,27 @@ export async function GET(request: NextRequest) {
 
   if (!lawdEntry) {
     return NextResponse.json({ trades: [], rents: [] });
+  }
+
+  // 0. 사전 확정된 주요 단지(밤 12시 배치 동기화 테이블) 데이터가 있는 경우 0ms 즉시 반환
+  const preloaded = getPreloadedTransactions({ name: aptName, district, region });
+  if (preloaded.isPreset && preloaded.trades.length > 0) {
+    return NextResponse.json(
+      {
+        trades: preloaded.trades,
+        rents: preloaded.rents,
+        region,
+        district,
+        lawdCode: lawdEntry.code,
+        cached: true,
+        isPreset: true,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+        },
+      }
+    );
   }
 
   // 1. 캐시 확인: 이미 조회된 단지는 0.001초(1ms) 만에 즉시 반환

@@ -184,3 +184,4 @@ export function calcGapInvestmentRisk(input: GapRiskInput): GapRiskResult {
     analysisComments,
   };
 }
+

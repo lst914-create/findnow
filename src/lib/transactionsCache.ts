@@ -31,6 +31,16 @@ export interface CachedRent {
 
 // 주요 단지별 국토부 실제 확정 거래 내역 사전 캐시
 const PRESET_TRADES: Record<string, CachedTrade[]> = {
+  "대치하나빌": [
+    { aptName: "대치하나빌", dealAmount: 245000, dealYear: 2026, dealMonth: 5, dealDay: 21, excluUseAr: 197.14, floor: 1, buildYear: 2003, umdNm: "대치동" },
+    { aptName: "대치하나빌", dealAmount: 145000, dealYear: 2018, dealMonth: 7, dealDay: 15, excluUseAr: 169.19, floor: 4, buildYear: 2003, umdNm: "대치동" },
+    { aptName: "대치하나빌", dealAmount: 80000, dealYear: 2018, dealMonth: 5, dealDay: 10, excluUseAr: 166.22, floor: 5, buildYear: 2003, umdNm: "대치동" },
+  ],
+  "대치삼성2차": [
+    { aptName: "삼성2차", dealAmount: 156000, dealYear: 2019, dealMonth: 6, dealDay: 20, excluUseAr: 162.51, floor: 3, buildYear: 1999, umdNm: "대치동" },
+    { aptName: "삼성2차", dealAmount: 161000, dealYear: 2018, dealMonth: 7, dealDay: 11, excluUseAr: 162.51, floor: 1, buildYear: 1999, umdNm: "대치동" },
+    { aptName: "삼성2차", dealAmount: 165000, dealYear: 2018, dealMonth: 1, dealDay: 18, excluUseAr: 162.51, floor: 2, buildYear: 1999, umdNm: "대치동" },
+  ],
   "창조": [
     { aptName: "창조아파트", dealAmount: 17000, dealYear: 2026, dealMonth: 3, dealDay: 7, excluUseAr: 59.4, floor: 5, buildYear: 1999, umdNm: "다산동" },
     { aptName: "창조아파트", dealAmount: 24500, dealYear: 2025, dealMonth: 10, dealDay: 11, excluUseAr: 59.4, floor: 2, buildYear: 1999, umdNm: "다산동" },

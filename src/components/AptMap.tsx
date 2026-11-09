@@ -176,6 +176,12 @@ export default function AptMap({
   // K-apt 단지 정보(세대수, 준공연도) 캐시 및 상태
   const kaptInfoCacheRef = useRef<Map<string, { householdCount?: number; builtYear?: number }>>(new Map());
   const [kaptInfo, setKaptInfo] = useState<{ householdCount?: number; builtYear?: number } | null>(null);
+
+  // 호갱노노/아실 방식: 화면 내 실존 소규모·나홀로 아파트 동적 보강 캐시
+  const dynamicDiscoveredMarkersRef = useRef<Map<string, AptMarker>>(new Map());
+  const [, setDynamicTrigger] = useState(0);
+  const discoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [isMapReady, setIsMapReady] = useState(false);
   const [activeTab, setActiveTab] = useState<"지도" | "주변" | "거리" | "분석">("지도");
   const [currentRegion, setCurrentRegion] = useState<string>("수도권 주요 단지");
@@ -573,8 +579,11 @@ export default function AptMap({
       const pMinLng = minLng - lngSpan * 0.15;
       const pMaxLng = maxLng + lngSpan * 0.15;
 
-      // 1. 현재 화면 바운드 내 아파트 추출
-      const inBounds = APT_MARKERS.filter(
+      // 1. 현재 화면 바운드 내 아파트 추출 (마스터 DB + 카카오 실시간 감지 단지 결합)
+      const dynamicList = Array.from(dynamicDiscoveredMarkersRef.current.values());
+      const allApts = dynamicList.length > 0 ? [...APT_MARKERS, ...dynamicList] : APT_MARKERS;
+
+      const inBounds = allApts.filter(
         (apt) => apt.lat >= pMinLat && apt.lat <= pMaxLat && apt.lng >= pMinLng && apt.lng <= pMaxLng
       );
 
@@ -602,8 +611,28 @@ export default function AptMap({
 
       // 상위 컴포넌트 목록 동기화
       if (onVisibleApartmentsChange) {
-        const inBoundsIds = new Set(inBounds.map((b) => b.id));
-        const matchedApts = APARTMENTS_DATA.filter((a) => inBoundsIds.has(a.id));
+        const matchedApts: Apartment[] = inBounds.map((a) => ({
+          id: a.id,
+          name: a.name,
+          region: a.rawRegion || "수도권",
+          district: a.district || "",
+          price_min: a.priceNum,
+          price_max: a.priceNum,
+          rent_min: a.rentNum,
+          rent_max: a.rentNum,
+          area_sqm: a.pyeong * 3.3,
+          area_pyeong: a.pyeong,
+          built_year: a.builtYear ?? 2005,
+          household_count: a.householdCount ?? 100,
+          school_score: a.schoolScore ?? 80,
+          traffic_score: a.trafficScore ?? 80,
+          nature_score: 85,
+          tags: a.isRealPrice ? ["실거래인증"] : [],
+          image_url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+          lat: a.lat,
+          lng: a.lng,
+          description: `${a.region}에 위치한 ${a.name}입니다.`,
+        }));
         onVisibleApartmentsChange(matchedApts, regName);
       }
 
@@ -718,6 +747,84 @@ export default function AptMap({
         overlay.setMap(map);
         overlaysRef.current.push(overlay);
       });
+
+      // 4. 호갱노노/아실 방식: 상세 줌 레벨(5 이하)에서 화면 내 소규모/나홀로 아파트 실시간 자동 감지
+      if (level <= 5 && kakaoMaps.services?.Places) {
+        if (discoverTimerRef.current) clearTimeout(discoverTimerRef.current);
+        discoverTimerRef.current = setTimeout(() => {
+          try {
+            const ps = new kakaoMaps.services.Places();
+            ps.keywordSearch(
+              "아파트",
+              (data: any[], status: any) => {
+                if (status !== kakaoMaps.services.Status.OK || !data || data.length === 0) return;
+                let hasNew = false;
+                data.forEach((place: any) => {
+                  if (!place.category_name || !place.category_name.includes("아파트")) return;
+                  const lat = parseFloat(place.y);
+                  const lng = parseFloat(place.x);
+                  const cleanName = place.place_name.replace(/(아파트|단지)$/, "").trim();
+
+                  // 기존 마커 목록과 거리(70m 이내) 또는 명칭 중복 검사
+                  const isExisting = allApts.some((m) => {
+                    const dist = Math.hypot(m.lat - lat, m.lng - lng) * 111000;
+                    return dist < 70 || m.name.includes(cleanName) || cleanName.includes(m.name);
+                  });
+                  if (isExisting) return;
+
+                  const key = `${place.id}_${cleanName}`;
+                  if (dynamicDiscoveredMarkersRef.current.has(key)) return;
+
+                  const addrParts = (place.address_name || "").split(" ");
+                  const region = `${addrParts[0] || "서울"} ${addrParts[1] || ""}`.trim();
+                  const district = addrParts[2] || "";
+
+                  const normName = normalizeAptName(cleanName);
+                  const liveDetail = livePriceDetailCacheRef.current.get(normName);
+
+                  const newMarker: AptMarker = {
+                    id: `kakao-${place.id}`,
+                    name: cleanName,
+                    lat,
+                    lng,
+                    pyeong: liveDetail ? liveDetail.pyeong : 34,
+                    priceNum: liveDetail ? liveDetail.latestPrice : 0,
+                    rentNum: 0,
+                    avgPrice: liveDetail ? liveDetail.formatted : "가격없음",
+                    region: `${region} ${district}`,
+                    rawRegion: region,
+                    district: district,
+                    isRealPrice: !!liveDetail,
+                    builtYear: 2005,
+                    householdCount: 50,
+                    schoolScore: 85,
+                    trafficScore: 85,
+                    liveViewers: 25,
+                    far: 200,
+                    bcr: 18,
+                    jeonseRatio: 55,
+                    gapPrice: 0,
+                    rentalBizRatio: 5,
+                    monthlyYield: 4.0,
+                    parkingRatio: 1.1,
+                    hallType: "계단식",
+                  };
+
+                  dynamicDiscoveredMarkersRef.current.set(key, newMarker);
+                  hasNew = true;
+                });
+
+                if (hasNew) {
+                  setDynamicTrigger((prev) => prev + 1);
+                }
+              },
+              { bounds }
+            );
+          } catch (e) {
+            // silent catch
+          }
+        }, 350);
+      }
     };
 
     // 초기 실행 및 200ms 후 안정화 재실행
@@ -732,6 +839,7 @@ export default function AptMap({
 
     return () => {
       clearTimeout(initTimer);
+      if (discoverTimerRef.current) clearTimeout(discoverTimerRef.current);
       kakaoMaps.event.removeListener(map, "dragend", renderMarkersForViewport);
       kakaoMaps.event.removeListener(map, "zoom_changed", renderMarkersForViewport);
       kakaoMaps.event.removeListener(map, "idle", renderMarkersForViewport);

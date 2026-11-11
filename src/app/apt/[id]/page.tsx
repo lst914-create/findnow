@@ -264,6 +264,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const [chartRange, setChartRange] = useState<"최근 1년" | "최근 3년">("최근 3년");
   const [showCount, setShowCount] = useState(5);
   const [activeLocation, setActiveLocation] = useState<"학군" | "교통" | "쾌적성" | "편의시설">("교통");
+  const [schoolTab, setSchoolTab] = useState<"초등학교" | "중학교" | "고등학교" | "대학교">("초등학교");
 
   // P0: 단지 데이터 검증 결과
   const validationResult = useMemo(() => validateApartment(apt), [apt]);
@@ -2278,88 +2279,152 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
               {activeLocation === "학군" && (
                 <div className="space-y-4 animate-in fade-in duration-200">
-                  <h4 className="text-sm font-extrabold text-blue-700 flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-xs">🎓</span>
-                    학군 입지 & 통학 환경
-                  </h4>
-
-                  {/* 인근 학교 100% 실존 팩트 데이터 */}
-                  {infraData?.schools && infraData.schools.length > 0 ? (
-                    <div className="space-y-2.5">
-                      {infraData.schools.map((s: any, i: number) => (
-                        <div
-                          key={i}
-                          className={`flex items-center justify-between rounded-xl px-3.5 py-3 border transition-all ${s.isChoPumAh
-                              ? "bg-amber-50/70 border-amber-200"
-                              : s.type === "초등학교"
-                                ? "bg-blue-50/70 border-blue-200"
-                                : "bg-slate-50 border-slate-200"
-                            }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <span className="text-lg">
-                              {s.type === "초등학교" ? "🏫" : s.type === "중학교" ? "🎒" : "🎓"}
-                            </span>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-extrabold text-slate-800 text-sm">{s.name}</span>
-                                {s.isChoPumAh && (
-                                  <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-500 text-white shadow-xs">
-                                    초품아
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-[11px] text-slate-500 mt-0.5">
-                                🚶 도보 약 {s.walkMinutes}분 ({s.distanceMeters}m)
-                                {s.distanceMeters <= 400 ? " · 단지 바로 앞 안심통학" : s.distanceMeters <= 800 ? " · 도보 통학권" : ""}
-                              </div>
-                            </div>
-                          </div>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.type === "초등학교" ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-700"
-                            }`}>
-                            {s.type}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : apt.schools && apt.schools.length > 0 ? (
-                    <div className="space-y-2">
-                      {apt.schools.map((s: string, i: number) => (
-                        <div key={i} className="flex items-center gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
-                          <span className="text-blue-500 text-base">🏫</span>
-                          <div>
-                            <div className="font-bold text-blue-800 text-sm">{s}</div>
-                            <div className="text-[10px] text-blue-500">{i === 0 ? "도보 통학 가능" : "인근 학교"}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3 text-sm">
-                      <p className="font-semibold text-amber-800 mb-1">📌 배정학교 안내</p>
-                      <p className="text-xs text-amber-600 mb-2">정확한 배정학교는 나이스 학교알리미에서 확인하세요.</p>
-                      <a
-                        href="https://www.schoolinfo.go.kr/ei/ss/Pneiss_a01_s0.do"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-bold text-amber-700 hover:underline"
-                      >
-                        🔗 나이스 학교알리미 →
-                      </a>
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-3 text-xs text-slate-500 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
-                    <span>📊</span>
-                    <span>학군 점수 <strong className="text-blue-700">{apt.school_score}점</strong> — {apt.school_score >= 90 ? "최상위 명문 학군 (상위 5% 수준)" : apt.school_score >= 80 ? "우수 학군 지역" : "평균 수준 학군"}</span>
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                    <h4 className="text-sm font-extrabold text-slate-800">
+                      학군 입지 및 통학 환경
+                    </h4>
+                    <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                      공식 공공데이터 연동
+                    </span>
                   </div>
+
+                  {/* 호갱노노 스타일 학교급 탭 (초등학교 | 중학교 | 고등학교 | 대학교) */}
+                  <div className="flex border-b border-slate-200">
+                    {(["초등학교", "중학교", "고등학교", "대학교"] as const).map((tab) => {
+                      const count = (infraData?.schools || []).filter((s: any) => s.type === tab).length;
+                      const isActive = schoolTab === tab;
+                      return (
+                        <button
+                          key={tab}
+                          onClick={() => setSchoolTab(tab)}
+                          className={`flex-1 py-2.5 text-center text-xs sm:text-sm font-bold transition-all border-b-2 cursor-pointer ${
+                            isActive
+                              ? "border-blue-600 text-blue-600 font-black"
+                              : "border-transparent text-slate-400 hover:text-slate-600 font-medium"
+                          }`}
+                        >
+                          <span>{tab}</span>
+                          {count > 0 && (
+                            <span
+                              className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                isActive
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-slate-100 text-slate-500"
+                              }`}
+                            >
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* 필터링된 학교 목록 (이모티콘을 없애고 가로폭을 최대로 확보하여 어색한 한 글자 줄바꿈 원천 차단) */}
+                  {(() => {
+                    const allSchools = infraData?.schools || [];
+                    const filteredSchools = allSchools.filter((s: any) => s.type === schoolTab);
+
+                    if (filteredSchools.length > 0) {
+                      return (
+                        <div className="space-y-2.5">
+                          {filteredSchools.map((s: any, i: number) => (
+                            <div
+                              key={i}
+                              className={`flex items-center justify-between rounded-xl px-4 py-3.5 border transition-all ${
+                                s.isChoPumAh
+                                  ? "bg-amber-50/80 border-amber-200 shadow-2xs"
+                                  : s.type === "초등학교"
+                                  ? "bg-blue-50/60 border-blue-200"
+                                  : "bg-white border-slate-200 hover:border-slate-300 shadow-2xs"
+                              }`}
+                            >
+                              <div className="flex-1 min-w-0 pr-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-extrabold text-slate-900 text-sm tracking-tight break-keep-all leading-snug">
+                                    {s.name}
+                                  </span>
+                                  {s.isChoPumAh && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-amber-500 text-white shadow-2xs shrink-0">
+                                      초품아
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[12px] text-slate-500 mt-1 font-medium">
+                                  도보 약 {s.walkMinutes}분 ({s.distanceMeters.toLocaleString()}m)
+                                  {s.distanceMeters <= 400
+                                    ? " · 단지 바로 앞 안심통학"
+                                    : s.distanceMeters <= 800
+                                    ? " · 도보 통학권"
+                                    : ""}
+                                </div>
+                              </div>
+                              <span
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded-md shrink-0 whitespace-nowrap ${
+                                  s.type === "초등학교"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : s.type === "중학교"
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : s.type === "고등학교"
+                                    ? "bg-indigo-100 text-indigo-700"
+                                    : "bg-purple-100 text-purple-700"
+                                }`}
+                              >
+                                {s.type}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+
+                    // 카카오 인프라 데이터가 없거나 0건일 때
+                    if (allSchools.length === 0 && apt.schools && apt.schools.length > 0) {
+                      return (
+                        <div className="space-y-2">
+                          {apt.schools.map((s: string, i: number) => (
+                            <div key={i} className="flex items-center justify-between bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3">
+                              <div>
+                                <div className="font-extrabold text-slate-900 text-sm break-keep-all">{s}</div>
+                                <div className="text-[11px] text-slate-500 mt-0.5">{i === 0 ? "도보 통학권" : "인근 학교"}</div>
+                              </div>
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-700">학교</span>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    }
+
+                    // 해당 학교급 정보가 없을 때 정직한 안내
+                    return (
+                      <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 text-center">
+                        <p className="text-xs font-bold text-slate-600 mb-1">
+                          반경 2.5km 내 {schoolTab} 정보가 등록되지 않았습니다.
+                        </p>
+                        <p className="text-[11px] text-slate-400">
+                          인근 다른 학군 배정 및 광역 통학 여부는 학교알리미를 통해 확인하실 수 있습니다.
+                        </p>
+                      </div>
+                    );
+                  })()}
+
+                  <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-50 rounded-xl px-4 py-3 border border-slate-200/80">
+                    <span className="font-semibold">단지 학군 평가 점수</span>
+                    <span className="font-bold">
+                      <strong className="text-blue-700 text-sm font-black">{apt.school_score}점</strong>
+                      <span className="text-slate-400 ml-1.5">
+                        ({apt.school_score >= 90 ? "최상위 명문 학군" : apt.school_score >= 80 ? "우수 학군 지역" : "평균 수준 학군"})
+                      </span>
+                    </span>
+                  </div>
+
                   <a
                     href={`https://map.naver.com/v5/search/${encodeURIComponent(apt.name + " 주변 학교")}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline"
                   >
-                    🔗 네이버 지도에서 학교 위치 확인 →
+                    네이버 지도에서 주변 학교 위치 전체 보기 →
                   </a>
                 </div>
               )}

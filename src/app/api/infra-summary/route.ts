@@ -10,7 +10,7 @@ interface SubwayInfo {
 
 interface SchoolInfo {
   name: string;
-  type: "초등학교" | "중학교" | "고등학교" | "기타";
+  type: "초등학교" | "중학교" | "고등학교" | "대학교" | "기타";
   distanceMeters: number;
   walkMinutes: number;
   isWalkable: boolean;
@@ -87,9 +87,15 @@ export async function GET(request: NextRequest) {
       { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
     ).then((r) => (r.ok ? r.json() : { documents: [] }));
 
-    // 2. 학교 조회 (SC4, 반경 1.5km)
+    // 2. 학교 조회 (SC4, 반경 2.5km, 최대 15개)
     const schoolPromise = fetch(
-      `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=SC4&x=${lng}&y=${lat}&radius=1500&sort=distance`,
+      `https://dapi.kakao.com/v2/local/search/category.json?category_group_code=SC4&x=${lng}&y=${lat}&radius=2500&size=15&sort=distance`,
+      { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
+    ).then((r) => (r.ok ? r.json() : { documents: [] }));
+
+    // 2-1. 대학교 추가 조회 (키워드 검색, 반경 4km)
+    const universityPromise = fetch(
+      `https://dapi.kakao.com/v2/local/search/keyword.json?query=대학교&x=${lng}&y=${lat}&radius=4000&size=5&sort=distance`,
       { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
     ).then((r) => (r.ok ? r.json() : { documents: [] }));
 
@@ -111,9 +117,10 @@ export async function GET(request: NextRequest) {
       { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
     ).then((r) => (r.ok ? r.json() : { documents: [] }));
 
-    const [subwayRes, schoolRes, parkRes, martRes, hospitalRes] = await Promise.all([
+    const [subwayRes, schoolRes, universityRes, parkRes, martRes, hospitalRes] = await Promise.all([
       subwayPromise,
       schoolPromise,
+      universityPromise,
       parkPromise,
       martPromise,
       hospitalPromise,
@@ -136,25 +143,41 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 학교 파싱
-    const schools: SchoolInfo[] = (schoolRes.documents || []).slice(0, 6).map((d: any) => {
+    // 학교 + 대학교 결합 파싱
+    const allSchoolDocs = [
+      ...(schoolRes.documents || []),
+      ...(universityRes.documents || []),
+    ];
+
+    const seenSchools = new Set<string>();
+    const schools: SchoolInfo[] = [];
+
+    for (const d of allSchoolDocs) {
+      const name = (d.place_name || "").trim();
+      if (!name || seenSchools.has(name)) continue;
+      seenSchools.add(name);
+
       const dist = parseInt(d.distance, 10);
       const walkMin = Math.round(dist / 67);
-      const name = d.place_name || "";
-      let type: "초등학교" | "중학교" | "고등학교" | "기타" = "기타";
+
+      let type: "초등학교" | "중학교" | "고등학교" | "대학교" | "기타" = "기타";
       if (name.includes("초등학교") || name.endsWith("초")) type = "초등학교";
       else if (name.includes("중학교") || name.endsWith("중")) type = "중학교";
       else if (name.includes("고등학교") || name.endsWith("고")) type = "고등학교";
+      else if (name.includes("대학교") || name.includes("대학") || name.includes("캠퍼스")) type = "대학교";
 
-      return {
+      schools.push({
         name,
         type,
         distanceMeters: dist,
         walkMinutes: walkMin,
         isWalkable: dist <= 1000,
         isChoPumAh: type === "초등학교" && dist <= 350,
-      };
-    });
+      });
+    }
+
+    // 거리순 정렬
+    schools.sort((a, b) => a.distanceMeters - b.distanceMeters);
 
     // 공원 파싱
     const parks: ParkInfo[] = (parkRes.documents || []).slice(0, 5).map((d: any) => {

@@ -530,7 +530,23 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             const finalRents = data.rents && data.rents.length > 0 ? data.rents : preloaded.rents;
             apiTransactionsCache.set(cacheKey, { trades: finalTrades, rents: finalRents });
             if (data.trades && data.trades.length > 0) {
-              setApiTrades(data.trades);
+              setApiTrades((prev) => {
+                // 이미 동일한 최신 거래 데이터가 표출되어 있다면 불필요한 차트/화면 재렌더링 방지
+                if (prev && prev.length === data.trades.length) {
+                  const p0 = prev[0];
+                  const d0 = data.trades[0];
+                  if (
+                    p0 && d0 &&
+                    p0.dealYear === d0.dealYear &&
+                    p0.dealMonth === d0.dealMonth &&
+                    p0.dealDay === d0.dealDay &&
+                    p0.dealAmount === d0.dealAmount
+                  ) {
+                    return prev;
+                  }
+                }
+                return data.trades;
+              });
               try {
                 localStorage.setItem(`findnow_trades_${apt.id}`, JSON.stringify(data.trades));
               } catch {}

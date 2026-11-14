@@ -110,26 +110,49 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
     { aptName: "대치아이파크", dealAmount: 255000, dealYear: 2023, dealMonth: 5, dealDay: 4, excluUseAr: 84.95, floor: 14, buildYear: 2008, umdNm: "대치동" },
   ],
   // ─── 다산신도시 단지 ─────────────────────────────────────────────────────────
-  "더힐포레": [
-    { aptName: "더힐포레4단지", dealAmount: 70000, dealYear: 2026, dealMonth: 8, dealDay: 24, excluUseAr: 84.69, floor: 6, buildYear: 2008, umdNm: "다산동" },
+  "더힐포레3단지": [
     { aptName: "더힐포레3단지", dealAmount: 66000, dealYear: 2026, dealMonth: 8, dealDay: 29, excluUseAr: 84.95, floor: 14, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 70000, dealYear: 2026, dealMonth: 7, dealDay: 11, excluUseAr: 84.69, floor: 3, buildYear: 2008, umdNm: "다산동" },
     { aptName: "더힐포레3단지", dealAmount: 64500, dealYear: 2026, dealMonth: 7, dealDay: 6, excluUseAr: 84.95, floor: 2, buildYear: 2008, umdNm: "다산동" },
     { aptName: "더힐포레3단지", dealAmount: 64000, dealYear: 2026, dealMonth: 6, dealDay: 28, excluUseAr: 75.83, floor: 14, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 67700, dealYear: 2026, dealMonth: 5, dealDay: 10, excluUseAr: 84.95, floor: 9, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 63500, dealYear: 2026, dealMonth: 5, dealDay: 3, excluUseAr: 84.74, floor: 9, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 59500, dealYear: 2026, dealMonth: 5, dealDay: 1, excluUseAr: 84.95, floor: 5, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 64000, dealYear: 2026, dealMonth: 4, dealDay: 25, excluUseAr: 75.83, floor: 13, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 58000, dealYear: 2026, dealMonth: 4, dealDay: 11, excluUseAr: 84.95, floor: 2, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 61000, dealYear: 2026, dealMonth: 4, dealDay: 3, excluUseAr: 84.95, floor: 14, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 62000, dealYear: 2026, dealMonth: 4, dealDay: 1, excluUseAr: 84.95, floor: 10, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 63000, dealYear: 2026, dealMonth: 2, dealDay: 26, excluUseAr: 84.74, floor: 7, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 65500, dealYear: 2026, dealMonth: 2, dealDay: 25, excluUseAr: 84.69, floor: 8, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 60500, dealYear: 2026, dealMonth: 2, dealDay: 20, excluUseAr: 84.95, floor: 6, buildYear: 2008, umdNm: "다산동" },
     { aptName: "더힐포레3단지", dealAmount: 56000, dealYear: 2026, dealMonth: 2, dealDay: 14, excluUseAr: 84.69, floor: 7, buildYear: 2008, umdNm: "다산동" },
     { aptName: "더힐포레3단지", dealAmount: 61000, dealYear: 2026, dealMonth: 2, dealDay: 13, excluUseAr: 84.69, floor: 11, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 60000, dealYear: 2026, dealMonth: 1, dealDay: 27, excluUseAr: 84.95, floor: 6, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "더힐포레4단지", dealAmount: 59000, dealYear: 2026, dealMonth: 1, dealDay: 5, excluUseAr: 75.83, floor: 8, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 64300, dealYear: 2025, dealMonth: 12, dealDay: 27, excluUseAr: 84.69, floor: 8, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 59700, dealYear: 2025, dealMonth: 12, dealDay: 20, excluUseAr: 84.69, floor: 5, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 56400, dealYear: 2025, dealMonth: 11, dealDay: 27, excluUseAr: 84.95, floor: 1, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 55250, dealYear: 2025, dealMonth: 8, dealDay: 19, excluUseAr: 75.83, floor: 10, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 55500, dealYear: 2025, dealMonth: 6, dealDay: 17, excluUseAr: 84.95, floor: 7, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 54000, dealYear: 2025, dealMonth: 6, dealDay: 26, excluUseAr: 84.95, floor: 2, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 60000, dealYear: 2025, dealMonth: 5, dealDay: 23, excluUseAr: 84.95, floor: 5, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 57000, dealYear: 2025, dealMonth: 5, dealDay: 20, excluUseAr: 84.95, floor: 2, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 55500, dealYear: 2025, dealMonth: 2, dealDay: 9, excluUseAr: 84.69, floor: 9, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 55500, dealYear: 2025, dealMonth: 2, dealDay: 9, excluUseAr: 84.69, floor: 9, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 58500, dealYear: 2024, dealMonth: 7, dealDay: 10, excluUseAr: 84.69, floor: 7, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 63000, dealYear: 2024, dealMonth: 6, dealDay: 29, excluUseAr: 84.95, floor: 10, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 54500, dealYear: 2024, dealMonth: 3, dealDay: 2, excluUseAr: 84.95, floor: 1, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 57000, dealYear: 2024, dealMonth: 2, dealDay: 27, excluUseAr: 84.95, floor: 7, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 50000, dealYear: 2023, dealMonth: 12, dealDay: 3, excluUseAr: 84.95, floor: 3, buildYear: 2008, umdNm: "다산동" },
+  ],
+  "더힐포레(3단지)": [
+    { aptName: "더힐포레3단지", dealAmount: 66000, dealYear: 2026, dealMonth: 8, dealDay: 29, excluUseAr: 84.95, floor: 14, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 64500, dealYear: 2026, dealMonth: 7, dealDay: 6, excluUseAr: 84.95, floor: 2, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 64000, dealYear: 2026, dealMonth: 6, dealDay: 28, excluUseAr: 75.83, floor: 14, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 56000, dealYear: 2026, dealMonth: 2, dealDay: 14, excluUseAr: 84.69, floor: 7, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 61000, dealYear: 2026, dealMonth: 2, dealDay: 13, excluUseAr: 84.69, floor: 11, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 64300, dealYear: 2025, dealMonth: 12, dealDay: 27, excluUseAr: 84.69, floor: 8, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 59700, dealYear: 2025, dealMonth: 12, dealDay: 20, excluUseAr: 84.69, floor: 5, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 56400, dealYear: 2025, dealMonth: 11, dealDay: 27, excluUseAr: 84.95, floor: 1, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 55250, dealYear: 2025, dealMonth: 8, dealDay: 19, excluUseAr: 75.83, floor: 10, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 55500, dealYear: 2025, dealMonth: 6, dealDay: 17, excluUseAr: 84.95, floor: 7, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 54000, dealYear: 2025, dealMonth: 6, dealDay: 26, excluUseAr: 84.95, floor: 2, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 60000, dealYear: 2025, dealMonth: 5, dealDay: 23, excluUseAr: 84.95, floor: 5, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 57000, dealYear: 2025, dealMonth: 5, dealDay: 20, excluUseAr: 84.95, floor: 2, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 55500, dealYear: 2025, dealMonth: 2, dealDay: 9, excluUseAr: 84.69, floor: 9, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 55500, dealYear: 2025, dealMonth: 2, dealDay: 9, excluUseAr: 84.69, floor: 9, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 58500, dealYear: 2024, dealMonth: 7, dealDay: 10, excluUseAr: 84.69, floor: 7, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 63000, dealYear: 2024, dealMonth: 6, dealDay: 29, excluUseAr: 84.95, floor: 10, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 54500, dealYear: 2024, dealMonth: 3, dealDay: 2, excluUseAr: 84.95, floor: 1, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 57000, dealYear: 2024, dealMonth: 2, dealDay: 27, excluUseAr: 84.95, floor: 7, buildYear: 2008, umdNm: "다산동" },
+    { aptName: "더힐포레3단지", dealAmount: 50000, dealYear: 2023, dealMonth: 12, dealDay: 3, excluUseAr: 84.95, floor: 3, buildYear: 2008, umdNm: "다산동" },
   ],
 };
 
@@ -156,10 +179,21 @@ export function getPreloadedTransactions(apt: any): { trades: CachedTrade[]; ren
   if (!apt || !apt.name) return { trades: [], rents: [], isPreset: false };
 
   const name = apt.name;
+  const normAptName = name.replace(/[\s\-_(),.·[\]{}<>]/g, "").toLowerCase();
 
   // 1. 사전 확정된 주요 단지 매핑 확인 (단지명 및 법정동 정밀 검증)
   for (const [key, preset] of Object.entries(PRESET_TRADES)) {
-    if (name.includes(key)) {
+    const normKey = key.replace(/[\s\-_(),.·[\]{}<>]/g, "").toLowerCase();
+
+    // 단지 번호(차수/단지) 정밀 대조: 3단지와 4단지 등 오매칭 원천 차단
+    const aptNumMatch = normAptName.match(/(\d+)(단지|차)?/);
+    const keyNumMatch = normKey.match(/(\d+)(단지|차)?/);
+    if (aptNumMatch && keyNumMatch && aptNumMatch[1] !== keyNumMatch[1]) {
+      continue;
+    }
+
+    const isMatch = normAptName === normKey || normAptName.includes(normKey) || normKey.includes(normAptName);
+    if (isMatch) {
       // 법정동 검증: 타 법정동 단지(예: 토평동 신명스카이뷰에 교문동 신명아파트 프리셋 혼입) 원천 차단
       if (preset[0]?.umdNm && apt.district && !apt.district.includes(preset[0].umdNm) && !preset[0].umdNm.includes(apt.district)) {
         continue;

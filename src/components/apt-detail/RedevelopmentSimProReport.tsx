@@ -56,16 +56,15 @@ export function RedevelopmentSimProReportModal({
       {/* 헤더 섹션 */}
       <div className="p-6 sm:p-8 border-b border-slate-800/80 relative z-10 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-sm">
+          <div className="mb-2">
+            <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #04
             </span>
-            <span className="text-xs text-slate-400 font-medium">정비사업 분담금 & 비례율 AI 시뮬레이터</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-950/80 text-purple-300 border border-purple-500/30">
-              공사비 변동 연동
-            </span>
+            <div className="text-xs text-slate-400 font-medium mt-1.5 break-keep">
+              정비사업 분담금 & 비례율 AI 시뮬레이터
+            </div>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 재건축·정비사업 분담금 시뮬레이션
           </h2>
           <p className="text-xs text-slate-400 mt-1">

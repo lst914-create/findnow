@@ -73,16 +73,15 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
       {/* 헤더 섹션 */}
       <div className="p-6 sm:p-8 border-b border-slate-800/80 relative z-10 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm">
+          <div className="mb-2">
+            <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #06
             </span>
-            <span className="text-xs text-slate-400 font-medium">전세가율 & 갭투자 리스크 진단</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-amber-500/30">
-              HUG 보증보험 기준 연동
-            </span>
+            <div className="text-xs text-slate-400 font-medium mt-1.5 break-keep">
+              전세가율 & 갭투자 리스크 진단
+            </div>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 갭투자 및 역전세 방어력 진단
           </h2>
           <p className="text-xs text-slate-400 mt-1">

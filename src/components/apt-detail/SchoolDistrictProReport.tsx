@@ -56,18 +56,22 @@ export function SchoolDistrictProReportModal({
       {/* 헤더 섹션 */}
       <div className="p-6 sm:p-8 border-b border-slate-800/80 relative z-10 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 text-white shadow-sm">
-              PRO REPORT #05
-            </span>
-            <span className="text-xs text-slate-400 font-medium">학군·학업성취도 & 진학 실적 리포트</span>
-            {result.isChoPumAh && (
-              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse">
-                🏫 초품아 인증
+          <div className="mb-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-teal-500 text-white shadow-sm whitespace-nowrap">
+                PRO REPORT #05
               </span>
-            )}
+              {result.isChoPumAh && (
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 whitespace-nowrap">
+                  🏫 초품아 단지
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-slate-400 font-medium mt-1.5 break-keep">
+              학군·학업성취도 & 진학 실적 리포트
+            </div>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 학군 배정 및 학업성취도 분석
           </h2>
           <p className="text-xs text-slate-400 mt-1">

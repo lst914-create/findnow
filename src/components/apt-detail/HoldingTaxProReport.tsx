@@ -52,20 +52,15 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
       {/* 헤더 섹션 */}
       <div className="p-6 sm:p-8 border-b border-slate-800/80 relative z-10 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm">
+          <div className="mb-2">
+            <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #07
             </span>
-            <span className="text-xs text-slate-400 font-medium">부동산 세금 및 종합부동산세 AI 시뮬레이터</span>
-            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-              simulation.policyInfo?.isExpired
-                ? "bg-amber-950/80 text-amber-400 border-amber-500/40 animate-pulse"
-                : "bg-emerald-950/80 text-emerald-400 border-emerald-500/30"
-            }`}>
-              {simulation.policyInfo?.isExpired ? "⚠️ 세법 갱신 필요" : "🟢 최신 세법 반영"} ({simulation.policyInfo?.effectiveYear})
-            </span>
+            <div className="text-xs text-slate-400 font-medium mt-1.5 break-keep">
+              부동산 세금 및 종합부동산세 AI 시뮬레이터
+            </div>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 취득·보유·양도세 통합 시뮬레이션
           </h2>
           <p className="text-xs text-slate-400 mt-1">

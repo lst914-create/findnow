@@ -64,16 +64,15 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
       {/* 헤더 섹션: 증권사 리서치 리포트 헤더 포맷 */}
       <div className="p-6 sm:p-8 border-b border-slate-800/80 relative z-10 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm">
+          <div className="mb-2">
+            <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm whitespace-nowrap">
               EQUITY VALUATION PRO #08
             </span>
-            <span className="text-xs text-slate-400 font-semibold">기관급 AI 가치평가 및 호가 협상 모델</span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-blue-300 border border-blue-500/30">
-              최종 검증 완료
-            </span>
+            <div className="text-xs text-slate-400 font-semibold mt-1.5 break-keep">
+              기관급 AI 가치평가 및 호가 협상 모델
+            </div>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight break-keep">
             {apt.name} 적정 가치평가 & 실전 매수 호가 리포트
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-2xl leading-relaxed">

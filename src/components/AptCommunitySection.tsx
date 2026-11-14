@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { convertImageToWebP } from "@/lib/imageUtils";
 
 interface AptComment {
   id: string;
@@ -12,6 +13,7 @@ interface AptComment {
   createdAt: string;
   likes: number;
   userLiked?: boolean;
+  images?: string[];
 }
 
 interface AptCommunitySectionProps {
@@ -41,6 +43,9 @@ export default function AptCommunitySection({
   const [inputAuthor, setInputAuthor] = useState("");
   const [inputBadge, setInputBadge] = useState<"입주민" | "임장러" | "예비매수자" | "공인중개사">("입주민");
   const [inputCategory, setInputCategory] = useState<"실거주후기" | "임장기" | "주차/관리비" | "질문있어요" | "매매/전세">("실거주후기");
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [isCompressing, setIsCompressing] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // 단지별 기본 맞춤 시드 생성기
   const generateAptDefaultComments = (): AptComment[] => [
@@ -86,6 +91,7 @@ export default function AptCommunitySection({
                 content: p.content,
                 createdAt: p.createdAt,
                 likes: p.likes || 0,
+                images: p.images,
               });
               p.comments?.forEach((c: any) => {
                 allComments.push({
@@ -182,6 +188,33 @@ export default function AptCommunitySection({
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (attachedImages.length + files.length > 3) {
+      alert("이미지는 최대 3장까지 첨부할 수 있습니다.");
+      return;
+    }
+    setIsCompressing(true);
+    try {
+      const converted: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const webp = await convertImageToWebP(files[i], 1280, 1280, 0.82);
+        converted.push(webp);
+      }
+      setAttachedImages((prev) => [...prev, ...converted]);
+    } catch (err: any) {
+      alert(err.message || "이미지 변환 중 오류가 발생했습니다.");
+    } finally {
+      setIsCompressing(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputContent.trim()) return;
@@ -195,11 +228,13 @@ export default function AptCommunitySection({
       content: inputContent.trim(),
       createdAt: "방금 전",
       likes: 0,
+      images: attachedImages.length > 0 ? attachedImages : undefined,
     };
 
     const nextComments = [newComment, ...comments];
     setComments(nextComments);
     setInputContent("");
+    setAttachedImages([]);
 
     // 단지별 개별 영구 저장 (로컬스토리지 + 서버 파일)
     try {
@@ -220,6 +255,7 @@ export default function AptCommunitySection({
           author: authorName,
           authorBadge: inputBadge,
           tags: [aptName, inputCategory],
+          images: newComment.images,
         }),
       });
     } catch (e) {
@@ -375,6 +411,30 @@ export default function AptCommunitySection({
                 {comment.content}
               </p>
 
+              {/* 첨부 이미지 썸네일 목록 */}
+              {comment.images && comment.images.length > 0 && (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {comment.images.map((imgUrl, imgIdx) => (
+                    <button
+                      key={imgIdx}
+                      type="button"
+                      onClick={() => setPreviewImage(imgUrl)}
+                      className="group relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-100 cursor-pointer hover:opacity-90 transition-opacity"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imgUrl}
+                        alt="첨부 이미지"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                      />
+                      <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[9px] font-bold bg-black/60 text-white leading-none">
+                        WebP
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="flex items-center justify-between pt-1 text-xs">
                 <span className="text-[11px] text-slate-400">
                   {aptName} 단지 이야기
@@ -398,10 +458,15 @@ export default function AptCommunitySection({
 
       {/* 5. 간편 이야기 작성창 */}
       <form onSubmit={handleAddComment} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-        <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
             <span>✏️</span>
             <span>{aptName}에 대해 이야기 남기기</span>
           </div>
+          <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+            ⚡ 고화질 경량 WebP 자동 압축
+          </span>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {/* 말머리 */}
@@ -447,16 +512,86 @@ export default function AptCommunitySection({
             onChange={(e) => setInputContent(e.target.value)}
             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all resize-none"
           />
-          <div className="flex justify-end mt-2">
+
+          {/* 첨부된 사진 미리보기 및 삭제 */}
+          {attachedImages.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-2 pb-1">
+              {attachedImages.map((img, idx) => (
+                <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-slate-200 shadow-xs group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img} alt="첨부 미리보기" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(idx)}
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/70 hover:bg-rose-600 text-white text-[11px] flex items-center justify-center font-bold transition-colors"
+                  >
+                    ✕
+                  </button>
+                  <span className="absolute bottom-0.5 left-0.5 px-1 py-0.2 rounded text-[8px] font-bold bg-blue-600 text-white">
+                    WebP
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100">
+            {/* 사진 첨부 버튼 */}
+            <div className="flex items-center gap-2">
+              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer transition-colors">
+                <span>📷</span>
+                <span>사진 첨부 ({attachedImages.length}/3)</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  disabled={isCompressing || attachedImages.length >= 3}
+                  className="hidden"
+                />
+              </label>
+              {isCompressing && (
+                <span className="text-xs text-blue-600 font-medium flex items-center gap-1 animate-pulse">
+                  <span className="inline-block w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  WebP 압축 변환 중...
+                </span>
+              )}
+            </div>
+
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+              disabled={isCompressing}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
             >
               {aptName}에 소통글 등록하기
             </button>
           </div>
         </div>
       </form>
+
+      {/* 사진 전체화면 확대 모달 */}
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <button
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-slate-300 text-2xl font-bold p-1 cursor-pointer"
+            >
+              ✕
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewImage}
+              alt="확대 미리보기"
+              className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -20,6 +20,7 @@ interface CommunityItem {
   views: number;
   likes: number;
   tags: string[];
+  images?: string[];
   comments: {
     id: string;
     author: string;
@@ -104,6 +105,7 @@ export async function POST(req: NextRequest) {
         authorBadge,
         tags = [],
         poll,
+        images,
       } = body;
 
       const newPost: CommunityItem = {
@@ -122,6 +124,7 @@ export async function POST(req: NextRequest) {
         views: 1,
         likes: 0,
         tags: tags.length > 0 ? tags : [targetName || "부동산"],
+        images: images && images.length > 0 ? images : undefined,
         comments: [],
         poll: poll || undefined,
       };

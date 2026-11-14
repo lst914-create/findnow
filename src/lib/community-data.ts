@@ -36,6 +36,7 @@ export interface CommunityPost {
   userLiked?: boolean;
   comments: CommunityComment[];
   tags: string[];
+  images?: string[]; // 첨부 이미지 목록 (경량 WebP 포맷)
   // 데이터 연동 (단지/분양/재개발 메타정보 태그)
   linkedData?: {
     type: "apt" | "sub" | "redev" | "region";

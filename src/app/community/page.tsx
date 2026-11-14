@@ -9,6 +9,7 @@ import {
   INITIAL_COMMUNITY_POSTS,
   COMMUNITY_TOP_TAGS,
 } from "@/lib/community-data";
+import { convertImageToWebP, formatDataUrlSize } from "@/lib/imageUtils";
 
 export default function CommunityPage() {
   // 1. 상태 관리
@@ -35,6 +36,11 @@ export default function CommunityPage() {
   const [newLinkedLocation, setNewLinkedLocation] = useState("");
   const [newLinkedInfo, setNewLinkedInfo] = useState("");
   const [newTags, setNewTags] = useState("");
+
+  // 이미지 첨부 상태 (WebP 자동 변환)
+  const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [isCompressing, setIsCompressing] = useState<boolean>(false);
+  const [previewModalImage, setPreviewModalImage] = useState<string | null>(null);
 
   // 투표 생성 옵션
   const [enablePoll, setEnablePoll] = useState(false);
@@ -180,6 +186,37 @@ export default function CommunityPage() {
     setCommentInput("");
   };
 
+  // 이미지 파일 선택 시 WebP로 자동 압축 변환
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    if (attachedImages.length + files.length > 5) {
+      alert("이미지는 최대 5장까지만 첨부할 수 있습니다.");
+      return;
+    }
+
+    setIsCompressing(true);
+    try {
+      const converted: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const webp = await convertImageToWebP(file, 1280, 1280, 0.82);
+        converted.push(webp);
+      }
+      setAttachedImages((prev) => [...prev, ...converted]);
+    } catch (err: any) {
+      alert(err.message || "이미지 변환 중 오류가 발생했습니다.");
+    } finally {
+      setIsCompressing(false);
+      if (e.target) e.target.value = "";
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // 새 글 작성 제출
   const handleCreatePost = (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,6 +246,7 @@ export default function CommunityPage() {
       views: 1,
       likes: 0,
       tags: tagsArray.length > 0 ? tagsArray : [catObj?.label || "부동산"],
+      images: attachedImages.length > 0 ? attachedImages : undefined,
       comments: [],
       linkedData: newLinkedName.trim()
         ? {
@@ -251,6 +289,7 @@ export default function CommunityPage() {
     setNewLinkedLocation("");
     setNewLinkedInfo("");
     setNewTags("");
+    setAttachedImages([]);
     setEnablePoll(false);
     setPollQuestion("");
     setPollOption1("");
@@ -557,6 +596,28 @@ export default function CommunityPage() {
                     <p className="text-xs sm:text-sm text-slate-600 line-clamp-2 leading-relaxed mb-3">
                       {post.content}
                     </p>
+
+                    {/* 첨부 이미지 썸네일 프리뷰 (있을 경우) */}
+                    {post.images && post.images.length > 0 && (
+                      <div className="mb-3 flex items-center gap-2 overflow-hidden">
+                        <div className="flex gap-2">
+                          {post.images.slice(0, 3).map((imgUrl, idx) => (
+                            <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={imgUrl} alt="첨부 이미지" className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        {post.images.length > 3 && (
+                          <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+                            +{post.images.length - 3}
+                          </span>
+                        )}
+                        <span className="ml-auto text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                          📷 사진 {post.images.length}장
+                        </span>
+                      </div>
+                    )}
 
                     {/* 데이터 연동 카드 (있을 경우) */}
                     {post.linkedData && (
@@ -870,6 +931,50 @@ export default function CommunityPage() {
                 </div>
               </div>
 
+              {/* 첨부 이미지 갤러리 */}
+              {activePost.images && activePost.images.length > 0 && (
+                <div className="space-y-2 pt-1">
+                  <div className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <span>📷 첨부 사진</span>
+                      <span className="text-[11px] text-slate-500 font-normal">({activePost.images.length}장)</span>
+                    </span>
+                    <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      WebP 최적화
+                    </span>
+                  </div>
+                  <div
+                    className={`grid gap-2.5 ${
+                      activePost.images.length === 1
+                        ? "grid-cols-1"
+                        : activePost.images.length === 2
+                        ? "grid-cols-2"
+                        : "grid-cols-2 sm:grid-cols-3"
+                    }`}
+                  >
+                    {activePost.images.map((imgUrl, i) => (
+                      <div
+                        key={i}
+                        onClick={() => setPreviewModalImage(imgUrl)}
+                        className="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 cursor-zoom-in aspect-4/3 max-h-72 shadow-xs"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imgUrl}
+                          alt={`${activePost.title} 첨부 이미지 ${i + 1}`}
+                          className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-200"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <span className="px-3 py-1.5 rounded-full bg-black/70 text-white text-xs font-bold backdrop-blur-xs shadow-md">
+                            🔍 크게 보기
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* 연동 데이터 배너 */}
               {activePost.linkedData && (
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3">
@@ -1166,6 +1271,75 @@ export default function CommunityPage() {
                 />
               </div>
 
+              {/* 이미지 첨부 (고화질 경량 WebP 자동 변환) */}
+              <div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <span>📷 사진 첨부</span>
+                    <span className="text-[11px] font-normal text-slate-500">
+                      ({attachedImages.length}/5장)
+                    </span>
+                  </label>
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    ⚡ WebP 자동 압축 최적화
+                  </span>
+                </div>
+
+                {/* 썸네일 그리드 */}
+                {attachedImages.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-1">
+                    {attachedImages.map((imgUrl, idx) => (
+                      <div key={idx} className="relative group rounded-xl overflow-hidden aspect-square border border-slate-200 bg-white shadow-xs">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imgUrl}
+                          alt={`첨부 이미지 ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 hover:bg-red-600 text-white flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer"
+                          title="삭제"
+                        >
+                          ✕
+                        </button>
+                        <span className="absolute bottom-1 left-1 px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-black/60 text-white">
+                          WebP
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 파일 업로드 버튼 */}
+                {attachedImages.length < 5 && (
+                  <div>
+                    <label className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl border border-dashed border-indigo-300 bg-indigo-50/50 hover:bg-indigo-50 text-indigo-700 text-xs font-bold cursor-pointer transition-all">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        disabled={isCompressing}
+                        className="hidden"
+                      />
+                      {isCompressing ? (
+                        <span className="flex items-center gap-1.5 text-indigo-600">
+                          <span className="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
+                          WebP로 압축 변환 중...
+                        </span>
+                      ) : (
+                        <span>+ 사진 추가하기 (최대 5장, 자동 WebP 변환)</span>
+                      )}
+                    </label>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      * 대용량 고화질 사진도 서버 부하 없이 빠르게 전송되도록 최적의 WebP 포맷으로 자동 변환됩니다.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* 데이터 연동 (단지/구역 태그) */}
               <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-2">
                 <div className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
@@ -1266,6 +1440,30 @@ export default function CommunityPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 7. 사진 확대 뷰어 모달 */}
+      {previewModalImage && (
+        <div
+          onClick={() => setPreviewModalImage(null)}
+          className="fixed inset-0 z-60 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out"
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <button
+              onClick={() => setPreviewModalImage(null)}
+              className="absolute -top-10 right-0 w-8 h-8 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center text-sm font-bold cursor-pointer transition-colors"
+            >
+              ✕
+            </button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={previewModalImage}
+              alt="확대 이미지"
+              className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         </div>
       )}

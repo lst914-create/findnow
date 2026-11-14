@@ -31,6 +31,55 @@ export interface CachedRent {
 
 // 주요 단지별 국토부 실제 확정 거래 내역 사전 캐시 (완전한 전체 거래 데이터만 유지, 불완전한 2~5건 더미 하드코딩 배제)
 const PRESET_TRADES: Record<string, CachedTrade[]> = {
+  "대치풍림아이원2차아파트": [
+  {
+    "aptName": "풍림아이원2차202동",
+    "dealAmount": 255000,
+    "dealYear": 2026,
+    "dealMonth": 6,
+    "dealDay": 23,
+    "excluUseAr": 156.21,
+    "floor": 7,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차202동",
+    "dealAmount": 230000,
+    "dealYear": 2025,
+    "dealMonth": 2,
+    "dealDay": 26,
+    "excluUseAr": 137.4,
+    "floor": 6,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  }
+],
+  "대치풍림아이원2차": [
+  {
+    "aptName": "풍림아이원2차202동",
+    "dealAmount": 255000,
+    "dealYear": 2026,
+    "dealMonth": 6,
+    "dealDay": 23,
+    "excluUseAr": 156.21,
+    "floor": 7,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차202동",
+    "dealAmount": 230000,
+    "dealYear": 2025,
+    "dealMonth": 2,
+    "dealDay": 26,
+    "excluUseAr": 137.4,
+    "floor": 6,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  }
+],
+
   "역삼개나리래미안": [
   {
     "aptName": "역삼래미안",
@@ -3594,6 +3643,275 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
 
 // 주요 단지별 국토부 실제 확정 전월세 내역 사전 캐시 (가상 데이터 배제 원본 연동)
 const PRESET_RENTS: Record<string, CachedRent[]> = {
+  "대치풍림아이원2차아파트": [
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 135000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 8,
+    "dealDay": 10,
+    "excluUseAr": 156.21,
+    "floor": 6,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 115500,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 4,
+    "dealDay": 3,
+    "excluUseAr": 156.21,
+    "floor": 4,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차202동",
+    "depositAmount": 99000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 2,
+    "dealDay": 24,
+    "excluUseAr": 115.22,
+    "floor": 3,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차202동",
+    "depositAmount": 60000,
+    "monthlyRent": 200,
+    "dealYear": 2025,
+    "dealMonth": 12,
+    "dealDay": 13,
+    "excluUseAr": 134.61,
+    "floor": 2,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 105000,
+    "monthlyRent": 0,
+    "dealYear": 2025,
+    "dealMonth": 5,
+    "dealDay": 10,
+    "excluUseAr": 156.21,
+    "floor": 5,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차202동",
+    "depositAmount": 89250,
+    "monthlyRent": 0,
+    "dealYear": 2025,
+    "dealMonth": 4,
+    "dealDay": 18,
+    "excluUseAr": 156.21,
+    "floor": 3,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 119000,
+    "monthlyRent": 0,
+    "dealYear": 2025,
+    "dealMonth": 2,
+    "dealDay": 18,
+    "excluUseAr": 156.21,
+    "floor": 7,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 108000,
+    "monthlyRent": 0,
+    "dealYear": 2025,
+    "dealMonth": 1,
+    "dealDay": 25,
+    "excluUseAr": 156.21,
+    "floor": 2,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 130000,
+    "monthlyRent": 0,
+    "dealYear": 2024,
+    "dealMonth": 8,
+    "dealDay": 13,
+    "excluUseAr": 156.21,
+    "floor": 6,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 115700,
+    "monthlyRent": 0,
+    "dealYear": 2024,
+    "dealMonth": 5,
+    "dealDay": 4,
+    "excluUseAr": 156.21,
+    "floor": 4,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 110000,
+    "monthlyRent": 0,
+    "dealYear": 2024,
+    "dealMonth": 3,
+    "dealDay": 16,
+    "excluUseAr": 156.21,
+    "floor": 1,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  }
+],
+  "대치풍림아이원2차": [
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 135000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 8,
+    "dealDay": 10,
+    "excluUseAr": 156.21,
+    "floor": 6,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 115500,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 4,
+    "dealDay": 3,
+    "excluUseAr": 156.21,
+    "floor": 4,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차202동",
+    "depositAmount": 99000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 2,
+    "dealDay": 24,
+    "excluUseAr": 115.22,
+    "floor": 3,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차202동",
+    "depositAmount": 60000,
+    "monthlyRent": 200,
+    "dealYear": 2025,
+    "dealMonth": 12,
+    "dealDay": 13,
+    "excluUseAr": 134.61,
+    "floor": 2,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 105000,
+    "monthlyRent": 0,
+    "dealYear": 2025,
+    "dealMonth": 5,
+    "dealDay": 10,
+    "excluUseAr": 156.21,
+    "floor": 5,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차202동",
+    "depositAmount": 89250,
+    "monthlyRent": 0,
+    "dealYear": 2025,
+    "dealMonth": 4,
+    "dealDay": 18,
+    "excluUseAr": 156.21,
+    "floor": 3,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 119000,
+    "monthlyRent": 0,
+    "dealYear": 2025,
+    "dealMonth": 2,
+    "dealDay": 18,
+    "excluUseAr": 156.21,
+    "floor": 7,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 108000,
+    "monthlyRent": 0,
+    "dealYear": 2025,
+    "dealMonth": 1,
+    "dealDay": 25,
+    "excluUseAr": 156.21,
+    "floor": 2,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 130000,
+    "monthlyRent": 0,
+    "dealYear": 2024,
+    "dealMonth": 8,
+    "dealDay": 13,
+    "excluUseAr": 156.21,
+    "floor": 6,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 115700,
+    "monthlyRent": 0,
+    "dealYear": 2024,
+    "dealMonth": 5,
+    "dealDay": 4,
+    "excluUseAr": 156.21,
+    "floor": 4,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "풍림아이원2차201동",
+    "depositAmount": 110000,
+    "monthlyRent": 0,
+    "dealYear": 2024,
+    "dealMonth": 3,
+    "dealDay": 16,
+    "excluUseAr": 156.21,
+    "floor": 1,
+    "buildYear": 2003,
+    "umdNm": "대치동"
+  }
+],
+
   "역삼개나리래미안": [
   {
     "aptName": "개나리래미안",

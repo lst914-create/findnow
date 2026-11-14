@@ -1436472,16 +1436472,16 @@
     "name": "대치풍림아이원2차아파트",
     "region": "서울 강남구",
     "district": "대치동",
-    "price_min": 38200,
-    "price_max": 38200,
-    "rent_min": 22920,
-    "rent_max": 22920,
-    "gapPrice": 15280,
-    "jeonseRatio": 60,
-    "area_sqm": 84.8,
-    "area_pyeong": 34,
-    "built_year": 2012,
-    "household_count": 65,
+    "price_min": 230000,
+    "price_max": 255000,
+    "rent_min": 105000,
+    "rent_max": 135000,
+    "gapPrice": 120000,
+    "jeonseRatio": 53,
+    "area_sqm": 156.21,
+    "area_pyeong": 51,
+    "built_year": 2003,
+    "household_count": 33,
     "school_score": 86,
     "traffic_score": 88,
     "nature_score": 90,
@@ -1436495,7 +1436495,7 @@
     "lng": 127.054855,
     "walk_minutes": 5,
     "description": "서울 강남구 대치동에 위치한 대치풍림아이원2차아파트입니다. 카카오 공식 위치 정보 및 실거래 데이터가 실시간 연동되어 있습니다.",
-    "dong_count": 1,
+    "dong_count": 2,
     "floor_top": 28,
     "floor_base": 2,
     "approval_date": "2012.11.15",
@@ -1436525,10 +1436525,32 @@
     ],
     "area_distributions": [
       {
-        "label": "전용 102㎡ (31평)",
-        "pyeong": 31,
-        "units": 65,
-        "ratio": 100
+        "label": "115㎡",
+        "pyeong": 38,
+        "sqm": 115.22,
+        "units": 6,
+        "ratio": 18
+      },
+      {
+        "label": "134㎡",
+        "pyeong": 44,
+        "sqm": 134.61,
+        "units": 6,
+        "ratio": 18
+      },
+      {
+        "label": "137㎡",
+        "pyeong": 45,
+        "sqm": 137.4,
+        "units": 7,
+        "ratio": 21
+      },
+      {
+        "label": "156㎡",
+        "pyeong": 51,
+        "sqm": 156.21,
+        "units": 14,
+        "ratio": 43
       }
     ],
     "isRealPrice": true

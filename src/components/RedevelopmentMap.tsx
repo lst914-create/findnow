@@ -25,10 +25,25 @@ export default function RedevelopmentMap({
   const kakaoMapInstanceRef = useRef<any>(null);
   const overlaysRef = useRef<any[]>([]);
   const polygonsRef = useRef<any[]>([]);
+  const wfsPolygonsRef = useRef<any[]>([]);
+  const wfsInfoOverlayRef = useRef<any>(null);
   const aptOverlaysRef = useRef<any[]>([]);
 
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState(false);
+
+  // 🏛️ 국토교통부 브이월드(VWorld) 공식 법적 지적 경계선(WFS) 연동 상태
+  const [useOfficialWfs, setUseOfficialWfs] = useState(true);
+  const [wfsStatus, setWfsStatus] = useState<{
+    loading: boolean;
+    hasKey: boolean;
+    count: number;
+    message?: string;
+  }>({
+    loading: false,
+    hasKey: true,
+    count: 0,
+  });
 
   // 🔴 [좌측 빨간 상자] 마커 데이터 표시 모드
   const [markerMode, setMarkerMode] = useState<MarkerDataMode>("trades");
@@ -150,6 +165,189 @@ export default function RedevelopmentMap({
       map.removeOverlayMapTypeId(kakaoMaps.MapTypeId.ROADVIEW);
     }
   }, [mapLoaded, useDistrict, isSkyview, showTerrain, showRoadview]);
+
+  // 🏛️ [국토부 공식 지적 경계선 WFS API 실시간 연동]
+  // 아실, 재개발닷컴과 동일하게 화면 이동/확대 시 국토교통부 브이월드(LT_C_UQ111) GeoJSON 벡터를 실시간 로드
+  useEffect(() => {
+    if (!mapLoaded || !window.kakao || !kakaoMapInstanceRef.current) return;
+    const kakaoMaps = window.kakao.maps;
+    const map = kakaoMapInstanceRef.current;
+
+    // WFS 비활성화 시 기존 WFS 폴리곤 제거 후 종료
+    if (!useOfficialWfs) {
+      wfsPolygonsRef.current.forEach((p) => p.setMap(null));
+      wfsPolygonsRef.current = [];
+      if (wfsInfoOverlayRef.current) {
+        wfsInfoOverlayRef.current.setMap(null);
+      }
+      setWfsStatus((prev) => ({ ...prev, count: 0 }));
+      return;
+    }
+
+    let debounceTimer: NodeJS.Timeout | null = null;
+
+    const fetchOfficialWfsPolygons = async () => {
+      try {
+        const bounds = map.getBounds();
+        if (!bounds) return;
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+
+        // 줌 레벨이 너무 멀면 (전국 단위) WFS 호출 자제 (레벨 7 이하일 때만 정밀 지적선 조회)
+        const currentLevel = map.getLevel();
+        if (currentLevel > 7) {
+          // 화면이 너무 축소된 상태일 때는 마커 중심 보기
+          return;
+        }
+
+        setWfsStatus((prev) => ({ ...prev, loading: true }));
+
+        const bbox = `${sw.getLng().toFixed(5)},${sw.getLat().toFixed(5)},${ne.getLng().toFixed(5)},${ne.getLat().toFixed(5)}`;
+        const res = await fetch(`/api/redevelopment/wfs?bbox=${bbox}`);
+        if (!res.ok) {
+          setWfsStatus((prev) => ({ ...prev, loading: false }));
+          return;
+        }
+
+        const data = await res.json();
+        setWfsStatus({
+          loading: false,
+          hasKey: data.hasApiKey !== false,
+          count: data.count || 0,
+          message: data.message,
+        });
+
+        if (!data.success || !Array.isArray(data.features) || data.features.length === 0) {
+          return;
+        }
+
+        // 기존 WFS 폴리곤 초기화
+        wfsPolygonsRef.current.forEach((p) => p.setMap(null));
+        wfsPolygonsRef.current = [];
+
+        data.features.forEach((feature: any) => {
+          const geom = feature.geometry;
+          if (!geom || !geom.coordinates) return;
+
+          const props = feature.properties || {};
+          const zoneName = props.uq_nm || props.UQ_NM || props.zone_nm || props.name || "국토부 정비구역";
+          const stageName = props.status || props.step || props.uq_st || "정비사업구역";
+
+          // GeoJSON 좌표를 카카오맵 폴리곤 경로로 변환
+          const rings: any[][] = [];
+          if (geom.type === "Polygon") {
+            const outerRing = geom.coordinates[0];
+            if (Array.isArray(outerRing)) {
+              rings.push(outerRing.map((c: number[]) => new kakaoMaps.LatLng(c[1], c[0])));
+            }
+          } else if (geom.type === "MultiPolygon") {
+            geom.coordinates.forEach((polygonCoords: any) => {
+              const outerRing = polygonCoords[0];
+              if (Array.isArray(outerRing)) {
+                rings.push(outerRing.map((c: number[]) => new kakaoMaps.LatLng(c[1], c[0])));
+              }
+            });
+          }
+
+          rings.forEach((path) => {
+            if (path.length < 3) return;
+
+            const polygon = new kakaoMaps.Polygon({
+              path: path,
+              strokeWeight: 2.8,
+              strokeColor: "#1d4ed8", // 국토부 법적 경계선 진한 블루
+              strokeOpacity: 0.95,
+              strokeStyle: "solid",
+              fillColor: "#3b82f6",
+              fillOpacity: 0.24,
+              zIndex: 10,
+            });
+
+            polygon.setMap(map);
+
+            // 호버 인터랙션
+            kakaoMaps.event.addListener(polygon, "mouseover", (mouseEvent: any) => {
+              polygon.setOptions({
+                strokeWeight: 4,
+                strokeColor: "#0f172a",
+                fillOpacity: 0.45,
+              });
+
+              if (!wfsInfoOverlayRef.current) {
+                const infoDiv = document.createElement("div");
+                infoDiv.className = "wfs-tooltip";
+                infoDiv.style.cssText =
+                  "background: rgba(15,23,42,0.92); color: #fff; padding: 5px 9px; border-radius: 8px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.2); pointer-events: none; white-space: nowrap;";
+                wfsInfoOverlayRef.current = new kakaoMaps.CustomOverlay({
+                  content: infoDiv,
+                  yAnchor: 1.3,
+                  zIndex: 45,
+                });
+              }
+
+              const tooltipEl = wfsInfoOverlayRef.current.getContent() as HTMLElement;
+              if (tooltipEl) {
+                tooltipEl.innerHTML = `🏛️ <span style="color:#60a5fa;">[국토부 공식 고시구역]</span> ${zoneName} (${stageName})`;
+              }
+              wfsInfoOverlayRef.current.setPosition(mouseEvent.latLng);
+              wfsInfoOverlayRef.current.setMap(map);
+            });
+
+            kakaoMaps.event.addListener(polygon, "mouseout", () => {
+              polygon.setOptions({
+                strokeWeight: 2.8,
+                strokeColor: "#1d4ed8",
+                fillOpacity: 0.24,
+              });
+              if (wfsInfoOverlayRef.current) {
+                wfsInfoOverlayRef.current.setMap(null);
+              }
+            });
+
+            // 클릭 시 해당 구역과 이름이 매칭되는 존 선택
+            kakaoMaps.event.addListener(polygon, "click", () => {
+              const matchedZone = zones.find(
+                (z) =>
+                  z.name.replace(/\s+/g, "").includes(zoneName.replace(/\s+/g, "")) ||
+                  zoneName.replace(/\s+/g, "").includes(z.name.replace(/\s+/g, ""))
+              );
+              if (matchedZone) {
+                onSelectZone(matchedZone);
+              }
+            });
+
+            wfsPolygonsRef.current.push(polygon);
+          });
+        });
+      } catch (err) {
+        console.error("[WFS Auto Fetch Error]:", err);
+      } finally {
+        setWfsStatus((prev) => ({ ...prev, loading: false }));
+      }
+    };
+
+    // 지도가 멈췄을 때(idle) 디바운스로 실시간 공식 지적선 호출
+    const handleIdle = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        fetchOfficialWfsPolygons();
+      }, 350);
+    };
+
+    kakaoMaps.event.addListener(map, "idle", handleIdle);
+    // 최초 진입 시 즉시 1회 로드
+    fetchOfficialWfsPolygons();
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      kakaoMaps.event.removeListener(map, "idle", handleIdle);
+      wfsPolygonsRef.current.forEach((p) => p.setMap(null));
+      wfsPolygonsRef.current = [];
+      if (wfsInfoOverlayRef.current) {
+        wfsInfoOverlayRef.current.setMap(null);
+      }
+    };
+  }, [mapLoaded, useOfficialWfs, zones, onSelectZone]);
 
   // 2. 구역 마커 & 폴리곤 & 인근 아파트 단지 핀 렌더링
   useEffect(() => {
@@ -520,6 +718,27 @@ export default function RedevelopmentMap({
 
         {/* 레이어 컨트롤 - 모바일에서는 숨김 */}
         <div className="hidden md:flex bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-slate-200/90 p-1.5 flex-col gap-1 text-[11px] font-bold">
+          {/* 🏛️ 국토교통부 공식 법적 지적 경계선 (V-World WFS) */}
+          <button
+            onClick={() => setUseOfficialWfs((prev) => !prev)}
+            className={`px-2.5 py-2 rounded-xl flex flex-col items-center justify-center transition-all ${
+              useOfficialWfs
+                ? "bg-indigo-600 text-white shadow-md ring-2 ring-indigo-300"
+                : "text-slate-600 hover:bg-slate-100"
+            }`}
+            title="국토교통부 공식 법적 정비구역 지적 경계(WFS GeoJSON) 실시간 렌더링"
+          >
+            <div className="flex items-center gap-1">
+              <span>법적경계</span>
+              {wfsStatus.loading && (
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+              )}
+            </div>
+            {useOfficialWfs && wfsStatus.count > 0 && (
+              <span className="text-[9px] font-extrabold opacity-90">{wfsStatus.count}개</span>
+            )}
+          </button>
+
           {/* 가상구역 (폴리곤) */}
           <button
             onClick={() => setShowVirtualZone((prev) => !prev)}
@@ -640,6 +859,35 @@ export default function RedevelopmentMap({
 
       {/* 상단 좌측 단계 범례 - 모바일에서는 숨김 */}
       <div className="hidden md:flex absolute top-4 left-4 z-10 flex-col gap-2">
+        {/* 🏛️ 국토교통부 공식 WFS 지적선 연동 상태 배지 */}
+        {useOfficialWfs && (
+          <div className="bg-slate-900/90 text-white backdrop-blur-md rounded-2xl shadow-lg border border-slate-700/60 px-3 py-1.5 flex items-center gap-2 text-[11px] font-bold">
+            <span className="flex h-2 w-2 relative">
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
+                  wfsStatus.hasKey ? "bg-emerald-400" : "bg-amber-400"
+                } opacity-75`}
+              ></span>
+              <span
+                className={`relative inline-flex rounded-full h-2 w-2 ${
+                  wfsStatus.hasKey ? "bg-emerald-500" : "bg-amber-500"
+                }`}
+              ></span>
+            </span>
+            <span>🏛️ 국토교통부 법적 지적 경계(WFS API) 실시간 연동</span>
+            {wfsStatus.count > 0 && (
+              <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">
+                {wfsStatus.count}개 구역 로드
+              </span>
+            )}
+            {!wfsStatus.hasKey && (
+              <span className="text-[10px] text-amber-300 font-medium">
+                (API 키 연동 준비됨)
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/80 px-3.5 py-2 flex items-center gap-2 text-xs">
           <span className="font-bold text-slate-700 mr-1 flex items-center gap-1 text-[11px]">
             <span className="inline-block w-2 h-2 rounded-full bg-blue-600"></span>단계 범례

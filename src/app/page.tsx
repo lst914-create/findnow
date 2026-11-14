@@ -884,7 +884,7 @@ export default function Home() {
                 inputMode="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="예: 잠실역 5억대 아파트"
+                placeholder="예: 잠실역 아파트, 향남 롯데캐슬 분양, 재개발..."
                 className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 text-base bg-transparent outline-none placeholder:text-gray-400 text-surface-900 min-w-0"
               />
               <button
@@ -1093,19 +1093,30 @@ export default function Home() {
           </div>
 
           {!isMapDriven && (
-            <button
-              onClick={() => {
-                isMapDrivenRef.current = true;
-                setIsMapDriven(true);
-                setSearchQuery("");
-                setSelectedTag("");
-                setSearchResultStats(null);
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs border border-indigo-200 transition-all cursor-pointer shadow-sm w-fit"
-            >
-              <span>🗺️</span>
-              <span>지도 이동 지역 시세로 다시 보기</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              {searchQuery && (
+                <Link
+                  href={`/subscriptions?q=${encodeURIComponent(searchQuery)}`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs border border-amber-200 transition-all cursor-pointer shadow-sm w-fit"
+                >
+                  <span>🏗️</span>
+                  <span>&apos;{searchQuery}&apos; 분양·청약 공고 보기 →</span>
+                </Link>
+              )}
+              <button
+                onClick={() => {
+                  isMapDrivenRef.current = true;
+                  setIsMapDriven(true);
+                  setSearchQuery("");
+                  setSelectedTag("");
+                  setSearchResultStats(null);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs border border-indigo-200 transition-all cursor-pointer shadow-sm w-fit"
+              >
+                <span>🗺️</span>
+                <span>지도 이동 지역 시세로 다시 보기</span>
+              </button>
+            </div>
           )}
         </div>
 

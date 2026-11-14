@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   SubscriptionNotice,
@@ -34,7 +35,11 @@ const STATUS_FILTERS = [
   { label: "지난 마감·발표완료 🗄️", value: "closed" },
 ];
 
-export default function SubscriptionsPage() {
+function SubscriptionsContent() {
+  const searchParams = useSearchParams();
+  const queryParam = searchParams.get("q") || searchParams.get("search") || "";
+  const idParam = searchParams.get("id") || "";
+
   const [notices, setNotices] = useState<SubscriptionNotice[]>([]);
   const [summary, setSummary] = useState<SubscriptionSummaryStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -56,6 +61,14 @@ export default function SubscriptionsPage() {
 
   // 페이지네이션
   const [visibleCount, setVisibleCount] = useState(18);
+
+  // 메인 및 외부 링크 연동: URL에 검색어가 있으면 자동으로 검색창에 채우고 목록 뷰 전환
+  useEffect(() => {
+    if (queryParam) {
+      setSearchQuery(queryParam);
+      setViewMode("list");
+    }
+  }, [queryParam]);
 
   // 데이터 로드
   const fetchSubscriptions = async (forceRefresh = false) => {
@@ -81,6 +94,18 @@ export default function SubscriptionsPage() {
   useEffect(() => {
     fetchSubscriptions();
   }, []);
+
+  // URL id 파라미터가 있을 때 공고 로드 후 자동 모달 오픈
+  useEffect(() => {
+    if (idParam && notices.length > 0) {
+      const target = notices.find(
+        (n) => n.id === idParam || String(n.pblancNo) === idParam
+      );
+      if (target) {
+        setSelectedNotice(target);
+      }
+    }
+  }, [idParam, notices]);
 
   // 각 시도별 공고 개수 집계 (발표완료 제외한 살아있는 공고 기준)
   const cityCountMap = useMemo(() => {
@@ -307,9 +332,9 @@ export default function SubscriptionsPage() {
               </div>
             )}
           </div>
-          {/* 뷰 모드 전환 대형 탭 바 (청약 캘린더 vs 공고 목록) */}
-          <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
-            <div className="inline-flex p-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 max-w-full overflow-x-auto scrollbar-none whitespace-nowrap">
+          {/* 뷰 모드 전환 대형 탭 바 (청약 캘린더 vs 공고 목록) + 상시 검색창 */}
+          <div className="mt-8 pt-6 border-t border-white/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+            <div className="inline-flex p-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 max-w-full overflow-x-auto scrollbar-none whitespace-nowrap shrink-0">
               <button
                 type="button"
                 onClick={() => setViewMode("calendar")}
@@ -338,6 +363,36 @@ export default function SubscriptionsPage() {
                 </span>
               </button>
             </div>
+
+            {/* 상시 노출 분양 단지 검색창 (캘린더 / 공고 목록 어디서든 단지 즉시 검색) */}
+            <div className="relative w-full md:w-80 lg:w-96">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSearchQuery(val);
+                  if (val.trim() && viewMode !== "list") {
+                    setViewMode("list");
+                  }
+                }}
+                placeholder="분양 단지명, 지역, 건설사 검색 (예: 롯데캐슬, 화성)..."
+                className="w-full bg-white/15 hover:bg-white/20 focus:bg-white text-white focus:text-slate-900 placeholder:text-slate-300 focus:placeholder:text-slate-400 border border-white/25 focus:border-blue-500 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm font-semibold transition-all shadow-inner focus:shadow-xl focus:outline-none backdrop-blur-md"
+              />
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none text-sm">
+                🔍
+              </span>
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white hover:bg-white/20 text-xs w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-all"
+                  title="검색어 지우기"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -346,6 +401,21 @@ export default function SubscriptionsPage() {
       {viewMode === "calendar" ? (
         /* ================= 캘린더 뷰 ================= */
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
+          {searchQuery && (
+            <div className="mb-4 p-3.5 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-between gap-3 text-xs sm:text-sm">
+              <div className="flex items-center gap-2 text-blue-900 font-bold">
+                <span>🔍</span>
+                <span>&apos;{searchQuery}&apos; 검색 결과: 총 {filteredNotices.length}개 단지 청약 일정 표시중</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="text-blue-600 hover:text-blue-800 font-extrabold hover:underline shrink-0 cursor-pointer"
+              >
+                전체 일정 보기 ↺
+              </button>
+            </div>
+          )}
           {loading ? (
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse space-y-3">
               <div className="text-3xl">📅</div>
@@ -356,7 +426,7 @@ export default function SubscriptionsPage() {
             </div>
           ) : (
             <SubscriptionCalendar
-              notices={notices}
+              notices={searchQuery ? filteredNotices : notices}
               onSelectNotice={(notice) => setSelectedNotice(notice)}
             />
           )}
@@ -692,5 +762,20 @@ export default function SubscriptionsPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function SubscriptionsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white space-y-3">
+          <div className="text-3xl animate-bounce">🏗️</div>
+          <div className="text-base font-bold">분양·청약 정보를 동기화하고 있습니다...</div>
+        </div>
+      }
+    >
+      <SubscriptionsContent />
+    </Suspense>
   );
 }

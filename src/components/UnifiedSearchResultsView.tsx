@@ -279,7 +279,7 @@ export default function UnifiedSearchResultsView({
               )}
             </div>
             <Link
-              href="/subscriptions"
+              href={`/subscriptions?q=${encodeURIComponent(intent.rawQuery || "")}`}
               className="text-xs font-bold text-amber-700 hover:text-amber-900 flex items-center gap-1"
             >
               <span>청약 캘린더 & 전체 공고 보기</span>
@@ -336,7 +336,7 @@ export default function UnifiedSearchResultsView({
                 <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-center justify-between">
                   <span className="text-xs text-slate-400 font-medium">당첨발표 {notice.winnerAnnounceDate || "-"}</span>
                   <Link
-                    href={`/subscriptions`}
+                    href={`/subscriptions?q=${encodeURIComponent(notice.name)}&id=${notice.id}`}
                     className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors"
                   >
                     공고 확인 &gt;

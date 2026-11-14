@@ -280,6 +280,8 @@ export async function executeUnifiedSearch(rawQuery: string): Promise<UnifiedSea
 
   // 3. 🏗️ 분양·청약 공고 검색
   const subPool = (masterSubscriptionsRaw as unknown as SubscriptionNotice[]) || [];
+  const rawClean = rawQuery.replace(/\s+/g, "").toLowerCase();
+
   let matchedSubs = subPool.filter((notice) => {
     // 1) 지역 매칭
     if (regionKeyword) {
@@ -299,10 +301,19 @@ export async function executeUnifiedSearch(rawQuery: string): Promise<UnifiedSea
       }
     }
 
-    // 3) 키워드 매칭
+    // 3) 전체 검색어 및 키워드 매칭 (띄어쓰기 무관 통합 검색)
+    const fullText = `${notice.name} ${notice.detailType} ${notice.type} ${notice.company || ""} ${notice.address} ${notice.region}`.toLowerCase();
+    const fullTextNoSpace = fullText.replace(/\s+/g, "");
+
+    if (rawClean && fullTextNoSpace.includes(rawClean)) {
+      return true;
+    }
+
     if (cleanKeywords.length > 0) {
-      const text = `${notice.name} ${notice.detailType} ${notice.type} ${notice.company || ""} ${notice.address}`.toLowerCase();
-      const hasMatch = cleanKeywords.some((k) => text.includes(k.toLowerCase()));
+      const hasMatch = cleanKeywords.some((k) => {
+        const kLower = k.toLowerCase();
+        return fullText.includes(kLower) || fullTextNoSpace.includes(kLower.replace(/\s+/g, ""));
+      });
       if (!hasMatch && !regionKeyword) return false;
     }
 

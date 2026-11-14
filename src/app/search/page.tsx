@@ -444,6 +444,7 @@ function ApartmentSearchContent() {
             <Link href="/" className="hover:text-indigo-600 transition-colors">홈</Link>
             <span className="text-indigo-600 font-bold border-b-2 border-indigo-600 pb-0.5 whitespace-nowrap">🏢 아파트 찾기</span>
             <Link href="/redevelopment" className="hover:text-indigo-600 transition-colors hidden sm:inline">🔨 재개발</Link>
+            <Link href="/redevelopment/recommend" className="hover:text-indigo-600 transition-colors hidden sm:inline">🎯 구역추천</Link>
             <Link href="/subscriptions" className="hover:text-indigo-600 transition-colors hidden sm:inline">🏗️ 분양</Link>
             <Link href="/regional" className="hover:text-indigo-600 transition-colors hidden sm:inline">📍 지역정보</Link>
             <Link href="/community" className="hover:text-indigo-600 transition-colors hidden sm:inline font-bold">💬 커뮤니티</Link>

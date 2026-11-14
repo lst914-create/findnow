@@ -34,6 +34,7 @@ const QUICK_TAGS = [
 const NAV_ITEMS = [
   { label: "아파트 찾기", href: "/search", icon: "🏢" },
   { label: "재개발", href: "/redevelopment", icon: "🔨" },
+  { label: "구역 추천", href: "/redevelopment/recommend", icon: "🎯" },
   { label: "분양·청약", href: "/subscriptions", icon: "📅" },
   { label: "지역정보", href: "/regional", icon: "📍" },
   { label: "커뮤니티", href: "/community", icon: "💬" },
@@ -905,26 +906,49 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Desktop view only (>= 640px): 6-col grid */}
-          <div className="hidden sm:grid grid-cols-6 gap-3 max-w-4xl mx-auto">
-            <Link href="/search" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-white/95 hover:bg-indigo-50/90 border border-indigo-100 hover:border-indigo-300 text-indigo-700 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center">
-              <span className="text-lg">🏢</span><span>아파트 검색</span><span className="text-xs opacity-60 group-hover:translate-x-0.5 transition-transform">→</span>
+          {/* Desktop view only (>= 640px): 6-col grid - 이모티콘·화살표 제거로 줄바꿈 없이 깔끔한 한 줄 텍스트 표출 */}
+          <div className="hidden sm:grid grid-cols-6 gap-2 max-w-4xl mx-auto">
+            <Link
+              href="/search"
+              className="flex items-center justify-center py-3 px-2 rounded-2xl bg-white/95 hover:bg-indigo-50 border border-indigo-100 hover:border-indigo-300 text-indigo-700 font-bold text-xs md:text-sm shadow-xs hover:shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center whitespace-nowrap"
+            >
+              아파트 검색
             </Link>
-            <Link href="/redevelopment" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-white/95 hover:bg-emerald-50/90 border border-emerald-100 hover:border-emerald-300 text-emerald-800 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center">
-              <span className="text-lg animate-pulse">🔨</span><span>재개발 지도</span><span className="text-xs opacity-60 group-hover:translate-x-0.5 transition-transform">→</span>
+            <Link
+              href="/redevelopment"
+              className="flex items-center justify-center py-3 px-2 rounded-2xl bg-white/95 hover:bg-emerald-50 border border-emerald-100 hover:border-emerald-300 text-emerald-800 font-bold text-xs md:text-sm shadow-xs hover:shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center whitespace-nowrap"
+            >
+              재개발 지도
             </Link>
-            <Link href="/redevelopment/recommend" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-gradient-to-r from-rose-50 to-orange-50 hover:from-rose-100 hover:to-orange-100 border border-rose-200 hover:border-rose-400 text-rose-800 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center relative">
-              <span className="text-lg">🎯</span><span>구역 추천</span>
-              <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white font-extrabold px-1.5 py-0.5 rounded-full text-[9px] leading-none animate-pulse">NEW</span>
+            <Link
+              href="/redevelopment/recommend"
+              className="relative flex items-center justify-center py-3 px-2 rounded-2xl bg-rose-50/90 hover:bg-rose-100 border border-rose-200 hover:border-rose-300 text-rose-700 font-bold text-xs md:text-sm shadow-xs hover:shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center whitespace-nowrap"
+            >
+              <span>구역 추천</span>
+              <span className="absolute -top-1.5 -right-1 bg-rose-500 text-white font-black px-1.5 py-0.5 rounded-full text-[9px] leading-none">
+                NEW
+              </span>
             </Link>
-            <Link href="/subscriptions" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-white/95 hover:bg-amber-50/90 border border-amber-100 hover:border-amber-300 text-amber-800 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center">
-              <span className="text-lg">🏗️</span><span>분양·청약</span><span className="text-xs opacity-60 group-hover:translate-x-0.5 transition-transform">→</span>
+            <Link
+              href="/subscriptions"
+              className="flex items-center justify-center py-3 px-2 rounded-2xl bg-white/95 hover:bg-amber-50 border border-amber-100 hover:border-amber-300 text-amber-800 font-bold text-xs md:text-sm shadow-xs hover:shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center whitespace-nowrap"
+            >
+              분양·청약
             </Link>
-            <Link href="/regional" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-white/90 hover:bg-sky-50/90 border border-sky-100 hover:border-sky-300 text-sky-800 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center">
-              <span className="text-lg">📍</span><span>지역정보</span><span className="text-xs opacity-60 group-hover:translate-x-0.5 transition-transform">→</span>
+            <Link
+              href="/regional"
+              className="flex items-center justify-center py-3 px-2 rounded-2xl bg-white/90 hover:bg-sky-50 border border-sky-100 hover:border-sky-300 text-sky-800 font-bold text-xs md:text-sm shadow-xs hover:shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center whitespace-nowrap"
+            >
+              지역정보
             </Link>
-            <Link href="/community" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-linear-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 border border-indigo-200 hover:border-indigo-400 text-indigo-900 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center">
-              <span className="text-lg">💬</span><span>커뮤니티</span><span className="bg-indigo-600 text-white font-extrabold px-1.5 py-0.5 rounded text-[10px] leading-none">HOT</span>
+            <Link
+              href="/community"
+              className="relative flex items-center justify-center py-3 px-2 rounded-2xl bg-indigo-50/80 hover:bg-indigo-100 border border-indigo-200 hover:border-indigo-300 text-indigo-900 font-bold text-xs md:text-sm shadow-xs hover:shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center whitespace-nowrap"
+            >
+              <span>커뮤니티</span>
+              <span className="absolute -top-1.5 -right-1 bg-indigo-600 text-white font-black px-1.5 py-0.5 rounded-full text-[9px] leading-none">
+                HOT
+              </span>
             </Link>
           </div>
         </div>

@@ -212,6 +212,12 @@ export default function SubscriptionsPage() {
                 🔨 재개발·정비사업
               </Link>
               <Link
+                href="/redevelopment/recommend"
+                className="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              >
+                🎯 구역추천
+              </Link>
+              <Link
                 href="/subscriptions"
                 className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-bold border border-blue-200"
               >

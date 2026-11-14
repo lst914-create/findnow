@@ -222,6 +222,15 @@ export default function RedevelopmentPage() {
               🔨 재개발·정비사업
             </Link>
             <Link
+              href="/redevelopment/recommend"
+              className="px-3 py-1.5 rounded-lg text-slate-600 hover:text-blue-700 hover:bg-blue-50 transition-colors flex items-center gap-1.5 font-bold"
+            >
+              <span>🎯 맞춤 구역추천</span>
+              <span className="text-[10px] bg-rose-500 text-white font-extrabold px-1.5 py-0.2 rounded-full animate-pulse">
+                HOT
+              </span>
+            </Link>
+            <Link
               href="/subscriptions"
               className="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
@@ -302,6 +311,32 @@ export default function RedevelopmentPage() {
             }`}
           >
             <div className="w-full md:w-[380px] lg:w-[420px] max-w-full flex-1 flex flex-col h-full overflow-hidden">
+              {/* 🎯 내 자금/실거주 맞춤 추천 구역 바로가기 배너 */}
+              <div className="p-2.5 sm:p-3 border-b border-slate-100 bg-gradient-to-r from-blue-50/80 to-indigo-50/60">
+                <Link
+                  href="/redevelopment/recommend"
+                  className="block p-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl shrink-0">🎯</span>
+                      <div>
+                        <div className="text-[10px] font-extrabold text-blue-200">
+                          내 자금·실거주 조건 AI 매칭
+                        </div>
+                        <div className="text-xs font-black tracking-tight flex items-center gap-1">
+                          <span>내게 맞는 재개발 구역 추천받기</span>
+                          <span className="group-hover:translate-x-1 transition-transform">→</span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] bg-white/20 text-white font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                      1분 진단
+                    </span>
+                  </div>
+                </Link>
+              </div>
+
               {/* 퀵 카테고리 칩 */}
               <div className="p-2.5 sm:p-3 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto scrollbar-none bg-slate-50/50">
                 {QUICK_MENUS.map((menu) => (
@@ -559,6 +594,23 @@ export default function RedevelopmentPage() {
             mobileViewMode === "list" ? "hidden md:block" : "block"
           }`}
         >
+          {/* 🎯 지도 위 추천 구역 찾기 플로팅 핫스팟 배너 (화면 상단 중앙) */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 pointer-events-auto max-w-[90%]">
+            <Link
+              href="/redevelopment/recommend"
+              className="flex items-center gap-2 sm:gap-2.5 bg-slate-900/95 hover:bg-slate-900 text-white backdrop-blur-md px-4 py-2 sm:py-2.5 rounded-full shadow-2xl border border-slate-700/80 text-xs font-black transition-all hover:scale-105 active:scale-95 group whitespace-nowrap"
+            >
+              <span className="flex h-2 w-2 relative shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+              </span>
+              <span className="truncate">내 자금으로 살 수 있는 구역은?</span>
+              <span className="text-blue-400 group-hover:underline">
+                맞춤 추천받기 →
+              </span>
+            </Link>
+          </div>
+
           <RedevelopmentMap
             zones={filteredZones}
             selectedZone={selectedZone}

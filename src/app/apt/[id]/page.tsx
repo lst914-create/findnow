@@ -332,12 +332,14 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     };
   }, [apt.lat, apt.lng]);
 
-  // 실시간 종합 교통 데이터 조회 (지하철 호선별 + 고속철도 + 호갱노노 100% 실존 버스 노선)
+  // 실시간 종합 교통 데이터 조회 (지하철 호선별 + 고속철도 + 전국 17개 시도 실존 버스 노선 칩)
   useEffect(() => {
     if (!apt.lat || !apt.lng) return;
     let isMounted = true;
     setIsTrafficLoading(true);
-    fetch(`/api/traffic-info?lat=${apt.lat}&lng=${apt.lng}&aptName=${encodeURIComponent(apt.name || "")}`)
+    const regionParam = encodeURIComponent(apt.region || apt.apiRegion || "");
+    const nameParam = encodeURIComponent(apt.name || "");
+    fetch(`/api/traffic-info?lat=${apt.lat}&lng=${apt.lng}&aptName=${nameParam}&region=${regionParam}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (isMounted && data && data.success) {
@@ -347,7 +349,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       .catch(() => { })
       .finally(() => { if (isMounted) setIsTrafficLoading(false); });
     return () => { isMounted = false; };
-  }, [apt.lat, apt.lng, apt.name]);
+  }, [apt.lat, apt.lng, apt.name, apt.region, apt.apiRegion]);
 
   // 100% 실존 인프라 기반 정량 점수 계산 (과거 고정 더미 점수 실시간 보정)
   const computedTrafficScore = useMemo(() => {

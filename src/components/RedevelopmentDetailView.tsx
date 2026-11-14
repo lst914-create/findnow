@@ -118,10 +118,11 @@ export default function RedevelopmentDetailView({
 
   // 국토교통부 실시간 API 연동 상태
   const [liveTrades, setLiveTrades] = useState<any[]>([]);
+  const [liveDong, setLiveDong] = useState<string>("");
   const [isLiveLoading, setIsLiveLoading] = useState(false);
   const [liveApiActive, setLiveApiActive] = useState(false);
 
-  // 구역 변경 시 국토교통부 실시간 실거래가 API 다이렉트 연동
+  // 구역 변경 시 국토교통부 실시간 실거래가 API 다이렉트 연동 (구역 법정동 단위 정밀 조회)
   useEffect(() => {
     let ignore = false;
     async function loadLiveTrades() {
@@ -132,6 +133,7 @@ export default function RedevelopmentDetailView({
           const data = await res.json();
           if (!ignore && data.trades && data.trades.length > 0) {
             setLiveTrades(data.trades);
+            if (data.dong) setLiveDong(data.dong);
             setLiveApiActive(true);
           }
         }
@@ -145,7 +147,7 @@ export default function RedevelopmentDetailView({
     return () => { ignore = true; };
   }, [zone.id]);
 
-  // 기본 구역 데이터 + 국토교통부 실시간 데이터 병합
+  // 실시간 국토교통부 데이터가 있으면 100% 국토교통부 실거래 데이터만 사용하여 완벽한 신뢰성 확보
   const allMergedTransactions = useMemo(() => {
     if (liveTrades.length === 0) return zone.transactions;
 
@@ -175,12 +177,37 @@ export default function RedevelopmentDetailView({
             (t.landAreaM2 || t.exclusiveAreaM2 * 0.45) / 3.30578
           )
       ),
-    }));
+      isZoneJibun: t.isZoneJibun,
+    } as RedevelopmentTransaction & { isZoneJibun?: boolean }));
 
-    return [...formattedLive, ...zone.transactions].sort((a, b) =>
-      b.date.localeCompare(a.date)
-    );
+    return formattedLive.sort((a, b) => b.date.localeCompare(a.date));
   }, [liveTrades, zone.transactions]);
+
+  // 국토부 실거래 데이터 기반 연식별 대지지분 평당가 실시간 산출
+  const livePriceByAge = useMemo(() => {
+    if (allMergedTransactions.length === 0) return zone.pricePerPyeongByAge;
+
+    const currentYear = new Date().getFullYear();
+    const villaTrades = allMergedTransactions.filter((t) => t.type === "다세대" || (t.type as string) === "연립");
+    const singleTrades = allMergedTransactions.filter((t) => t.type === "단독" || t.type === "다가구");
+
+    const under10 = villaTrades.filter((t) => t.builtYear >= currentYear - 10 && t.landPricePerPyeongManwon > 0);
+    const midAge = villaTrades.filter(
+      (t) => t.builtYear >= currentYear - 30 && t.builtYear < currentYear - 10 && t.landPricePerPyeongManwon > 0
+    );
+    const over30 = villaTrades.filter((t) => t.builtYear < currentYear - 30 && t.builtYear > 0 && t.landPricePerPyeongManwon > 0);
+    const singleValid = singleTrades.filter((t) => t.landPricePerPyeongManwon > 0);
+
+    const calcAvg = (arr: RedevelopmentTransaction[]) =>
+      arr.length > 0 ? Math.round(arr.reduce((sum, t) => sum + t.landPricePerPyeongManwon, 0) / arr.length) : 0;
+
+    return {
+      villaUnder10Year: calcAvg(under10) || zone.pricePerPyeongByAge?.villaUnder10Year,
+      villa11To30Year: calcAvg(midAge) || zone.pricePerPyeongByAge?.villa11To30Year,
+      villaOver30Year: calcAvg(over30) || zone.pricePerPyeongByAge?.villaOver30Year,
+      singleHouse: calcAvg(singleValid) || zone.pricePerPyeongByAge?.singleHouse,
+    };
+  }, [allMergedTransactions, zone.pricePerPyeongByAge]);
 
   // 실거래 필터
   const filteredTransactions = allMergedTransactions.filter((tx) =>
@@ -353,13 +380,18 @@ export default function RedevelopmentDetailView({
         {/* -------------------------------------------------------- */}
         <section id="section-trades" className="space-y-4 pt-1">
           <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
                 <span>💰</span> 실거래 시세 및 내역
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                   {allMergedTransactions.length}건
                 </span>
               </h3>
+              {liveDong && (
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  {liveDong} 실거래
+                </span>
+              )}
               {liveApiActive && (
                 <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -383,12 +415,12 @@ export default function RedevelopmentDetailView({
             currentStageName={zone.status}
           />
 
-          {/* 연식별 대지지분 평당가 요약 박스 */}
+          {/* 연식별 대지지분 평당가 요약 박스 (국토교통부 실거래 기반 실시간 산출) */}
           <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200">
             <div className="flex items-center justify-between mb-2.5">
               <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-                대지지분 평당가 시세
+                대지지분 평당가 시세 {liveDong ? `(${liveDong})` : ""}
               </span>
               <span className="text-[11px] text-slate-400">단위: 만원/평</span>
             </div>
@@ -396,32 +428,32 @@ export default function RedevelopmentDetailView({
               <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                 <div className="text-[11px] font-semibold text-emerald-700">다세대 ~10년</div>
                 <div className="text-sm font-black text-slate-800 mt-1">
-                  {zone.pricePerPyeongByAge.villaUnder10Year
-                    ? `${zone.pricePerPyeongByAge.villaUnder10Year.toLocaleString()}`
+                  {livePriceByAge?.villaUnder10Year
+                    ? `${livePriceByAge.villaUnder10Year.toLocaleString()}`
                     : "-"}
                 </div>
               </div>
               <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                 <div className="text-[11px] font-semibold text-teal-700">다세대 11~30년</div>
                 <div className="text-sm font-black text-blue-600 mt-1">
-                  {zone.pricePerPyeongByAge.villa11To30Year
-                    ? `${zone.pricePerPyeongByAge.villa11To30Year.toLocaleString()}`
+                  {livePriceByAge?.villa11To30Year
+                    ? `${livePriceByAge.villa11To30Year.toLocaleString()}`
                     : "-"}
                 </div>
               </div>
               <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                 <div className="text-[11px] font-semibold text-indigo-700">다세대 31년~</div>
                 <div className="text-sm font-black text-indigo-900 mt-1">
-                  {zone.pricePerPyeongByAge.villaOver30Year
-                    ? `${zone.pricePerPyeongByAge.villaOver30Year.toLocaleString()}`
+                  {livePriceByAge?.villaOver30Year
+                    ? `${livePriceByAge.villaOver30Year.toLocaleString()}`
                     : "-"}
                 </div>
               </div>
               <div className="bg-white p-2.5 rounded-xl border border-slate-200 shadow-2xs">
                 <div className="text-[11px] font-semibold text-amber-700">단독·다가구</div>
                 <div className="text-sm font-black text-amber-900 mt-1">
-                  {zone.pricePerPyeongByAge.singleHouse
-                    ? `${zone.pricePerPyeongByAge.singleHouse.toLocaleString()}`
+                  {livePriceByAge?.singleHouse
+                    ? `${livePriceByAge.singleHouse.toLocaleString()}`
                     : "-"}
                 </div>
               </div>
@@ -473,8 +505,13 @@ export default function RedevelopmentDetailView({
                         </div>
                       </td>
                       <td className="py-3 px-3 align-top">
-                        <div className="font-bold text-slate-900 leading-tight">
+                        <div className="font-bold text-slate-900 leading-tight flex items-center gap-1.5 flex-wrap">
                           {tx.addressDetail}
+                          {(tx as any).isZoneJibun && (
+                            <span className="text-[9px] font-extrabold px-1.5 py-0.5 bg-amber-100 text-amber-800 rounded">
+                              구역내
+                            </span>
+                          )}
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
                           전용 {tx.exclusivePyeong}평

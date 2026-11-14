@@ -33,7 +33,7 @@ export interface RealTradeRecord {
   /** 거래 날짜 (YYYY.MM.DD) */
   date: string;
   /** 주택 유형 */
-  houseType: "다세대" | "단독" | "다가구" | "연립";
+  houseType: "다세대" | "단독" | "다가구" | "연립" | "아파트";
   /** 건축년도 */
   builtYear: number;
   /** 주소 상세 (지번 + 층) */
@@ -48,6 +48,8 @@ export interface RealTradeRecord {
   landAreaM2?: number;
   /** 법정동 */
   dongName?: string;
+  /** 지번 */
+  jibun?: string;
   /** 취소여부 */
   isCanceled?: boolean;
 }
@@ -116,6 +118,10 @@ export interface BuildingInfo {
 
 // ==================== API 서비스 클래스 ====================
 
+// 인메모리 캐시 (서버 수명 주기 동안 국토부 실거래 데이터 보존 - 0초 즉시 응답)
+const memoryTradeCache = new Map<string, { data: RealTradeRecord[]; timestamp: number }>();
+const CACHE_TTL_MS = 1000 * 60 * 60 * 12; // 12시간
+
 /**
  * 재개발닷컴 동일 데이터 출처 API 서비스
  *
@@ -182,6 +188,13 @@ export class PublicRedevelopmentApiService {
     const dealYmdList = this.buildDealYmdList(monthsBack);
 
     for (const dealYmd of dealYmdList) {
+      const cacheKey = `villa:${lawdCode}:${dealYmd}`;
+      const cached = memoryTradeCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        results.push(...cached.data);
+        continue;
+      }
+
       try {
         const url = new URL("https://apis.data.go.kr/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade");
         url.searchParams.set("serviceKey", this.apiKey);
@@ -198,6 +211,8 @@ export class PublicRedevelopmentApiService {
           console.error(`[연립다세대 실거래] 공공 API 인증 실패 (${dealYmd}): 서비스 키를 확인하세요.`);
           break;
         }
+
+        const monthResults: RealTradeRecord[] = [];
         for (const item of this.parseItems(xml)) {
           const dealAmountStr = this.getVal(item, "dealAmount").replace(/,/g, "");
           if (!dealAmountStr) continue;
@@ -210,8 +225,9 @@ export class PublicRedevelopmentApiService {
           const mhouseNm = this.getVal(item, "mhouseNm");
           const rawHouseType = this.getVal(item, "houseType") || "다세대";
           const landAr = this.getVal(item, "landAr");
+          const dong = this.getVal(item, "umdNm") || this.getVal(item, "dong") || this.getVal(item, "법정동");
 
-          results.push({
+          monthResults.push({
             date: `${dealYear}.${dealMonth}.${dealDay}`,
             houseType: rawHouseType.includes("연립") ? "연립" : "다세대",
             builtYear: parseInt(this.getVal(item, "buildYear") || "0", 10),
@@ -220,9 +236,13 @@ export class PublicRedevelopmentApiService {
             tradePriceManwon: parseInt(dealAmountStr, 10),
             exclusiveAreaM2: parseFloat(this.getVal(item, "excluUseAr") || "0"),
             landAreaM2: parseFloat(landAr || "0") || undefined,
-            dongName: this.getVal(item, "umdNm"),
+            dongName: dong,
+            jibun: jibun || undefined,
           });
         }
+
+        memoryTradeCache.set(cacheKey, { data: monthResults, timestamp: Date.now() });
+        results.push(...monthResults);
       } catch (err) {
         console.error(`[연립다세대 실거래] ${dealYmd} 오류:`, err);
       }
@@ -249,6 +269,13 @@ export class PublicRedevelopmentApiService {
     const dealYmdList = this.buildDealYmdList(monthsBack);
 
     for (const dealYmd of dealYmdList) {
+      const cacheKey = `single:${lawdCode}:${dealYmd}`;
+      const cached = memoryTradeCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        results.push(...cached.data);
+        continue;
+      }
+
       try {
         const url = new URL("https://apis.data.go.kr/1613000/RTMSDataSvcSHTrade/getRTMSDataSvcSHTrade");
         url.searchParams.set("serviceKey", this.apiKey);
@@ -265,6 +292,8 @@ export class PublicRedevelopmentApiService {
           console.error(`[단독다가구 실거래] 공공 API 인증 실패 (${dealYmd}): 서비스 키를 확인하세요.`);
           break;
         }
+
+        const monthResults: RealTradeRecord[] = [];
         for (const item of this.parseItems(xml)) {
           const dealAmountStr = this.getVal(item, "dealAmount").replace(/,/g, "");
           if (!dealAmountStr) continue;
@@ -276,8 +305,9 @@ export class PublicRedevelopmentApiService {
           const rawHouseType = this.getVal(item, "houseType") || "단독";
           const plottageAr = this.getVal(item, "plottageAr");
           const totalFloorAr = this.getVal(item, "totalFloorAr");
+          const dong = this.getVal(item, "umdNm") || this.getVal(item, "dong") || this.getVal(item, "법정동");
 
-          results.push({
+          monthResults.push({
             date: `${dealYear}.${dealMonth}.${dealDay}`,
             houseType: rawHouseType.includes("다가구") ? "다가구" : "단독",
             builtYear: parseInt(this.getVal(item, "buildYear") || "0", 10),
@@ -285,9 +315,13 @@ export class PublicRedevelopmentApiService {
             tradePriceManwon: parseInt(dealAmountStr, 10),
             exclusiveAreaM2: parseFloat(totalFloorAr || "0"),
             landAreaM2: parseFloat(plottageAr || "0") || undefined,
-            dongName: this.getVal(item, "umdNm"),
+            dongName: dong,
+            jibun: jibun || undefined,
           });
         }
+
+        memoryTradeCache.set(cacheKey, { data: monthResults, timestamp: Date.now() });
+        results.push(...monthResults);
       } catch (err) {
         console.error(`[단독다가구 실거래] ${dealYmd} 오류:`, err);
       }
@@ -596,6 +630,51 @@ export function getLawdCodeFromAddress(address: string): string | null {
     if (parts.every((p) => address.includes(p))) return code;
   }
   return null;
+}
+
+/**
+ * 주소로부터 법정동(동/읍/면/리/가) 추출 (예: '응암동', '불광동', '장위동', '한남동')
+ */
+export function extractDongFromAddress(address: string, zoneName?: string): string {
+  if (!address) return "";
+
+  // 1. 주소에서 '동/읍/면/리/가' 패턴 매칭
+  const dongMatch = address.match(/([가-힣\d]+(?:동\d*가?|읍|면|리|로\d*가))(?:\s+|$|\d|일대)/);
+  if (dongMatch) {
+    const candidate = dongMatch[1];
+    if (!candidate.endsWith("시") && !candidate.endsWith("군") && !candidate.endsWith("구")) {
+      return candidate;
+    }
+  }
+
+  // 2. 공백 분리 토큰 중 동/가/읍/면/리로 끝나는 토큰 검색
+  const tokens = address.split(/\s+/);
+  for (const token of tokens) {
+    const clean = token.replace(/[^가-힣\d]/g, "");
+    if (/(동\d*가?|읍|면|리|로\d*가)$/.test(clean) && !/(시|군|구)$/.test(clean)) {
+      return clean;
+    }
+  }
+
+  // 3. 구역명에서 유추 (예: '응암2구역' -> '응암동', '불광1구역' -> '불광동')
+  if (zoneName) {
+    const nameMatch = zoneName.match(/^([가-힣]+?)(?:\d+구역|구역|지구)/);
+    if (nameMatch && nameMatch[1]) {
+      const base = nameMatch[1];
+      return base.endsWith("동") ? base : `${base}동`;
+    }
+  }
+
+  return "";
+}
+
+/**
+ * 주소로부터 지번(Jibun) 추출 (예: '278-1', '454')
+ */
+export function extractJibunFromAddress(address: string): string {
+  if (!address) return "";
+  const match = address.match(/(?:산\s*)?(\d+(?:-\d+)?)/);
+  return match ? match[1] : "";
 }
 
 /** API 서비스 싱글톤 인스턴스 */

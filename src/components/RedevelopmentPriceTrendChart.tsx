@@ -21,8 +21,8 @@ interface Props {
 
 interface TrendPoint {
   label: string;
-  villaPrice: number;
-  housePrice: number;
+  villaPrice: number | null;
+  housePrice: number | null;
   volume: number;
   event?: string;
 }
@@ -78,11 +78,11 @@ export default function RedevelopmentPriceTrendChart({
 
       const avgVilla = villaTrades.length > 0
         ? Math.round(villaTrades.reduce((sum, t) => sum + getVal(t), 0) / villaTrades.length)
-        : 0;
+        : null;
 
       const avgHouse = houseTrades.length > 0
         ? Math.round(houseTrades.reduce((sum, t) => sum + getVal(t), 0) / houseTrades.length)
-        : 0;
+        : null;
 
       points.push({
         label: key,

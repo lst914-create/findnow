@@ -266,6 +266,15 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const [activeLocation, setActiveLocation] = useState<"학군" | "교통" | "쾌적성" | "편의시설">("교통");
   const [schoolTab, setSchoolTab] = useState<"초등학교" | "중학교" | "고등학교" | "대학교">("초등학교");
 
+  // 실시간 종합 교통 데이터 (지하철 호선별 + 고속철도 + 호갱노노 100% 실존 버스 노선)
+  const [trafficData, setTrafficData] = useState<{
+    totalBusCount: number;
+    subways: Array<{ name: string; line: string; distanceMeters: number; walkMinutes: number; color: string }>;
+    highSpeedTrains: Array<{ name: string; distanceMeters: number; distanceKm: string; carMinutes: number }>;
+    busGroups: Array<{ category: string; color: string; badgeClass: string; routes: Array<{ number: string; type: number; startName?: string; endName?: string }> }>;
+  } | null>(null);
+  const [isTrafficLoading, setIsTrafficLoading] = useState(false);
+
   // P0: 단지 데이터 검증 결과
   const validationResult = useMemo(() => validateApartment(apt), [apt]);
 
@@ -323,10 +332,30 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     };
   }, [apt.lat, apt.lng]);
 
+  // 실시간 종합 교통 데이터 조회 (지하철 호선별 + 고속철도 + 호갱노노 100% 실존 버스 노선)
+  useEffect(() => {
+    if (!apt.lat || !apt.lng) return;
+    let isMounted = true;
+    setIsTrafficLoading(true);
+    fetch(`/api/traffic-info?lat=${apt.lat}&lng=${apt.lng}&aptName=${encodeURIComponent(apt.name || "")}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (isMounted && data && data.success) {
+          setTrafficData(data);
+        }
+      })
+      .catch(() => { })
+      .finally(() => { if (isMounted) setIsTrafficLoading(false); });
+    return () => { isMounted = false; };
+  }, [apt.lat, apt.lng, apt.name]);
+
   // 100% 실존 인프라 기반 정량 점수 계산 (과거 고정 더미 점수 실시간 보정)
   const computedTrafficScore = useMemo(() => {
-    if (infraData?.subways && infraData.subways.length > 0) {
-      const dist = infraData.subways[0].distanceMeters;
+    const subways = (trafficData?.subways && trafficData.subways.length > 0)
+      ? trafficData.subways
+      : (infraData?.subways || []);
+    if (subways.length > 0) {
+      const dist = subways[0].distanceMeters;
       if (dist <= 500) return 96;
       if (dist <= 800) return 92;
       if (dist <= 1200) return 88;
@@ -335,7 +364,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       return 73;
     }
     return apt.traffic_score || 75;
-  }, [infraData, apt.traffic_score]);
+  }, [trafficData, infraData, apt.traffic_score]);
 
   const computedSchoolScore = useMemo(() => {
     if (infraData?.schools && infraData.schools.length > 0) {
@@ -2128,151 +2157,200 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
             <div className="p-6">
               {activeLocation === "교통" && (
                 <div className="space-y-4 animate-in fade-in duration-200">
-                  <h4 className="text-sm font-extrabold text-indigo-700 flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-xs">🚇</span>
-                    교통 & 역세권 세부 정보
-                  </h4>
-                  {/* 지하철역 100% 실존 팩트 데이터 */}
-                  {infraData?.subways && infraData.subways.length > 0 ? (
-                    <div className="space-y-2">
-                      {/* 가장 가까운 대표 지하철역 */}
-                      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[11px] font-bold text-indigo-500">🚇 가장 가까운 지하철역</span>
-                          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-600 text-white">
-                            {infraData.subways[0].distanceMeters <= 800
-                              ? "역세권 (도보 10분 내)"
-                              : infraData.subways[0].distanceMeters <= 1500
-                                ? "도보 통근 권역"
-                                : "버스/차량 연계 권역"}
-                          </span>
-                        </div>
-                        <div className="font-extrabold text-indigo-900 text-base">{infraData.subways[0].name}</div>
-                        <div className="flex items-center gap-2 mt-1.5 text-xs text-indigo-700">
-                          <span>🚶 도보 약 {infraData.subways[0].walkMinutes}분 ({infraData.subways[0].distanceMeters.toLocaleString()}m)</span>
-                          {infraData.subways[0].distanceMeters > 1000 && (
-                            <span className="text-indigo-500">· 🚌 버스 약 {Math.round(infraData.subways[0].distanceMeters / 250)}분</span>
-                          )}
-                        </div>
-                      </div>
+                  <div className="flex items-center justify-between pb-1 border-b border-slate-100">
+                    <h4 className="text-sm font-extrabold text-slate-800">
+                      대중교통 및 역세권 인프라
+                    </h4>
+                    <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
+                      실시간 교통망 연동
+                    </span>
+                  </div>
 
-                      {/* 인근 추가 지하철역 (2~3위) */}
-                      {infraData.subways.length > 1 && (
-                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
-                          <div className="text-[10px] font-bold text-slate-400 mb-1.5">인근 환승 및 기타 지하철역</div>
-                          <div className="flex flex-wrap gap-2">
-                            {infraData.subways.slice(1).map((sub: any, idx: number) => (
-                              <span key={idx} className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">
-                                <span>🚇</span> {sub.name} <span className="text-slate-400 text-[10px]">({(sub.distanceMeters / 1000).toFixed(1)}km)</span>
-                              </span>
-                            ))}
-                          </div>
+                  {/* 1. 고속철도 (KTX / SRT) 인접 정보 (호갱노노 스타일) */}
+                  {trafficData?.highSpeedTrains && trafficData.highSpeedTrains.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {trafficData.highSpeedTrains.map((train, idx) => (
+                        <div
+                          key={idx}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/90 border border-slate-200/80 text-xs font-semibold text-slate-700"
+                        >
+                          <span className="font-bold text-slate-900">{train.name}</span>
+                          <span className="text-slate-400">·</span>
+                          <span className="text-slate-600">{train.distanceKm} / 차량 약 {train.carMinutes}분</span>
                         </div>
-                      )}
-                    </div>
-                  ) : apt.station ? (
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
-                      <div className="text-[11px] font-bold text-indigo-500 mb-2">🚇 인근 지하철역</div>
-                      <div className="font-extrabold text-indigo-800 text-base">{apt.station}</div>
-                      {apt.station_dist && (
-                        <div className="text-xs text-indigo-600 mt-1">
-                          🚶 {apt.station_dist}{apt.walk_minutes ? ` (도보 약 ${apt.walk_minutes}분)` : ""}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-sm text-slate-500">
-                      반경 4km 내 직통 지하철역이 없으며, 인근 버스 노선 및 광역버스로 이동 가능합니다.
+                      ))}
                     </div>
                   )}
 
-                  {/* 버스 */}
-                  {(() => {
-                    const busInfo = getBusInfo(apt);
-                    const typeColor: Record<string, string> = {
-                      "광역": "bg-red-100 text-red-700 border-red-200",
-                      "간선": "bg-blue-100 text-blue-700 border-blue-200",
-                      "지선": "bg-green-100 text-green-700 border-green-200",
-                      "마을": "bg-amber-100 text-amber-700 border-amber-200",
-                      "BRT": "bg-purple-100 text-purple-700 border-purple-200",
-                    };
-                    return (
-                      <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
-                        {/* 헤더 */}
-                        <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-slate-100 flex-wrap sm:flex-nowrap">
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <span className="text-sm">🚏</span>
-                            <span className="text-xs font-extrabold text-slate-800 whitespace-nowrap">{busInfo.stopName}</span>
-                            {busInfo.stopId && (
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 text-slate-600 font-mono font-semibold">
-                                {busInfo.stopId}
+                  {/* 2. 지하철역 정보 (호선별 고유 컬러 뱃지 + 도보 거리) */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-600">지하철역 (도보권 환승)</span>
+                      <span className="text-[11px] text-slate-400">
+                        {((trafficData?.subways && trafficData.subways.length > 0)
+                          ? trafficData.subways.length
+                          : (infraData?.subways?.length || 0))}개 역사 연계
+                      </span>
+                    </div>
+
+                    {(trafficData?.subways && trafficData.subways.length > 0) ? (
+                      <div className="space-y-1.5">
+                        {trafficData.subways.slice(0, 5).map((sub, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100/70 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span
+                                className="px-2 py-0.5 rounded-md text-[11px] font-black text-white shrink-0 shadow-2xs"
+                                style={{ backgroundColor: sub.color || "#4F46E5" }}
+                              >
+                                {sub.line || "지하철"}
                               </span>
-                            )}
-                          </div>
-                          <div className="text-[10px] font-bold text-indigo-600 whitespace-nowrap text-right">{busInfo.summary}</div>
-                        </div>
-
-                        {/* 실제 검증된 노선만 노출 (가짜 더미 노선 완전 배제) */}
-                        {busInfo.hasVerifiedRoutes && busInfo.routes.length > 0 ? (
-                          <div className="space-y-2">
-                            {busInfo.routes.map((route, i) => (
-                              <div key={i} className="flex items-center justify-between gap-2.5 bg-white rounded-lg p-2.5 border border-slate-100">
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <span className={`shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-extrabold border ${typeColor[route.type] || "bg-slate-100 text-slate-600 border-slate-200"}`}>
-                                    {route.type}
-                                  </span>
-                                  <span className="text-xs font-black text-slate-900 whitespace-nowrap">{route.number}</span>
-                                </div>
-                                <span className="text-[11px] text-slate-500 font-medium truncate text-right min-w-0 flex-1">
-                                  {route.dest}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="bg-white rounded-xl p-3 border border-slate-100 text-xs text-slate-500">
-                            단지 앞 정류소 실시간 배차 및 경유 노선(시내·마을·광역) 정보를 실시간 교통망에서 확인하실 수 있습니다.
-                          </div>
-                        )}
-
-                        {/* 배차 간격 */}
-                        <div className="flex items-center gap-3 bg-white rounded-xl px-3 py-2 border border-slate-100">
-                          <span className="text-sm">⏱️</span>
-                          <div className="flex-1">
-                            <div className="text-[10px] font-semibold text-slate-400 mb-0.5">배차 간격</div>
-                            <div className="text-xs font-bold text-slate-700">
-                              {apt.tags?.some((t: string) => /광역버스|BRT|역세권/.test(t))
-                                ? "첨두시 5~10분 / 비첨두시 10~20분"
-                                : apt.traffic_score >= 85
-                                  ? "첨두시 8~12분 / 비첨두시 15~25분"
-                                  : "첨두시 10~15분 / 비첨두시 20~30분"}
+                              <span className="text-sm font-bold text-slate-900">{sub.name}</span>
+                            </div>
+                            <div className="text-xs font-medium text-slate-600">
+                              <span className="font-semibold text-indigo-600">도보 약 {sub.walkMinutes}분</span>
+                              <span className="text-slate-400 ml-1">({sub.distanceMeters.toLocaleString()}m)</span>
                             </div>
                           </div>
-                        </div>
-
-                        {/* 실시간 버스도착 지도 CTA */}
-                        <a
-                          href={`https://map.naver.com/v5/search/${encodeURIComponent(busInfo.stopName || (apt.name + " 버스정류장"))}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-between w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 transition-colors group shadow-xs"
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">🗺️</span>
-                            <div>
-                              <div className="text-xs font-bold">실시간 버스 도착 정보 확인</div>
-                              <div className="text-[10px] text-indigo-200">정류소 실시간 배차 · 남은 시간 · 경유 노선</div>
-                            </div>
-                          </div>
-                          <span className="text-white/70 group-hover:translate-x-0.5 transition-transform text-sm">→</span>
-                        </a>
+                        ))}
                       </div>
-                    );
-                  })()}
-                  {/* 자가용 접근성 */}
-                  <div className="flex items-center gap-3 text-xs text-slate-500 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
-                    <span>🚗</span>
-                    <span>교통 점수 <strong className="text-indigo-700">{apt.traffic_score}점</strong> — {apt.traffic_score >= 90 ? "최상위 교통 인프라 (상위 5% 수준)" : apt.traffic_score >= 80 ? "우수한 교통 환경" : "평균 이상 교통 환경"}</span>
+                    ) : (infraData?.subways && infraData.subways.length > 0) ? (
+                      <div className="space-y-1.5">
+                        {infraData.subways.slice(0, 3).map((sub: any, idx: number) => (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100"
+                          >
+                            <div className="flex items-center gap-2">
+                              {sub.line && (
+                                <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-indigo-600 text-white shrink-0">
+                                  {sub.line}
+                                </span>
+                              )}
+                              <span className="text-sm font-bold text-slate-900">{sub.name}</span>
+                            </div>
+                            <div className="text-xs font-medium text-slate-600">
+                              <span className="font-semibold text-indigo-600">도보 약 {sub.walkMinutes}분</span>
+                              <span className="text-slate-400 ml-1">({sub.distanceMeters.toLocaleString()}m)</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : apt.station ? (
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                        <span className="text-sm font-bold text-slate-900">{apt.station}</span>
+                        {apt.station_dist && (
+                          <span className="text-xs text-indigo-600 font-semibold">{apt.station_dist}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-500">
+                        반경 4km 내 직통 전철역이 없으며, 인근 버스 및 광역교통망으로 연계됩니다.
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. 버스 노선 정보 (호갱노노 100% 동일: 🚌 버스 N + 카테고리별 칩 그리드) */}
+                  <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-4 shadow-2xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">🚌</span>
+                        <h5 className="text-sm sm:text-base font-black text-slate-900 tracking-tight">
+                          버스 {trafficData ? trafficData.totalBusCount : "조회 중..."}
+                        </h5>
+                      </div>
+                      <span className="text-[11px] text-slate-400">
+                        단지 인근 경유 노선 전체
+                      </span>
+                    </div>
+
+                    {isTrafficLoading && !trafficData ? (
+                      <div className="py-6 text-center text-xs text-slate-400 animate-pulse">
+                        실시간 버스 노선망을 불러오는 중입니다...
+                      </div>
+                    ) : trafficData?.busGroups && trafficData.busGroups.length > 0 ? (
+                      <div className="space-y-4">
+                        {trafficData.busGroups.map((group, gIdx) => (
+                          <div key={gIdx} className="space-y-2">
+                            {/* 카테고리 뱃지 (공항, 마을, 간선, 지선, 경기 등) */}
+                            <div>
+                              <span
+                                className="inline-block px-2 py-0.5 rounded text-[11px] font-extrabold text-white shadow-2xs"
+                                style={{ backgroundColor: group.color }}
+                              >
+                                {group.category}
+                              </span>
+                            </div>
+
+                            {/* 해당 카테고리 버스 노선 번호 칩 나열 (호갱노노 둥근 회색 칩 스타일) */}
+                            <div className="flex flex-wrap gap-2">
+                              {group.routes.map((route, rIdx) => (
+                                <span
+                                  key={rIdx}
+                                  title={route.startName && route.endName ? `${route.startName} ↔ ${route.endName}` : undefined}
+                                  className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 text-slate-800 text-xs sm:text-sm font-bold tracking-tight border border-slate-200/60 transition-colors cursor-default"
+                                >
+                                  {route.number}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      /* Fallback: 버스 데이터 로딩 실패 시 기존 getBusInfo 사용 */
+                      (() => {
+                        const busInfo = getBusInfo(apt);
+                        return (
+                          <div className="space-y-3">
+                            <div className="text-xs font-bold text-slate-700">
+                              {busInfo.stopName} ({busInfo.summary})
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {busInfo.routes.map((r, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold border border-slate-200"
+                                >
+                                  <span className="text-[10px] text-indigo-600 font-extrabold">{r.type}</span>
+                                  <span>{r.number}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })()
+                    )}
+
+                    {/* 실시간 버스 도착 정보 네이버 지도 CTA */}
+                    <div className="pt-2 border-t border-slate-100">
+                      <a
+                        href={`https://map.naver.com/v5/search/${encodeURIComponent(apt.name + " 버스정류장")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 transition-colors group shadow-xs"
+                      >
+                        <div className="text-left">
+                          <div className="text-xs font-bold">정류소별 실시간 버스 도착 정보 확인</div>
+                          <div className="text-[10px] text-indigo-200">남은 시간 · 실시간 버스 위치 · 첫차/막차 정보</div>
+                        </div>
+                        <span className="text-white/80 group-hover:translate-x-0.5 transition-transform text-sm font-bold">
+                          확인하기 →
+                        </span>
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* 4. 자가용 접근성 및 교통 종합 점수 */}
+                  <div className="flex items-center justify-between text-xs text-slate-600 bg-slate-50 rounded-xl px-3.5 py-2.5 border border-slate-100">
+                    <span className="font-medium">
+                      교통 환경 종합 평가: <strong className="text-indigo-700 font-extrabold">{computedTrafficScore}점</strong>
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      {computedTrafficScore >= 90 ? "최상위 교통 인프라" : computedTrafficScore >= 80 ? "우수한 교통 환경" : "보통 수준"}
+                    </span>
                   </div>
                 </div>
               )}

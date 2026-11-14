@@ -602,9 +602,11 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     if (!apt.area_distributions || apt.area_distributions.length === 0) return null;
     const list: { sqm: number; label: string }[] = [];
     apt.area_distributions.forEach((dist: any) => {
-      const m = dist.label?.match(/전용\s*(\d+)㎡/);
-      if (m) {
-        list.push({ sqm: parseInt(m[1], 10), label: `${m[1]}㎡` });
+      const numMatch = dist.label?.match(/(\d+)/);
+      const labelSqm = numMatch ? parseInt(numMatch[1], 10) : 0;
+      const sqmNum = labelSqm > 0 ? labelSqm : (dist.sqm ? Math.floor(dist.sqm) : 0);
+      if (sqmNum > 0) {
+        list.push({ sqm: sqmNum, label: `${sqmNum}㎡` });
       }
     });
     return list.length > 0 ? list : null;
@@ -1902,9 +1904,12 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
               : (apt.area_distributions && apt.area_distributions.length > 0
                 ? apt.area_distributions
                 : [
-                  { label: "전용 59㎡ (25평)", pyeong: 25, units: Math.round((apt.household_count || 500) * 0.35), ratio: 35 },
-                  { label: "전용 84㎡ (34평)", pyeong: 34, units: Math.round((apt.household_count || 500) * 0.45), ratio: 45 },
-                  { label: "전용 114㎡ (45평)", pyeong: 45, units: Math.round((apt.household_count || 500) * 0.20), ratio: 20 },
+                  {
+                    label: `전용 ${Math.round(apt.area_sqm || 84)}㎡ (${apt.area_pyeong || Math.round((apt.area_sqm || 84) * 0.3025)}평)`,
+                    pyeong: apt.area_pyeong || Math.round((apt.area_sqm || 84) * 0.3025),
+                    units: apt.household_count || 0,
+                    ratio: 100,
+                  },
                 ]),
             school_name: resolvedSchoolName,
             school_dist: resolvedSchoolDist,

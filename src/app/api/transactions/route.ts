@@ -137,10 +137,12 @@ function isAptNameMatch(
   if (tStripped === cStripped) return true;
   if (tStripped === cNorm || cStripped === tNorm) return true;
 
-  // ─── 4. 차수/단지 번호 불일치 시 매칭 거부 ────────────────────────────────
+  // ─── 4. 차수/단지 번호 엄격 대조 (단지 번호 유무 불일치 시 절대 매칭 거부) ──────
   const tNums = extractAptNums(tNorm);
   const cNums = extractAptNums(cNorm);
-  if (tNums.length > 0 && cNums.length > 0) {
+  if (tNums.length > 0 || cNums.length > 0) {
+    // 타겟 또는 후보 중 한쪽에만 단지 번호가 있거나 번호 시퀀스가 다르면 절대 매칭 불가!
+    // (예: "다산한신더휴 7단지"에 단지번호 없는 "다산한신휴플러스"나 다른 차수 "다산한신더휴 6단지" 오매칭 원천 차단)
     if (tNums.join(",") !== cNums.join(",")) {
       return false;
     }

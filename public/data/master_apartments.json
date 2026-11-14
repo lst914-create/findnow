@@ -185156,10 +185156,10 @@
     "rent_max": 52140,
     "gapPrice": 26860,
     "jeonseRatio": 66,
-    "area_sqm": 134.9,
-    "area_pyeong": 49,
+    "area_sqm": 134.94,
+    "area_pyeong": 50,
     "built_year": 2009,
-    "household_count": 1110,
+    "household_count": 114,
     "school_score": 91,
     "traffic_score": 83,
     "nature_score": 87,
@@ -185176,7 +185176,7 @@
     "lng": 127.157383,
     "walk_minutes": 11,
     "description": "경기 남양주시 다산동에 위치한 아파트입니다. 국토교통부 실거래가 공개시스템 및 K-apt 공식 공공데이터가 실시간 연동되어 있습니다.",
-    "dong_count": 9,
+    "dong_count": 7,
     "floor_top": 21,
     "floor_base": 3,
     "approval_date": "2004.05.01",
@@ -185215,22 +185215,32 @@
     ],
     "area_distributions": [
       {
-        "label": "전용 59㎡ (25평)",
-        "pyeong": 25,
-        "units": 389,
-        "ratio": 35
+        "label": "121㎡",
+        "pyeong": 46,
+        "sqm": 121.94,
+        "units": 44,
+        "ratio": 39
       },
       {
-        "label": "전용 84㎡ (34평)",
-        "pyeong": 34,
-        "units": 500,
-        "ratio": 45
+        "label": "124㎡",
+        "pyeong": 47,
+        "sqm": 124.98,
+        "units": 6,
+        "ratio": 5
       },
       {
-        "label": "전용 114㎡ (45평)",
-        "pyeong": 45,
-        "units": 222,
-        "ratio": 20
+        "label": "134㎡",
+        "pyeong": 50,
+        "sqm": 134.94,
+        "units": 59,
+        "ratio": 52
+      },
+      {
+        "label": "147㎡",
+        "pyeong": 55,
+        "sqm": 147.38,
+        "units": 5,
+        "ratio": 4
       }
     ],
     "isRealPrice": true

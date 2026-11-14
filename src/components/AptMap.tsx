@@ -22,6 +22,7 @@ export interface AptMarker {
   lat: number;
   lng: number;
   pyeong: number;
+  areaSqm?: number;      // 전용면적 (㎡) - 소수점 1자리 정규화
   priceNum: number;      // 만원 단위 (매매)
   rentNum?: number;       // 만원 단위 (전세)
   avgPrice: string;      // 표시용 (예: "30.5억")
@@ -48,6 +49,30 @@ export interface AptMarker {
   heatingType?: string;  // 난방방식
 }
 
+/**
+ * 한국 아파트 평형(공급) -> 국토부 표준 전용면적(㎡) 정밀 환산
+ * 24~25평형 -> 59㎡, 30평형 -> 74㎡, 33~34평형 -> 84.8~84.9㎡
+ */
+export function getStandardExclusiveAreaSqm(pyeong: number, existingSqm?: number): number {
+  if (existingSqm && existingSqm > 10 && existingSqm < 300) {
+    const isGrossAreaMistake = Math.abs(existingSqm - pyeong * 3.3) < 0.5;
+    if (!isGrossAreaMistake) {
+      return Math.round(existingSqm * 10) / 10;
+    }
+  }
+
+  const p = Math.round(pyeong);
+  if (p <= 18) return Math.round(p * 2.3 * 10) / 10;
+  if (p <= 22) return 49.0;
+  if (p <= 26) return 59.0;
+  if (p <= 31) return 74.0;
+  if (p <= 35) return 84.8;
+  if (p <= 40) return 101.5;
+  if (p <= 45) return 114.5;
+  if (p <= 52) return 130.0;
+  return Math.round(p * 2.5 * 10) / 10;
+}
+
 export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
   const isRentalOnly = (apt as any).isRentalOnly === true;
   // 임대전용(청년주택 등) 단지는 price_max가 임대보증금이므로 매매가로 사용하지 않음
@@ -67,6 +92,7 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
     lat: apt.lat,
     lng: apt.lng,
     pyeong: apt.area_pyeong,
+    areaSqm: apt.area_sqm ? Math.round(apt.area_sqm * 10) / 10 : getStandardExclusiveAreaSqm(apt.area_pyeong),
     priceNum: priceNum,
     rentNum: rentNum,
     avgPrice: avgPriceStr,
@@ -680,7 +706,7 @@ export default function AptMap({
           price_max: a.priceNum,
           rent_min: a.rentNum,
           rent_max: a.rentNum,
-          area_sqm: a.pyeong * 3.3,
+          area_sqm: a.areaSqm ?? getStandardExclusiveAreaSqm(a.pyeong),
           area_pyeong: a.pyeong,
           built_year: a.builtYear ?? 2005,
           household_count: a.householdCount ?? 100,
@@ -821,33 +847,60 @@ export default function AptMap({
                 let hasNew = false;
                 data.forEach((place: any) => {
                   if (!place.category_name || !place.category_name.includes("아파트")) return;
+
+                  // 1) 비주거 부속시설(어린이집, 유치원, 상가, 복합청사, 관리사무소, 경로당 등) 원천 차단
+                  if (/(어린이집|유치원|상가|관리소|관리사무소|경로당|노인정|주민센터|복합청사|청사|주차장|놀이터|치안센터|파출소|동호회|상가동)/.test(place.place_name)) {
+                    return;
+                  }
+
                   const lat = parseFloat(place.y);
                   const lng = parseFloat(place.x);
                   const cleanName = place.place_name.replace(/(아파트|단지)$/, "").trim();
+                  const normPlace = normalizeAptName(place.place_name);
+                  if (!normPlace || normPlace.length < 2) return;
 
-                  // 기존 마커 목록과 거리(70m 이내) 또는 명칭 중복 검사
+                  // 2) 기존 화면 마커 목록과 중복 검사 (단지 반경 250m 및 정규화 명칭 대조)
                   const isExisting = allApts.some((m) => {
+                    const normM = normalizeAptName(m.name);
                     const dist = Math.hypot(m.lat - lat, m.lng - lng) * 111000;
-                    return dist < 70 || m.name.includes(cleanName) || cleanName.includes(m.name);
+                    const isNameMatch = normM === normPlace || normM.includes(normPlace) || normPlace.includes(normM);
+
+                    // 단지 반경 250m 이내에 이름이 일치/유사하면 100% 동일 단지
+                    if (dist < 250 && isNameMatch) return true;
+                    // 정규화 명칭이 완전 동일하면 거리 불문 동일 단지
+                    if (normM === normPlace) return true;
+                    // 60m 이내 초근접 좌표는 부속 장소이므로 스킵
+                    if (dist < 60) return true;
+
+                    return false;
                   });
                   if (isExisting) return;
 
-                  const key = `${place.id}_${cleanName}`;
+                  // 3) 전국 K-apt 마스터 단지 DB와 정밀 대조 (300m 이내에 이미 마스터 단지가 있으면 마커 중복 생성 차단)
+                  const isMasterExisting = APT_MARKERS.some((m) => {
+                    const normM = normalizeAptName(m.name);
+                    const dist = Math.hypot(m.lat - lat, m.lng - lng) * 111000;
+                    return dist < 300 && (normM === normPlace || normM.includes(normPlace) || normPlace.includes(normM));
+                  });
+                  if (isMasterExisting) return;
+
+                  const key = `${place.id}_${normPlace}`;
                   if (dynamicDiscoveredMarkersRef.current.has(key)) return;
 
                   const addrParts = (place.address_name || "").split(" ");
                   const region = `${addrParts[0] || "서울"} ${addrParts[1] || ""}`.trim();
                   const district = addrParts[2] || "";
 
-                  const normName = normalizeAptName(cleanName);
-                  const liveDetail = livePriceDetailCacheRef.current.get(normName);
+                  const liveDetail = livePriceDetailCacheRef.current.get(normPlace);
+                  const pyeongVal = liveDetail ? liveDetail.pyeong : 34;
 
                   const newMarker: AptMarker = {
                     id: `kakao-${place.id}`,
                     name: cleanName,
                     lat,
                     lng,
-                    pyeong: liveDetail ? liveDetail.pyeong : 34,
+                    pyeong: pyeongVal,
+                    areaSqm: getStandardExclusiveAreaSqm(pyeongVal),
                     priceNum: liveDetail ? liveDetail.latestPrice : 0,
                     rentNum: 0,
                     avgPrice: liveDetail ? liveDetail.formatted : "가격없음",

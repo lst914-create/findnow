@@ -658,6 +658,27 @@ export default function Home() {
     return `보증금 5천 / 월 ${monthlyMin}~${monthlyMax}만`;
   };
 
+  const formatExclusiveAreaDisplay = (sqm?: number, pyeong?: number) => {
+    if (!sqm || sqm <= 0) {
+      const p = pyeong || 34;
+      if (p <= 26) return "59㎡";
+      if (p <= 31) return "74㎡";
+      if (p <= 35) return "84.8㎡";
+      return `${Math.round(p * 2.5 * 10) / 10}㎡`;
+    }
+
+    // 만약 공급면적(pyeong * 3.3)으로 잘못 들어와서 33~35평인데 100㎡ 이상인 경우 국민전용으로 보정
+    if (pyeong && pyeong <= 35 && sqm >= 100) {
+      if (pyeong <= 26) return "59㎡";
+      if (pyeong <= 31) return "74㎡";
+      return "84.8㎡";
+    }
+
+    // 부동소수점 오차 정돈 (소수점 1자리, .0이면 정수로 깔끔하게 표현)
+    const rounded = Math.round(sqm * 10) / 10;
+    return `${Number(rounded.toFixed(1))}㎡`;
+  };
+
   return (
     <div className="min-h-screen bg-surface-50 text-surface-900 font-sans pb-mobile-nav sm:pb-0">
       {/* Header */}
@@ -1228,7 +1249,7 @@ export default function Home() {
                         <div className="flex justify-between items-center text-xs text-gray-600">
                           <span className="text-gray-400">전용면적</span>
                           <span className="font-semibold text-gray-800">
-                            {apt.area_sqm}㎡ ({apt.area_pyeong}평형)
+                            {formatExclusiveAreaDisplay(apt.area_sqm, apt.area_pyeong)} ({apt.area_pyeong}평형)
                           </span>
                         </div>
                         <div className="flex justify-between items-center text-xs text-gray-600">

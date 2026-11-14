@@ -1336,11 +1336,27 @@ const BASE_REDEVELOPMENT_DATA: RedevelopmentZone[] = [
     lat: 37.5595,
     lng: 126.9545,
     polygon: [
-      { lat: 37.5625, lng: 126.9515 },
-      { lat: 37.5628, lng: 126.9578 },
-      { lat: 37.5572, lng: 126.9585 },
-      { lat: 37.5565, lng: 126.9525 },
-      { lat: 37.5595, lng: 126.9502 },
+      { lat: 37.5573, lng: 126.9582 }, // 남동 코너 (충현동 경계, 아현역 2번출구 북동측)
+      { lat: 37.5584, lng: 126.9585 }, // 충현동 주택가 경계선
+      { lat: 37.5595, lng: 126.9583 }, // 충정로1차 서편 능선
+      { lat: 37.5606, lng: 126.9580 }, // 북아현동 주민센터 동편
+      { lat: 37.5615, lng: 126.9575 }, // 동측 능선 도로변
+      { lat: 37.5622, lng: 126.9570 }, // 북동 코너 진입로
+      { lat: 37.5628, lng: 126.9566 }, // 북동점 (북아현3구역 남동 접경)
+      { lat: 37.5630, lng: 126.9553 }, // 북측 경계선 (북아현3구역과 접경)
+      { lat: 37.5631, lng: 126.9538 }, // 북측 경계선 중앙
+      { lat: 37.5630, lng: 126.9525 }, // 북측 경계선 서편 (북아현3구역 남서 접경)
+      { lat: 37.5626, lng: 126.9513 }, // 북서 코너 (한성중고교 북동측)
+      { lat: 37.5617, lng: 126.9510 }, // 한성고등학교 동측 능선
+      { lat: 37.5607, lng: 126.9512 }, // 한성중학교 동측 경계
+      { lat: 37.5598, lng: 126.9516 }, // 북아현로변 이면도로
+      { lat: 37.5589, lng: 126.9522 }, // 북아현로 방향 서측 주택가
+      { lat: 37.5580, lng: 126.9530 }, // 서측 하단 능선
+      { lat: 37.5574, lng: 126.9536 }, // 남서 코너 (아현역 1번출구 북측)
+      { lat: 37.5572, lng: 126.9546 }, // 신촌로 북측 이면도로
+      { lat: 37.5571, lng: 126.9558 }, // 아현역 북측 중심도로
+      { lat: 37.5571, lng: 126.9570 }, // 남측 이면도로 동편
+      { lat: 37.5573, lng: 126.9582 }, // 폐합
     ],
     totalUnits: 2320,
     ownersCount: 1280,
@@ -1407,6 +1423,322 @@ const BASE_REDEVELOPMENT_DATA: RedevelopmentZone[] = [
         title: "북아현2재정비촉진구역 사업시행계획 변경인가 고시",
         org: "서대문구청 고시",
         date: "2023.03.16",
+        type: "고시",
+      },
+    ],
+  },
+  {
+    id: "bukahyeon-3",
+    name: "북아현3구역",
+    type: "재개발",
+    status: "사업시행인가",
+    statusDate: "2022.07.14",
+    region: "서울",
+    district: "서대문구",
+    address: "서울특별시 서대문구 북아현동 3-66 일대",
+    lat: 37.5655,
+    lng: 126.9550,
+    polygon: [
+      { lat: 37.5630, lng: 126.9525 }, // 남서 코너 (북아현2구역 북서 접경)
+      { lat: 37.5631, lng: 126.9538 }, // 남측 경계선 (북아현2구역과 맞닿음)
+      { lat: 37.5630, lng: 126.9553 }, // 남측 경계선 중앙
+      { lat: 37.5628, lng: 126.9566 }, // 남동 코너 (북아현2구역 북동 접경)
+      { lat: 37.5635, lng: 126.9576 }, // 충현동 방향 북상선
+      { lat: 37.5644, lng: 126.9583 }, // 경기대 진입로 서편
+      { lat: 37.5654, lng: 126.9587 }, // 경기대 서울캠퍼스 남서측 능선
+      { lat: 37.5666, lng: 126.9584 }, // 경기대 서측 경계 도로
+      { lat: 37.5676, lng: 126.9578 }, // 천연뜨란채 서측 경계
+      { lat: 37.5685, lng: 126.9570 }, // 동북측 고지대 주택가
+      { lat: 37.5692, lng: 126.9559 }, // 북동 코너 (안산도시자연공원 자락 접경)
+      { lat: 37.5696, lng: 126.9547 }, // 최북단 능선부
+      { lat: 37.5694, lng: 126.9535 }, // 북측 능선길
+      { lat: 37.5689, lng: 126.9523 }, // 북측 안산 자락
+      { lat: 37.5680, lng: 126.9515 }, // 북서 코너 (안산 자락 서편)
+      { lat: 37.5670, lng: 126.9510 }, // 북아현힐스테이트 동측 경계
+      { lat: 37.5660, lng: 126.9508 }, // 북아현로 방향 서측 능선
+      { lat: 37.5650, lng: 126.9511 }, // e편한세상신촌 4단지 동측
+      { lat: 37.5642, lng: 126.9516 }, // 중앙여고/한성고 북측 경계
+      { lat: 37.5635, lng: 126.9520 }, // 남서 진입로
+      { lat: 37.5630, lng: 126.9525 }, // 폐합
+    ],
+    totalUnits: 4724,
+    ownersCount: 1850,
+    generalUnits: 1540,
+    rentalUnits: 815,
+    generalRatio: 33,
+    builder: "GS건설 · 롯데건설",
+    zoneAreaM2: 263101,
+    far: 258,
+    bcr: 21,
+    maxFloor: 32,
+    totalBuildings: 47,
+    recentTradePriceDisplay: "9.8억",
+    avgLandPricePerPyeongManwon: 8200,
+    pricePerPyeongByAge: {
+      villa11To30Year: 8800,
+      villaOver30Year: 7900,
+      singleHouse: 4200,
+    },
+    askCount: 62,
+    minPriceDisplay: "8.5억",
+    minInvestmentDisplay: "6.7억",
+    estimatedPremiumDisplay: "4.5억~5.5억",
+    calcMetrics: {
+      estimatedProportionRate: 104,
+      avgOfficialPriceRatio: 130,
+      unionPrice59Manwon: 68000,
+      unionPrice84Manwon: 89000,
+      generalPrice59Manwon: 98000,
+      generalPrice84Manwon: 132000,
+      expectedNewAptPrice84Manwon: 185000,
+    },
+    nearestStation: "서대문역 (5호선) · 충정로역 · 아현역",
+    walkMinutes: 8,
+    stages: [
+      { name: "정비구역지정", isCompleted: true, isCurrent: false, date: "2008.02.05" },
+      { name: "조합설립인가", isCompleted: true, isCurrent: false, date: "2008.09.25" },
+      { name: "사업시행인가", isCompleted: true, isCurrent: true, date: "2022.07.14", description: "사업시행계획 변경인가 및 관리처분 총회 추진" },
+      { name: "관리처분인가", isCompleted: false, isCurrent: false },
+      { name: "이주철거", isCompleted: false, isCurrent: false },
+      { name: "착공", isCompleted: false, isCurrent: false },
+      { name: "준공", isCompleted: false, isCurrent: false },
+    ],
+    transactions: [
+      {
+        id: "tx-ba3-1",
+        date: "2026.09.25",
+        type: "다세대",
+        builtYear: 1999,
+        addressDetail: "북아현동 101 2층",
+        tradePriceManwon: 89000,
+        tradePriceDisplay: "8.9억",
+        officialPriceManwon: 32000,
+        officialPriceDisplay: "3.2억",
+        landPyeong: 10.5,
+        exclusivePyeong: 16.8,
+        landPricePerPyeongManwon: 8476,
+      },
+    ],
+    notices: [
+      {
+        id: "nt-ba3-1",
+        title: "북아현3재정비촉진구역 재정비촉진계획 변경 및 사업시행계획 관련 고시",
+        org: "서대문구청 고시",
+        date: "2022.07.14",
+        type: "고시",
+      },
+    ],
+  },
+  {
+    id: "chungjeongro-1",
+    name: "충정로1구역 (공공재개발)",
+    type: "공공재개발",
+    status: "정비구역지정",
+    statusDate: "2023.10.19",
+    region: "서울",
+    district: "서대문구",
+    address: "서울특별시 서대문구 충정로3가 281-11 일대",
+    lat: 37.5620,
+    lng: 126.9620,
+    polygon: [
+      { lat: 37.5605, lng: 126.9608 },
+      { lat: 37.5615, lng: 126.9632 },
+      { lat: 37.5632, lng: 126.9628 },
+      { lat: 37.5628, lng: 126.9605 },
+      { lat: 37.5618, lng: 126.9600 },
+      { lat: 37.5605, lng: 126.9608 },
+    ],
+    totalUnits: 930,
+    ownersCount: 420,
+    generalUnits: 360,
+    rentalUnits: 150,
+    generalRatio: 38,
+    builder: "시공사 선정 예정 (SH공사 공동시행)",
+    zoneAreaM2: 52000,
+    far: 290,
+    bcr: 25,
+    maxFloor: 30,
+    totalBuildings: 8,
+    recentTradePriceDisplay: "7.8억",
+    avgLandPricePerPyeongManwon: 7200,
+    askCount: 18,
+    minPriceDisplay: "6.9억",
+    minInvestmentDisplay: "5.5억",
+    estimatedPremiumDisplay: "3.2억~4.0억",
+    nearestStation: "충정로역 (2·5호선 더블역세권)",
+    walkMinutes: 3,
+    stages: [
+      { name: "정비구역지정", isCompleted: true, isCurrent: true, date: "2023.10.19", description: "정비계획 수립 및 공공재개발 추진" },
+      { name: "조합설립인가", isCompleted: false, isCurrent: false },
+      { name: "사업시행인가", isCompleted: false, isCurrent: false },
+      { name: "관리처분인가", isCompleted: false, isCurrent: false },
+      { name: "이주철거", isCompleted: false, isCurrent: false },
+      { name: "착공", isCompleted: false, isCurrent: false },
+      { name: "준공", isCompleted: false, isCurrent: false },
+    ],
+    pricePerPyeongByAge: {
+      villa11To30Year: 7800,
+      villaOver30Year: 6900,
+      singleHouse: 3800,
+    },
+    calcMetrics: {
+      estimatedProportionRate: 103,
+      avgOfficialPriceRatio: 128,
+      unionPrice59Manwon: 58000,
+      unionPrice84Manwon: 76000,
+      generalPrice59Manwon: 88000,
+      generalPrice84Manwon: 118000,
+      expectedNewAptPrice84Manwon: 155000,
+    },
+    transactions: [],
+    notices: [
+      {
+        id: "nt-cj1-1",
+        title: "충정로1구역 공공재개발 정비구역 지정 고시",
+        org: "서울시 고시",
+        date: "2023.10.19",
+        type: "고시",
+      },
+    ],
+  },
+  {
+    id: "gongdeok-1",
+    name: "공덕1구역 (마포자이힐스테이트)",
+    type: "재건축",
+    status: "착공",
+    statusDate: "2024.03.15",
+    region: "서울",
+    district: "마포구",
+    address: "서울특별시 마포구 공덕동 105-84 일대",
+    lat: 37.5485,
+    lng: 126.9550,
+    polygon: [
+      { lat: 37.5468, lng: 126.9535 },
+      { lat: 37.5475, lng: 126.9565 },
+      { lat: 37.5502, lng: 126.9560 },
+      { lat: 37.5498, lng: 126.9530 },
+      { lat: 37.5482, lng: 126.9525 },
+      { lat: 37.5468, lng: 126.9535 },
+    ],
+    totalUnits: 1101,
+    ownersCount: 480,
+    generalUnits: 463,
+    rentalUnits: 158,
+    generalRatio: 42,
+    builder: "GS건설 · 현대건설",
+    zoneAreaM2: 58427,
+    far: 249,
+    bcr: 21,
+    maxFloor: 22,
+    totalBuildings: 11,
+    recentTradePriceDisplay: "18.5억",
+    avgLandPricePerPyeongManwon: 12000,
+    askCount: 15,
+    minPriceDisplay: "16.8억",
+    minInvestmentDisplay: "12.5억",
+    estimatedPremiumDisplay: "7.5억~9.0억",
+    nearestStation: "애오개역 (5호선) · 공덕역",
+    walkMinutes: 4,
+    stages: [
+      { name: "정비구역지정", isCompleted: true, isCurrent: false },
+      { name: "조합설립인가", isCompleted: true, isCurrent: false },
+      { name: "사업시행인가", isCompleted: true, isCurrent: false },
+      { name: "관리처분인가", isCompleted: true, isCurrent: false },
+      { name: "착공", isCompleted: true, isCurrent: true, date: "2024.03.15", description: "일반분양 완료 및 공사 진행 중" },
+      { name: "준공", isCompleted: false, isCurrent: false },
+    ],
+    pricePerPyeongByAge: {
+      villa11To30Year: 12500,
+      villaOver30Year: 11200,
+      singleHouse: 5500,
+    },
+    calcMetrics: {
+      estimatedProportionRate: 108,
+      avgOfficialPriceRatio: 135,
+      unionPrice59Manwon: 92000,
+      unionPrice84Manwon: 128000,
+      generalPrice59Manwon: 148000,
+      generalPrice84Manwon: 188000,
+      expectedNewAptPrice84Manwon: 220000,
+    },
+    transactions: [],
+    notices: [
+      {
+        id: "nt-gd1-1",
+        title: "공덕1구역 재건축 착공 허가",
+        org: "마포구청",
+        date: "2024.03.15",
+        type: "고시",
+      },
+    ],
+  },
+  {
+    id: "yeongcheon-1",
+    name: "영천구역 (도시환경정비)",
+    type: "재개발",
+    status: "사업시행인가",
+    statusDate: "2022.09.28",
+    region: "서울",
+    district: "서대문구",
+    address: "서울특별시 서대문구 영천동 69 일대",
+    lat: 37.5710,
+    lng: 126.9610,
+    polygon: [
+      { lat: 37.5700, lng: 126.9598 },
+      { lat: 37.5705, lng: 126.9622 },
+      { lat: 37.5722, lng: 126.9618 },
+      { lat: 37.5718, lng: 126.9595 },
+      { lat: 37.5700, lng: 126.9598 },
+    ],
+    totalUnits: 399,
+    ownersCount: 180,
+    generalUnits: 140,
+    rentalUnits: 79,
+    generalRatio: 35,
+    builder: "반도건설",
+    zoneAreaM2: 18500,
+    far: 380,
+    bcr: 48,
+    maxFloor: 23,
+    totalBuildings: 3,
+    recentTradePriceDisplay: "8.2억",
+    avgLandPricePerPyeongManwon: 7800,
+    askCount: 12,
+    minPriceDisplay: "7.5억",
+    minInvestmentDisplay: "5.8억",
+    estimatedPremiumDisplay: "3.5억~4.2억",
+    nearestStation: "독립문역 (3호선) · 서대문역 (5호선)",
+    walkMinutes: 5,
+    stages: [
+      { name: "정비구역지정", isCompleted: true, isCurrent: false },
+      { name: "조합설립인가", isCompleted: true, isCurrent: false },
+      { name: "사업시행인가", isCompleted: true, isCurrent: true, date: "2022.09.28", description: "관리처분계획 수립 추진 중" },
+      { name: "관리처분인가", isCompleted: false, isCurrent: false },
+      { name: "이주철거", isCompleted: false, isCurrent: false },
+      { name: "착공", isCompleted: false, isCurrent: false },
+      { name: "준공", isCompleted: false, isCurrent: false },
+    ],
+    pricePerPyeongByAge: {
+      villa11To30Year: 8400,
+      villaOver30Year: 7600,
+      singleHouse: 4000,
+    },
+    calcMetrics: {
+      estimatedProportionRate: 103,
+      avgOfficialPriceRatio: 128,
+      unionPrice59Manwon: 62000,
+      unionPrice84Manwon: 82000,
+      generalPrice59Manwon: 92000,
+      generalPrice84Manwon: 122000,
+      expectedNewAptPrice84Manwon: 158000,
+    },
+    transactions: [],
+    notices: [
+      {
+        id: "nt-yc1-1",
+        title: "영천구역 도시환경정비사업 사업시행계획 인가 고시",
+        org: "서대문구청",
+        date: "2022.09.28",
         type: "고시",
       },
     ],

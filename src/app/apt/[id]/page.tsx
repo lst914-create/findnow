@@ -501,12 +501,12 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     return "전체";
   }, [apt]);
 
-  // 평형별 필터 상태: 가장 세대수가 많은 주력 평형으로 기본 설정
-  const [selectedArea, setSelectedArea] = useState<string>(() => majorArea);
+  // 평형별 필터 상태: 단지 전체 3년치 실거래 및 회전율(두번째 이미지)이 0초 즉시 온전히 표출되도록 기본값 '전체'로 설정
+  const [selectedArea, setSelectedArea] = useState<string>("전체");
 
   useEffect(() => {
-    setSelectedArea(majorArea);
-  }, [majorArea]);
+    setSelectedArea("전체");
+  }, [apt.id]);
 
   useEffect(() => {
     let isMounted = true;

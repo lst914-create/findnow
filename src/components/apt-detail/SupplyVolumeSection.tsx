@@ -225,10 +225,17 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
                           </div>
                           {/* 모바일: 상단 우측에 세대수 깔끔하게 배치 */}
                           <div className="sm:hidden text-right shrink-0 whitespace-nowrap">
-                            <span className="font-extrabold text-slate-900 text-sm">
-                              {p.totalUnits.toLocaleString()}
-                            </span>
-                            <span className="text-slate-500 text-[11px] ml-0.5">세대</span>
+                            <div>
+                              <span className="font-extrabold text-slate-900 text-sm">
+                                {p.totalUnits.toLocaleString()}
+                              </span>
+                              <span className="text-slate-500 text-[11px] ml-0.5">세대</span>
+                            </div>
+                            {p.saleUnits && p.saleUnits < p.totalUnits && (
+                              <div className="text-[10px] text-blue-600 font-semibold">
+                                (일반분양 {p.saleUnits.toLocaleString()}세대)
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="text-slate-500 mt-1 flex items-center gap-1.5 text-[11px] sm:text-xs whitespace-nowrap overflow-hidden text-ellipsis">
@@ -247,10 +254,17 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
                       <div className="flex items-center justify-end gap-3 shrink-0">
                         {/* PC 화면 세대수 */}
                         <div className="hidden sm:block text-right whitespace-nowrap">
-                          <span className="font-extrabold text-slate-900 text-base">
-                            {p.totalUnits.toLocaleString()}
-                          </span>
-                          <span className="text-slate-500 ml-0.5">세대</span>
+                          <div>
+                            <span className="font-extrabold text-slate-900 text-base">
+                              {p.totalUnits.toLocaleString()}
+                            </span>
+                            <span className="text-slate-500 ml-0.5">세대</span>
+                          </div>
+                          {p.saleUnits && p.saleUnits < p.totalUnits && (
+                            <div className="text-[11px] text-blue-600 font-semibold">
+                              (일반분양 {p.saleUnits.toLocaleString()}세대)
+                            </div>
+                          )}
                         </div>
                         <Link
                           href="/subscriptions"

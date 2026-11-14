@@ -44,6 +44,7 @@ export interface SubscriptionNotice {
   detailType: string; // 민영, 국민, 무순위, 공공 등
   rentType: string; // 분양주택, 분양전환공공임대 등
   totalUnits: number; // 총 공급 세대수 (TOT_SUPLY_HSHLDCO)
+  generalSupplyUnits?: number; // 일반분양 세대수 (재개발/지주택 조합원 물량 분리 시)
   recruitDate: string; // 모집공고일 (YYYY-MM-DD)
   receptStartDate: string; // 청약접수 시작일 (YYYY-MM-DD)
   receptEndDate: string; // 청약접수 종료일 (YYYY-MM-DD)

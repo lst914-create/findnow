@@ -128,12 +128,13 @@ export async function GET(req: NextRequest) {
         if (distM <= maxRadiusM) {
           seenIds.add(notice.id);
           const supplyType: SupplyType = notice.rentType?.includes("임대") ? "임대" : "분양";
+          const saleUnits = (notice as any).generalSupplyUnits || notice.totalUnits || 0;
           units.push({
             id: `applyhome-${notice.id}`,
             name: notice.name,
             supplyType,
             totalUnits: notice.totalUnits || 0,
-            saleUnits: notice.totalUnits || 0,
+            saleUnits,
             expectedMoveIn: moveIn,
             address: notice.address,
             lat: coord.lat,

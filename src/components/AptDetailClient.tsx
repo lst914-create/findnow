@@ -794,7 +794,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     if (monthlyRealAvg.size === 0) {
       // 💡 실거래 건별 데이터가 아직 수신되기 전이라도, 단지 확정 시세(36억)를 기반으로 36개월 기준 시세 라인을 즉시 생성
       if (baseMax > 0) {
-        const estPrice = +(baseMax / 10000).toFixed(2);
+        const estPrice = +(baseMax / 10000).toFixed(1);
         return timeline.map((item, idx) => ({
           date: item.ymKey,
           price: estPrice,
@@ -818,7 +818,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         currentHoldingPrice = monthlyRealAvg.get(ym)!;
         result.push({
           date: ym,
-          price: +(currentHoldingPrice / 10000).toFixed(2),
+          price: +(currentHoldingPrice / 10000).toFixed(1),
           volume: monthlyCount.get(ym) || 1,
           isReal: true,
         });
@@ -826,7 +826,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         // 최초 실거래 발생 이후 거래가 없는 월은 직전 실거래가 계단식 유지
         result.push({
           date: ym,
-          price: +(currentHoldingPrice / 10000).toFixed(2),
+          price: +(currentHoldingPrice / 10000).toFixed(1),
           volume: 0,
           isReal: false,
         });
@@ -924,9 +924,9 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       const minPrice = apt.price_min || basePrice;
       const maxPrice = apt.price_max || basePrice;
       return {
-        min: +(minPrice / 10000).toFixed(2),
-        max: +(maxPrice / 10000).toFixed(2),
-        latest: +(basePrice / 10000).toFixed(2),
+        min: +(minPrice / 10000).toFixed(1),
+        max: +(maxPrice / 10000).toFixed(1),
+        latest: +(basePrice / 10000).toFixed(1),
         isFromRealTxs: false,
         hasBaselinePrice: basePrice > 0,
         recent1MonthCount: 0,
@@ -978,9 +978,9 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     }
 
     return {
-      min: +(displayMin / 10000).toFixed(2),
-      max: +(displayMax / 10000).toFixed(2),
-      latest: +(displayLatest / 10000).toFixed(2),
+      min: +(displayMin / 10000).toFixed(1),
+      max: +(displayMax / 10000).toFixed(1),
+      latest: +(displayLatest / 10000).toFixed(1),
       isFromRealTxs: true,
       hasBaselinePrice: true,
       recent1MonthCount: recent1MonthTxs.length,
@@ -1264,9 +1264,8 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
               </button>
             ))}
           </div>
-          {/* 평형 선택 버튼 (좌측) & 실시간 국토부 연동 배지 (우측) */}
-          <div className="px-5 py-3 flex items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/40">
-            {/* 좌측: 두번째 이미지에서 이동된 평형 선택 버튼 */}
+          {/* 평형 선택 버튼 */}
+          <div className="px-5 py-3 flex items-center gap-2 border-b border-slate-100 bg-slate-50/40">
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
               {areaOptions.map((area) => (
                 <button
@@ -1280,14 +1279,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                   {area === "전체" ? "전체 평형" : area}
                 </button>
               ))}
-            </div>
-
-            {/* 우측: 국토부 연동 배지 (0초 즉시 확정 표기) */}
-            <div className="flex-shrink-0">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                실시간 국토부 연동
-              </span>
             </div>
           </div>
 
@@ -1529,25 +1520,21 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">📋 실거래 신고 내역</h3>
-                <div className="flex-shrink-0">
-                  {isLoadingApi ? (
+                {isLoadingApi && (
+                  <div className="flex-shrink-0">
                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 whitespace-nowrap">
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                       동기화 중...
                     </span>
-                  ) : hasRealDataForCurrentTab ? (
-                    <span className="text-[11px] text-emerald-600 font-semibold whitespace-nowrap">
-                      • 실시간 연동됨
-                    </span>
-                  ) : null}
-                </div>
+                  </div>
+                )}
               </div>
 
               {isLoadingApi && activeTxs.length === 0 ? (
                 <div className="rounded-2xl border border-slate-100 p-8 text-center bg-slate-50 animate-pulse">
                   <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
                   <p className="text-xs font-bold text-slate-700">국토교통부 실거래 계약 내역을 확인하는 중입니다...</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">최근 3개년 체결 건을 실시간으로 가져옵니다.</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">최근 3개년 체결 건을 조회하고 있습니다.</p>
                 </div>
               ) : activeTxs.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
@@ -2290,9 +2277,8 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                     <span>도보권 대형마트·병의원 밀집도(500m 내 3곳 94점, 800m 90점, 1.5km 85점)</span>
                   </div>
                 </div>
-                <div className="pt-2 border-t border-slate-200 text-[10px] text-slate-400 flex items-center justify-between">
+                <div className="pt-2 border-t border-slate-200 text-[10px] text-slate-400">
                   <span>* 4대 핵심 입지 영역 각 100점 만점 산술 평균</span>
-                  <span className="font-semibold text-slate-500">실시간 연동</span>
                 </div>
               </div>
             </div>
@@ -2305,9 +2291,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                     <h4 className="text-sm font-extrabold text-slate-800">
                       대중교통 및 역세권 인프라
                     </h4>
-                    <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">
-                      실시간 교통망 연동
-                    </span>
                   </div>
 
                   {/* 1. 고속철도 (KTX / SRT) 인접 정보 (호갱노노 스타일) */}
@@ -2505,9 +2488,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                     <h4 className="text-sm font-extrabold text-slate-800">
                       학군 입지 및 통학 환경
                     </h4>
-                    <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                      공식 공공데이터 연동
-                    </span>
                   </div>
 
                   {/* 호갱노노 스타일 학교급 탭 (초등학교 | 중학교 | 고등학교) */}

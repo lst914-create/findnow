@@ -1084,12 +1084,6 @@ export default function Home() {
             <span className="text-xs sm:text-sm font-bold text-brand-600 bg-brand-50 border border-brand-200/80 px-3 py-1 rounded-full">
               총 {apartments.length}개 단지
             </span>
-            {isMapDriven && (
-              <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                지도 화면 실시간 연동중
-              </span>
-            )}
           </div>
 
           {!isMapDriven && (

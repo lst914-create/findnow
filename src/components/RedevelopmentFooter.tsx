@@ -112,10 +112,9 @@ export default function RedevelopmentFooter({ className = "" }: RedevelopmentFoo
         <span className="text-slate-300">|</span>
         <button
           onClick={() => setShowApiModal(true)}
-          className="font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+          className="font-bold text-slate-600 hover:text-slate-800 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-          데이터 출처 (공공 API 연동 현황 ↗)
+          데이터 출처 안내 ↗
         </button>
       </div>
 

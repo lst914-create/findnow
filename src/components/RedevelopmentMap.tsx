@@ -859,35 +859,6 @@ export default function RedevelopmentMap({
 
       {/* 상단 좌측 단계 범례 - 모바일에서는 숨김 */}
       <div className="hidden md:flex absolute top-4 left-4 z-10 flex-col gap-2">
-        {/* 🏛️ 국토교통부 공식 WFS 지적선 연동 상태 배지 */}
-        {useOfficialWfs && (
-          <div className="bg-slate-900/90 text-white backdrop-blur-md rounded-2xl shadow-lg border border-slate-700/60 px-3 py-1.5 flex items-center gap-2 text-[11px] font-bold">
-            <span className="flex h-2 w-2 relative">
-              <span
-                className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
-                  wfsStatus.hasKey ? "bg-emerald-400" : "bg-amber-400"
-                } opacity-75`}
-              ></span>
-              <span
-                className={`relative inline-flex rounded-full h-2 w-2 ${
-                  wfsStatus.hasKey ? "bg-emerald-500" : "bg-amber-500"
-                }`}
-              ></span>
-            </span>
-            <span>🏛️ 국토교통부 법적 지적 경계(WFS API) 실시간 연동</span>
-            {wfsStatus.count > 0 && (
-              <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-black">
-                {wfsStatus.count}개 구역 로드
-              </span>
-            )}
-            {!wfsStatus.hasKey && (
-              <span className="text-[10px] text-amber-300 font-medium">
-                (API 키 연동 준비됨)
-              </span>
-            )}
-          </div>
-        )}
-
         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/80 px-3.5 py-2 flex items-center gap-2 text-xs">
           <span className="font-bold text-slate-700 mr-1 flex items-center gap-1 text-[11px]">
             <span className="inline-block w-2 h-2 rounded-full bg-blue-600"></span>단계 범례

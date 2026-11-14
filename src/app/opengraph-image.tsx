@@ -107,7 +107,7 @@ export default async function Image() {
             <span style={{ fontSize: "28px" }}>🏢</span>
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontSize: "18px", fontWeight: "700", color: "#ffffff" }}>전국 실거래가 시세</span>
-              <span style={{ fontSize: "14px", color: "#94a3b8" }}>국토부 공공데이터 실시간 연동</span>
+              <span style={{ fontSize: "14px", color: "#94a3b8" }}>국토부 공식 실거래 데이터</span>
             </div>
           </div>
 

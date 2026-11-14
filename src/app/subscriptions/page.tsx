@@ -283,7 +283,7 @@ function SubscriptionsContent() {
               className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer disabled:opacity-50"
             >
               <span className={refreshing ? "animate-spin" : ""}>🔄</span>
-              <span>{refreshing ? "동기화 중..." : "청약홈 실시간 동기화"}</span>
+              <span>{refreshing ? "새로고침 중..." : "청약 공고 새로고침"}</span>
             </button>
           </div>
         </div>
@@ -298,10 +298,6 @@ function SubscriptionsContent() {
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-bold mb-3">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>한국부동산원 청약홈 (ApplyHome) 실시간 OpenAPI 연동</span>
-              </div>
               <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
                 전국 아파트 분양 & 청약 정보
               </h1>

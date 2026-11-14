@@ -459,7 +459,7 @@ function ApartmentSearchContent() {
         <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden">
           <div className="relative z-10 space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/30 text-indigo-200 text-xs font-bold backdrop-blur-sm border border-indigo-400/20">
-              <span>⚡</span> 전국 24,000+ 아파트 실거래 데이터 완벽 연동
+              <span>⚡</span> 전국 24,000+ 아파트 단지 정보
             </div>
             <h1 className="text-xl sm:text-4xl font-extrabold tracking-tight">
               원하는 조건의 아파트를 찾아보세요

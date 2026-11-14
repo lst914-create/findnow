@@ -119,13 +119,6 @@ export default function RegionalInfoPage() {
               </Link>
             </nav>
           </div>
-
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-semibold text-slate-500 hidden sm:flex items-center gap-1.5 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-              <span>카카오 로컬 & TourAPI 실시간 연동</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            </div>
-          </div>
         </div>
       </header>
 

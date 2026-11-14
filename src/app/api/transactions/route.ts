@@ -212,8 +212,8 @@ export async function GET(request: NextRequest) {
   const region = searchParams.get("region") || "";
   const district = searchParams.get("district") || "";
   const aptName = searchParams.get("aptName") || "";
-  // 최근 12~18개월로 최적화 (차트 및 시세 분석의 핵심인 최근 1년 반 데이터를 초고속 응답)
-  const months = Math.min(18, Math.max(6, parseInt(searchParams.get("months") || "12", 10)));
+  // 호갱노노/아실과 동일하게 최근 3년(36개월) 풀 실거래를 수집하여 왜곡 없는 그래프와 전체 거래 목록 제공
+  const months = Math.min(36, Math.max(6, parseInt(searchParams.get("months") || "36", 10)));
 
   const apiKey =
     process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
@@ -236,27 +236,6 @@ export async function GET(request: NextRequest) {
 
   if (!lawdEntry) {
     return NextResponse.json({ trades: [], rents: [] });
-  }
-
-  // 0. 사전 확정된 주요 단지(밤 12시 배치 동기화 테이블) 데이터가 있는 경우 0ms 즉시 반환
-  const preloaded = getPreloadedTransactions({ name: aptName, district, region });
-  if (preloaded.isPreset && preloaded.trades.length > 0) {
-    return NextResponse.json(
-      {
-        trades: preloaded.trades,
-        rents: preloaded.rents,
-        region,
-        district,
-        lawdCode: lawdEntry.code,
-        cached: true,
-        isPreset: true,
-      },
-      {
-        headers: {
-          "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
-        },
-      }
-    );
   }
 
   // 1. 캐시 확인: 이미 조회된 단지는 0.001초(1ms) 만에 즉시 반환
@@ -305,104 +284,119 @@ export async function GET(request: NextRequest) {
   const encodedKey = encodeURIComponent(cleanApiKey);
 
   try {
-    // 2. 병렬 fetch (Promise.all) - 36번 직렬 통신(3~4초)을 1회 왕복(0.15초)으로 단축!
-    const fetchPromises = dealYmdList.map(async (dealYmd) => {
-      const tradeUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
-      const rentUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+    // 2. 병렬 fetch: 12개월 단위 배치로 안정적 호출 (Vercel 및 공공데이터 동시성 최적화)
+    const CHUNK_SIZE = 12;
+    for (let c = 0; c < dealYmdList.length; c += CHUNK_SIZE) {
+      const chunk = dealYmdList.slice(c, c + CHUNK_SIZE);
+      const chunkPromises = chunk.map(async (dealYmd) => {
+        const tradeUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+        const rentUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
 
-      const [tradeRes, rentRes] = await Promise.all([
-        fetch(tradeUrl, { next: { revalidate: 3600 } }).catch(() => null),
-        fetch(rentUrl, { next: { revalidate: 3600 } }).catch(() => null),
-      ]);
+        const [tradeRes, rentRes] = await Promise.all([
+          fetch(tradeUrl, { next: { revalidate: 3600 } }).catch(() => null),
+          fetch(rentUrl, { next: { revalidate: 3600 } }).catch(() => null),
+        ]);
 
-      const monthlyTrades: any[] = [];
-      const monthlyRents: any[] = [];
+        const monthlyTrades: any[] = [];
+        const monthlyRents: any[] = [];
 
-      if (tradeRes && tradeRes.ok) {
-        const xml = await tradeRes.text();
-        for (const item of parseItems(xml)) {
-          const itemAptName = getVal(item, "aptNm");
-          const itemUmdNm = getVal(item, "umdNm");
+        if (tradeRes && tradeRes.ok) {
+          const xml = await tradeRes.text();
+          for (const item of parseItems(xml)) {
+            const itemAptName = getVal(item, "aptNm");
+            const itemUmdNm = getVal(item, "umdNm");
 
-          if (aptName && !isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
-            continue;
+            if (aptName && !isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
+              continue;
+            }
+
+            const dealAmtStr = getVal(item, "dealAmount").replace(/,/g, "");
+            if (!dealAmtStr) continue;
+
+            // 취소여부 확인 (취소 거래 데이터 정합성 보완)
+            const dealCancelRaw = getVal(item, "dealingGbn") || getVal(item, "dealType") || "";
+            const isCanceled = dealCancelRaw.includes("취소") || dealCancelRaw === "C";
+            if (isCanceled) continue; // 취소된 거래 제외
+
+            monthlyTrades.push({
+              aptName: itemAptName,
+              dealAmount: parseInt(dealAmtStr, 10),
+              dealYear: parseInt(getVal(item, "dealYear"), 10),
+              dealMonth: parseInt(getVal(item, "dealMonth"), 10),
+              dealDay: parseInt(getVal(item, "dealDay"), 10),
+              excluUseAr: parseFloat(getVal(item, "excluUseAr")),
+              floor: parseInt(getVal(item, "floor"), 10),
+              buildYear: parseInt(getVal(item, "buildYear"), 10),
+              umdNm: itemUmdNm,
+              lawdCode: lawdEntry.code,
+            });
           }
-
-          const dealAmtStr = getVal(item, "dealAmount").replace(/,/g, "");
-          if (!dealAmtStr) continue;
-
-          // 취소여부 확인 (취소 거래 데이터 정합성 보완)
-          const dealCancelRaw = getVal(item, "dealingGbn") || getVal(item, "dealType") || "";
-          const isCanceled = dealCancelRaw.includes("취소") || dealCancelRaw === "C";
-          if (isCanceled) continue; // 취소된 거래 제외
-
-          monthlyTrades.push({
-            aptName: itemAptName,
-            dealAmount: parseInt(dealAmtStr, 10),
-            dealYear: parseInt(getVal(item, "dealYear"), 10),
-            dealMonth: parseInt(getVal(item, "dealMonth"), 10),
-            dealDay: parseInt(getVal(item, "dealDay"), 10),
-            excluUseAr: parseFloat(getVal(item, "excluUseAr")),
-            floor: parseInt(getVal(item, "floor"), 10),
-            buildYear: parseInt(getVal(item, "buildYear"), 10),
-            umdNm: itemUmdNm,
-            lawdCode: lawdEntry.code,
-          });
         }
-      }
 
-      if (rentRes && rentRes.ok) {
-        const xml = await rentRes.text();
-        for (const item of parseItems(xml)) {
-          const itemAptName = getVal(item, "aptNm") || getVal(item, "아파트");
-          const itemUmdNm = getVal(item, "umdNm") || getVal(item, "법정동");
+        if (rentRes && rentRes.ok) {
+          const xml = await rentRes.text();
+          for (const item of parseItems(xml)) {
+            const itemAptName = getVal(item, "aptNm") || getVal(item, "아파트");
+            const itemUmdNm = getVal(item, "umdNm") || getVal(item, "법정동");
 
-          if (aptName && !isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
-            continue;
+            if (aptName && !isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
+              continue;
+            }
+
+            const depositRaw = getVal(item, "deposit") || getVal(item, "보증금액") || getVal(item, "보증금");
+            const depositStr = depositRaw.replace(/,/g, "").trim();
+            if (!depositStr) continue;
+
+            // 전월세 취소여부 확인
+            const rentCancelRaw = getVal(item, "dealingGbn") || getVal(item, "dealType") || "";
+            const isCanceled = rentCancelRaw.includes("취소") || rentCancelRaw === "C";
+            if (isCanceled) continue;
+
+            const rentRaw = getVal(item, "monthlyRent") || getVal(item, "월세금액") || getVal(item, "월세금") || getVal(item, "월세");
+            const rentStr = rentRaw.replace(/,/g, "").trim();
+
+            monthlyRents.push({
+              aptName: itemAptName,
+              depositAmount: parseInt(depositStr, 10),
+              monthlyRent: rentStr ? parseInt(rentStr, 10) : 0,
+              dealYear: parseInt(getVal(item, "dealYear") || getVal(item, "년"), 10),
+              dealMonth: parseInt(getVal(item, "dealMonth") || getVal(item, "월"), 10),
+              dealDay: parseInt(getVal(item, "dealDay") || getVal(item, "일"), 10),
+              excluUseAr: parseFloat(getVal(item, "excluUseAr") || getVal(item, "전용면적")),
+              floor: parseInt(getVal(item, "floor") || getVal(item, "층"), 10),
+              buildYear: parseInt(getVal(item, "buildYear") || getVal(item, "건축년도"), 10),
+              umdNm: itemUmdNm,
+              contractTerm: getVal(item, "contractType") || getVal(item, "계약구분") || undefined,
+              lawdCode: lawdEntry.code,
+            });
           }
-
-          const depositRaw = getVal(item, "deposit") || getVal(item, "보증금액") || getVal(item, "보증금");
-          const depositStr = depositRaw.replace(/,/g, "").trim();
-          if (!depositStr) continue;
-
-          // 전월세 취소여부 확인
-          const rentCancelRaw = getVal(item, "dealingGbn") || getVal(item, "dealType") || "";
-          const isCanceled = rentCancelRaw.includes("취소") || rentCancelRaw === "C";
-          if (isCanceled) continue;
-
-          const rentRaw = getVal(item, "monthlyRent") || getVal(item, "월세금액") || getVal(item, "월세금") || getVal(item, "월세");
-          const rentStr = rentRaw.replace(/,/g, "").trim();
-
-          monthlyRents.push({
-            aptName: itemAptName,
-            depositAmount: parseInt(depositStr, 10),
-            monthlyRent: rentStr ? parseInt(rentStr, 10) : 0,
-            dealYear: parseInt(getVal(item, "dealYear") || getVal(item, "년"), 10),
-            dealMonth: parseInt(getVal(item, "dealMonth") || getVal(item, "월"), 10),
-            dealDay: parseInt(getVal(item, "dealDay") || getVal(item, "일"), 10),
-            excluUseAr: parseFloat(getVal(item, "excluUseAr") || getVal(item, "전용면적")),
-            floor: parseInt(getVal(item, "floor") || getVal(item, "층"), 10),
-            buildYear: parseInt(getVal(item, "buildYear") || getVal(item, "건축년도"), 10),
-            umdNm: itemUmdNm,
-            contractTerm: getVal(item, "contractType") || getVal(item, "계약구분") || undefined,
-            lawdCode: lawdEntry.code,
-          });
         }
+
+        return { monthlyTrades, monthlyRents };
+      });
+
+      const chunkResults = await Promise.all(chunkPromises);
+      for (const res of chunkResults) {
+        trades.push(...res.monthlyTrades);
+        rents.push(...res.monthlyRents);
       }
-
-      return { monthlyTrades, monthlyRents };
-    });
-
-    const results = await Promise.all(fetchPromises);
-    for (const res of results) {
-      trades.push(...res.monthlyTrades);
-      rents.push(...res.monthlyRents);
     }
   } catch (err) {
     console.error("[API /transactions] 오류:", err);
   }
 
-  // 3. 최신 거래순 정렬
+  // 3. 공공데이터 API 조회 결과가 없는 경우에만 프리셋(사전 캐시)을 fallback으로 적용
+  if (trades.length === 0 && rents.length === 0) {
+    const preloaded = getPreloadedTransactions({ name: aptName, district, region });
+    if (preloaded.trades.length > 0) {
+      trades.push(...preloaded.trades);
+    }
+    if (preloaded.rents.length > 0) {
+      rents.push(...preloaded.rents);
+    }
+  }
+
+  // 4. 최신 거래순 정렬
   trades.sort((a, b) => {
     const da = new Date(a.dealYear, a.dealMonth - 1, a.dealDay || 1).getTime();
     const db = new Date(b.dealYear, b.dealMonth - 1, b.dealDay || 1).getTime();

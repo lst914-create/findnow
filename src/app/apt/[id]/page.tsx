@@ -473,7 +473,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       try {
         const apiRegion = apt.apiRegion || apt.region;
         const res = await fetch(
-          `/api/transactions?region=${encodeURIComponent(apiRegion)}&district=${encodeURIComponent(apt.district || "")}&aptName=${encodeURIComponent(apt.name)}&months=18`
+          `/api/transactions?region=${encodeURIComponent(apiRegion)}&district=${encodeURIComponent(apt.district || "")}&aptName=${encodeURIComponent(apt.name)}&months=36`
         );
         if (res.ok) {
           const data = await res.json();
@@ -719,10 +719,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
 
     // 4. 호갱노노 스타일 연속 가격 궤적 및 거래량 생성 (거래 없는 월은 직전 실거래가 유지)
     const sortedRealEntries = Array.from(monthlyRealAvg.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-    const firstRealPrice = sortedRealEntries[0][1];
+    const firstRealYm = sortedRealEntries.length > 0 ? sortedRealEntries[0][0] : null;
 
-    let currentHoldingPrice = firstRealPrice;
-    const result: { date: string; price: number; volume: number; isReal: boolean }[] = [];
+    let currentHoldingPrice: number | null = null;
+    const result: { date: string; price: number | null; volume: number; isReal: boolean }[] = [];
 
     for (const item of timeline) {
       const ym = item.ymKey;
@@ -734,10 +734,19 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
           volume: monthlyCount.get(ym) || 1,
           isReal: true,
         });
-      } else {
+      } else if (currentHoldingPrice !== null) {
+        // 최초 실거래 발생 이후 거래가 없는 월은 직전 실거래가 계단식 유지
         result.push({
           date: ym,
           price: +(currentHoldingPrice / 10000).toFixed(2),
+          volume: 0,
+          isReal: false,
+        });
+      } else {
+        // 최초 실거래 발생 이전 월은 가짜 수평선 왜곡을 방지하기 위해 null 처리
+        result.push({
+          date: ym,
+          price: null,
           volume: 0,
           isReal: false,
         });
@@ -757,8 +766,13 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       return { maxPoint: null, minPoint: null, latestPoint: null, maxVolume: 1, turnoverRatio: "0" };
     }
 
-    const realPoints = chartData.filter((d) => d.isReal);
-    const targetPoints = realPoints.length > 0 ? realPoints : chartData;
+    const realPoints = chartData.filter((d) => d.isReal && d.price !== null) as { date: string; price: number; volume: number; isReal: boolean }[];
+    const validPoints = chartData.filter((d) => d.price !== null) as { date: string; price: number; volume: number; isReal: boolean }[];
+    const targetPoints = realPoints.length > 0 ? realPoints : validPoints;
+
+    if (targetPoints.length === 0) {
+      return { maxPoint: null, minPoint: null, latestPoint: null, maxVolume: 1, turnoverRatio: "0" };
+    }
 
     let maxP = targetPoints[0];
     let minP = targetPoints[0];
@@ -768,7 +782,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
       if (p.price < minP.price) minP = p;
     }
 
-    const latestP = realPoints.length > 0 ? realPoints[realPoints.length - 1] : chartData[chartData.length - 1];
+    const latestP = realPoints.length > 0 ? realPoints[realPoints.length - 1] : targetPoints[targetPoints.length - 1];
     const maxVol = Math.max(...chartData.map((d) => d.volume), 1);
 
     // 단지 총 세대수 대비 실거래 회전율 계산
@@ -1275,7 +1289,18 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                         tickLine={false}
                         axisLine={false}
                         tickFormatter={(v) => `${v}억`}
-                        domain={["auto", "auto"]}
+                        domain={[
+                          (dataMin: number) => {
+                            if (!isFinite(dataMin) || dataMin <= 0) return 0;
+                            const padded = dataMin * 0.96;
+                            return Math.max(0, Math.floor(padded * 10) / 10);
+                          },
+                          (dataMax: number) => {
+                            if (!isFinite(dataMax) || dataMax <= 0) return 10;
+                            const padded = dataMax * 1.04;
+                            return Math.ceil(padded * 10) / 10;
+                          },
+                        ]}
                       />
                       {/* 거래량 Y축 (하단 25% 영역에 안착되도록 스케일링) */}
                       <YAxis
@@ -1302,6 +1327,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                         stroke="#4f46e5"
                         strokeWidth={2.8}
                         dot={false}
+                        connectNulls={true}
                         activeDot={{ r: 6, fill: "#4f46e5", stroke: "#ffffff", strokeWidth: 2 }}
                       />
 
@@ -1490,14 +1516,16 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                   {/* 더보기 버튼 */}
                   {showCount < activeTxs.length && (
                     <button
-                      onClick={() => setShowCount((prev) => prev + 10)}
-                      className="mt-3 w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all cursor-pointer"
+                      onClick={() => setShowCount((prev) => prev + 15)}
+                      className="mt-3 w-full py-3 flex items-center justify-center gap-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-2xl transition-all cursor-pointer shadow-2xs"
                     >
-                      더보기 <span className="text-slate-400">∨</span>
+                      실거래 내역 더보기 ({Math.min(showCount, activeTxs.length)} / {activeTxs.length}건) <span className="text-slate-400">∨</span>
                     </button>
                   )}
-                  {showCount >= activeTxs.length && (
-                    <p className="mt-3 text-center text-xs text-slate-400">모든 실거래 내역을 확인했습니다.</p>
+                  {showCount >= activeTxs.length && activeTxs.length > 0 && (
+                    <p className="mt-3 text-center text-xs text-slate-400">
+                      전체 실거래 내역 {activeTxs.length}건을 모두 확인했습니다.
+                    </p>
                   )}
                 </>
               )}

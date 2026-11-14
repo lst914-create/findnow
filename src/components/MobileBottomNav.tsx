@@ -14,7 +14,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "홈", icon: "🏠" },
   { href: "/search", label: "아파트", icon: "🏢" },
   { href: "/subscriptions", label: "분양·청약", icon: "📅" },
-  { href: "/redevelopment", label: "재개발", icon: "🔨" },
+  { href: "/redevelopment", label: "재개발", icon: "🔨", badge: "추천" },
   { href: "/community", label: "커뮤니티", icon: "💬" },
 ];
 
@@ -47,9 +47,11 @@ export default function MobileBottomNav() {
                 <span className={`text-xl leading-none transition-transform ${isActive ? "scale-110" : ""}`}>
                   {item.icon}
                 </span>
-                {item.badge && (
-                  <span className="absolute -top-1 -right-2 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                )}
+                {item.badge ? (
+                  <span className="absolute -top-1.5 -right-3 bg-rose-500 text-white font-extrabold px-1 py-0.5 rounded text-[8px] leading-none whitespace-nowrap">
+                    {item.badge}
+                  </span>
+                ) : null}
               </div>
               <span className={`text-[11px] mt-0.5 tracking-tight whitespace-nowrap shrink-0 ${isActive ? "font-bold" : "font-medium"}`}>
                 {item.label}

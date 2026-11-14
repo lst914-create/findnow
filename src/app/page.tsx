@@ -888,9 +888,10 @@ export default function Home() {
             {[
               { href: "/search", icon: "🏢", label: "아파트 검색" },
               { href: "/redevelopment", icon: "🔨", label: "재개발 지도" },
+              { href: "/redevelopment/recommend", icon: "🎯", label: "구역 추천", hot: true },
               { href: "/subscriptions", icon: "🏗️", label: "분양·청약" },
               { href: "/regional", icon: "📍", label: "지역정보" },
-              { href: "/community", icon: "💬", label: "커뮤니티", hot: true },
+              { href: "/community", icon: "💬", label: "커뮤니티" },
             ].map((item) => (
               <Link
                 key={item.href}
@@ -899,18 +900,22 @@ export default function Home() {
               >
                 <span className="text-2xl">{item.icon}</span>
                 <span className="text-[11px] font-bold text-gray-700 whitespace-nowrap">{item.label}</span>
-                {item.hot && <span className="bg-indigo-600 text-white font-extrabold px-1.5 py-0.5 rounded text-[9px] leading-none">HOT</span>}
+                {item.hot && <span className="bg-rose-500 text-white font-extrabold px-1.5 py-0.5 rounded text-[9px] leading-none">NEW</span>}
               </Link>
             ))}
           </div>
 
-          {/* Desktop view only (>= 640px): 5-col grid */}
-          <div className="hidden sm:grid grid-cols-5 gap-3 max-w-4xl mx-auto">
+          {/* Desktop view only (>= 640px): 6-col grid */}
+          <div className="hidden sm:grid grid-cols-6 gap-3 max-w-4xl mx-auto">
             <Link href="/search" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-white/95 hover:bg-indigo-50/90 border border-indigo-100 hover:border-indigo-300 text-indigo-700 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center">
               <span className="text-lg">🏢</span><span>아파트 검색</span><span className="text-xs opacity-60 group-hover:translate-x-0.5 transition-transform">→</span>
             </Link>
             <Link href="/redevelopment" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-white/95 hover:bg-emerald-50/90 border border-emerald-100 hover:border-emerald-300 text-emerald-800 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center">
               <span className="text-lg animate-pulse">🔨</span><span>재개발 지도</span><span className="text-xs opacity-60 group-hover:translate-x-0.5 transition-transform">→</span>
+            </Link>
+            <Link href="/redevelopment/recommend" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-gradient-to-r from-rose-50 to-orange-50 hover:from-rose-100 hover:to-orange-100 border border-rose-200 hover:border-rose-400 text-rose-800 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center relative">
+              <span className="text-lg">🎯</span><span>구역 추천</span>
+              <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white font-extrabold px-1.5 py-0.5 rounded-full text-[9px] leading-none animate-pulse">NEW</span>
             </Link>
             <Link href="/subscriptions" className="group flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl bg-white/95 hover:bg-amber-50/90 border border-amber-100 hover:border-amber-300 text-amber-800 font-bold text-sm shadow-sm hover:shadow-md transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer text-center">
               <span className="text-lg">🏗️</span><span>분양·청약</span><span className="text-xs opacity-60 group-hover:translate-x-0.5 transition-transform">→</span>

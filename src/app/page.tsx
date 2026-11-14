@@ -433,65 +433,72 @@ export default function Home() {
     let targetCenter: { lat: number; lng: number } | null = null;
 
     if (rawTrim) {
-      // 통합 검색에서 아파트 결과가 산출되었을 경우 해당 결과 우선 적용
-      if (unifiedRes && unifiedRes.apartments.length > 0) {
+      // 1. 지하철역, 학교(초/중/고/대), 랜드마크, 거점 위치 해석 (동화고, 도농역, 판교현대백화점 등)
+      const stationLoc = await resolveStationOrPlace(rawTrim);
+
+      if (stationLoc) {
+        targetCenter = { lat: stationLoc.lat, lng: stationLoc.lng };
+        // 사용자가 명시한 도보 시간(예: 도보 5분)이 있으면 우선, 없으면 15분(1,400m) 여유 반경 기본 제공
+        const walkMinLimit = queryInfo.maxWalkMinutes || 15;
+        let maxAllowedMeters = walkMinLimit * 80 + 200;
+
+        let stationMatched: (Apartment & { distMeters: number })[] = [];
+        const checkAptMatch = (maxM: number) => {
+          const list: (Apartment & { distMeters: number })[] = [];
+          for (const apt of INITIAL_MOCK_APARTMENTS) {
+            if (!apt.lat || !apt.lng) continue;
+            const distM = getDistanceMeters(stationLoc.lat, stationLoc.lng, apt.lat, apt.lng);
+            if (distM > maxM) continue;
+
+            // 1) 가격 상한 필터링 ("8억 이내", "8억 이하", "8억 미만")
+            if (queryInfo.isPriceUpperBound && queryInfo.priceMaxManwon) {
+              if (queryInfo.tradeType === "rent") {
+                const rentMin = apt.rent_min || Math.round(apt.price_min * 0.55);
+                if (rentMin > queryInfo.priceMaxManwon) continue;
+              } else {
+                if (apt.price_min > queryInfo.priceMaxManwon) continue;
+              }
+            }
+
+            // 2) 가격 하한 필터링 ("8억 이상", "8억 초과")
+            if (queryInfo.isPriceLowerBound && queryInfo.priceMinManwon) {
+              if (queryInfo.tradeType === "rent") {
+                const rentMax = apt.rent_max || Math.round(apt.price_max * 0.6);
+                if (rentMax < queryInfo.priceMinManwon) continue;
+              } else {
+                if (apt.price_max < queryInfo.priceMinManwon) continue;
+              }
+            }
+
+            const walkMin = Math.round(distM / 80);
+            list.push({
+              ...apt,
+              walk_minutes: walkMin,
+              station: stationLoc.name,
+              station_dist: `${stationLoc.name} 도보 ${walkMin}분 (${distM}m)`,
+              distMeters: distM,
+            });
+          }
+          return list;
+        };
+
+        stationMatched = checkAptMatch(maxAllowedMeters);
+
+        // 만약 1차 반경에서 3개 미만으로 발견된 경우 반경을 3km(도보 35분권)까지 자동 확장하여 인근 아파트 확실하게 보장
+        if (stationMatched.length < 3) {
+          stationMatched = checkAptMatch(3000);
+        }
+
+        // 역/거점에서 가장 가까운 도보 거리 순서로 정렬
+        stationMatched.sort((a, b) => a.distMeters - b.distMeters);
+        filtered = stationMatched;
+      } else if (unifiedRes && unifiedRes.apartments.length > 0) {
+        // 통합 검색 결과 적용
         filtered = unifiedRes.apartments;
         const firstWithCoords = filtered.find((a) => a.lat && a.lng);
         if (firstWithCoords) {
           targetCenter = { lat: firstWithCoords.lat, lng: firstWithCoords.lng };
         }
-      } else {
-      // 1. 지하철역 및 주요 거점 위치 해석 (도농역, 강남역, 판교역 등)
-      const stationLoc = await resolveStationOrPlace(rawTrim);
-
-      if (stationLoc) {
-        targetCenter = { lat: stationLoc.lat, lng: stationLoc.lng };
-        // 도보 분수 지정 여부 (기본값: 도보 10분, 초역세권: 4분, 역세권: 8분)
-        const walkMinLimit = queryInfo.maxWalkMinutes || 10;
-        const maxAllowedMeters = walkMinLimit * 80 + 150; // 여유 오차 150m 허용 (10분 기준 950m)
-
-        const stationMatched: (Apartment & { distMeters: number })[] = [];
-        for (const apt of INITIAL_MOCK_APARTMENTS) {
-          if (!apt.lat || !apt.lng) continue;
-          const distM = getDistanceMeters(stationLoc.lat, stationLoc.lng, apt.lat, apt.lng);
-          const walkMin = Math.round(distM / 80);
-
-          // 1) 역 도보 반경 필터링
-          if (distM > maxAllowedMeters) continue;
-
-          // 2) 가격 상한 필터링 ("8억 이내", "8억 이하", "8억 미만")
-          if (queryInfo.isPriceUpperBound && queryInfo.priceMaxManwon) {
-            if (queryInfo.tradeType === "rent") {
-              const rentMin = apt.rent_min || Math.round(apt.price_min * 0.55);
-              if (rentMin > queryInfo.priceMaxManwon) continue;
-            } else {
-              if (apt.price_min > queryInfo.priceMaxManwon) continue;
-            }
-          }
-
-          // 3) 가격 하한 필터링 ("8억 이상", "8억 초과")
-          if (queryInfo.isPriceLowerBound && queryInfo.priceMinManwon) {
-            if (queryInfo.tradeType === "rent") {
-              const rentMax = apt.rent_max || Math.round(apt.price_max * 0.6);
-              if (rentMax < queryInfo.priceMinManwon) continue;
-            } else {
-              if (apt.price_max < queryInfo.priceMinManwon) continue;
-            }
-          }
-
-          stationMatched.push({
-            ...apt,
-            walk_minutes: walkMin,
-            station: stationLoc.name,
-            station_dist: `도보 ${walkMin}분 (${distM}m)`,
-            distMeters: distM,
-          });
-        }
-
-        // 역에서 가장 가까운 도보 거리 순서로 정렬
-        stationMatched.sort((a, b) => a.distMeters - b.distMeters);
-        // ★ 역 검색이 확정된 경우, 결과가 0개여도 폴백 없이 그대로 표시 (엉뚱한 결과 차단)
-        filtered = stationMatched;
       } else if (keywords.length > 0 || queryInfo.targetPriceManwon !== undefined) {
         // 2. 일반 자연어 키워드/지역/단지명 스코어링 검색 (가격 조건 엄격 적용)
         const scored = INITIAL_MOCK_APARTMENTS
@@ -518,7 +525,6 @@ export default function Home() {
         });
 
         filtered = scored.map((item) => item.apt);
-      }
       }
     }
 

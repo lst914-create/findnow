@@ -331,50 +331,60 @@ export async function searchApartmentsWithNlp(
 
   if (stationLoc) {
     targetCenter = { lat: stationLoc.lat, lng: stationLoc.lng };
-    const walkMinLimit = queryInfo.maxWalkMinutes || 10;
-    const maxAllowedMeters = walkMinLimit * 80 + 200; // 여유 오차 200m
+    const walkMinLimit = queryInfo.maxWalkMinutes || 15;
+    let maxAllowedMeters = walkMinLimit * 80 + 200; // 기본 15분(1,400m) 여유 오차
 
-    summaryParts.push(`${stationLoc.name} 반경 도보 ${walkMinLimit}분 이내`);
+    summaryParts.push(`${stationLoc.name} 인근 도보 생활권`);
 
-    const stationMatched: (Apartment & { distMeters: number })[] = [];
-    for (const apt of allApartments) {
-      if (!apt.lat || !apt.lng) continue;
-      const distM = getDistanceMeters(stationLoc.lat, stationLoc.lng, apt.lat, apt.lng);
-      const walkMin = Math.round(distM / 80);
+    const checkAptList = (maxM: number) => {
+      const list: (Apartment & { distMeters: number })[] = [];
+      for (const apt of allApartments) {
+        if (!apt.lat || !apt.lng) continue;
+        const distM = getDistanceMeters(stationLoc.lat, stationLoc.lng, apt.lat, apt.lng);
+        const walkMin = Math.round(distM / 80);
 
-      if (distM > maxAllowedMeters) continue;
+        if (distM > maxM) continue;
 
-      // 가격 상한
-      if (queryInfo.isPriceUpperBound && queryInfo.priceMaxManwon) {
-        if (queryInfo.tradeType === "rent") {
-          const rentMin = apt.rent_min || Math.round(apt.price_min * 0.55);
-          if (rentMin > queryInfo.priceMaxManwon) continue;
-        } else {
-          if (apt.price_min > queryInfo.priceMaxManwon) continue;
+        // 가격 상한
+        if (queryInfo.isPriceUpperBound && queryInfo.priceMaxManwon) {
+          if (queryInfo.tradeType === "rent") {
+            const rentMin = apt.rent_min || Math.round(apt.price_min * 0.55);
+            if (rentMin > queryInfo.priceMaxManwon) continue;
+          } else {
+            if (apt.price_min > queryInfo.priceMaxManwon) continue;
+          }
         }
-      }
 
-      // 가격 하한
-      if (queryInfo.isPriceLowerBound && queryInfo.priceMinManwon) {
-        if (queryInfo.tradeType === "rent") {
-          const rentMax = apt.rent_max || Math.round(apt.price_max * 0.6);
-          if (rentMax < queryInfo.priceMinManwon) continue;
-        } else {
-          if (apt.price_max < queryInfo.priceMinManwon) continue;
+        // 가격 하한
+        if (queryInfo.isPriceLowerBound && queryInfo.priceMinManwon) {
+          if (queryInfo.tradeType === "rent") {
+            const rentMax = apt.rent_max || Math.round(apt.price_max * 0.6);
+            if (rentMax < queryInfo.priceMinManwon) continue;
+          } else {
+            if (apt.price_max < queryInfo.priceMinManwon) continue;
+          }
         }
+
+        // 평형 필터
+        if (queryInfo.minPyeong && apt.area_pyeong && apt.area_pyeong < queryInfo.minPyeong) continue;
+        if (queryInfo.maxPyeong && apt.area_pyeong && apt.area_pyeong > queryInfo.maxPyeong) continue;
+
+        list.push({
+          ...apt,
+          walk_minutes: walkMin,
+          station: stationLoc.name,
+          station_dist: `${stationLoc.name} 도보 ${walkMin}분 (${distM}m)`,
+          distMeters: distM,
+        });
       }
+      return list;
+    };
 
-      // 평형 필터
-      if (queryInfo.minPyeong && apt.area_pyeong && apt.area_pyeong < queryInfo.minPyeong) continue;
-      if (queryInfo.maxPyeong && apt.area_pyeong && apt.area_pyeong > queryInfo.maxPyeong) continue;
+    let stationMatched = checkAptList(maxAllowedMeters);
 
-      stationMatched.push({
-        ...apt,
-        walk_minutes: walkMin,
-        station: stationLoc.name,
-        station_dist: `도보 ${walkMin}분 (${distM}m)`,
-        distMeters: distM,
-      });
+    // 1차 반경에서 3개 미만인 경우 3km(도보 35분 생활권)까지 자동 확장
+    if (stationMatched.length < 3) {
+      stationMatched = checkAptList(3000);
     }
 
     stationMatched.sort((a, b) => a.distMeters - b.distMeters);

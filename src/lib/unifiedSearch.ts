@@ -179,19 +179,40 @@ export async function executeUnifiedSearch(rawQuery: string): Promise<UnifiedSea
   let matchedApts: Apartment[] = [];
   const aptPool = APARTMENTS_DATA.length > 0 ? APARTMENTS_DATA : [];
 
-  if (stationName) {
-    // 지하철역 중심 검색
-    const stationLoc = await resolveStationOrPlace(stationName);
-    if (stationLoc) {
-      const walkLimit = maxWalkMinutes || 10;
-      const maxAllowedMeters = walkLimit * 80 + 200;
+  // 지하철역, 학교(초/중/고/대), 랜드마크, 거점 위치 해석
+  const placeLoc = await resolveStationOrPlace(stationName || rawQuery);
+  if (placeLoc) {
+    const walkLimit = maxWalkMinutes || 15;
+    let maxAllowedMeters = walkLimit * 80 + 200; // 기본 15분 기준 1,400m
 
+    // 1차 반경 검색
+    for (const apt of aptPool) {
+      if (!apt.lat || !apt.lng) continue;
+      const dist = getDistanceMeters(placeLoc.lat, placeLoc.lng, apt.lat, apt.lng);
+      if (dist > maxAllowedMeters) continue;
+
+      // 가격 상한
+      if (priceMaxManwon && apt.price_min > priceMaxManwon) continue;
+      if (priceMinManwon && apt.price_max < priceMinManwon) continue;
+
+      const walkMin = Math.round(dist / 80);
+      matchedApts.push({
+        ...apt,
+        walk_minutes: walkMin,
+        station: placeLoc.name,
+        station_dist: `${placeLoc.name} 도보 ${walkMin}분 (${dist}m)`,
+      });
+    }
+
+    // 만약 1차 반경에서 3개 미만으로 발견된 경우 반경을 2.5km로 자동 확장
+    if (matchedApts.length < 3) {
+      maxAllowedMeters = 2500;
+      matchedApts = [];
       for (const apt of aptPool) {
         if (!apt.lat || !apt.lng) continue;
-        const dist = getDistanceMeters(stationLoc.lat, stationLoc.lng, apt.lat, apt.lng);
+        const dist = getDistanceMeters(placeLoc.lat, placeLoc.lng, apt.lat, apt.lng);
         if (dist > maxAllowedMeters) continue;
 
-        // 가격 상한
         if (priceMaxManwon && apt.price_min > priceMaxManwon) continue;
         if (priceMinManwon && apt.price_max < priceMinManwon) continue;
 
@@ -199,12 +220,13 @@ export async function executeUnifiedSearch(rawQuery: string): Promise<UnifiedSea
         matchedApts.push({
           ...apt,
           walk_minutes: walkMin,
-          station: stationLoc.name,
-          station_dist: `도보 ${walkMin}분 (${dist}m)`,
+          station: placeLoc.name,
+          station_dist: `${placeLoc.name} 도보 ${walkMin}분 (${dist}m)`,
         });
       }
-      matchedApts.sort((a, b) => (a.walk_minutes || 99) - (b.walk_minutes || 99));
     }
+
+    matchedApts.sort((a, b) => (a.walk_minutes || 99) - (b.walk_minutes || 99));
   }
 
   // 지하철역으로 못 찾았거나 역 키워드가 없는 경우 키워드/지역/가격 검색

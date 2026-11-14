@@ -2617,11 +2617,11 @@
     "name": "양재동청년주택호반써밋 ",
     "region": "서울 서초구",
     "district": "양재동",
-    "price_min": 108000,
-    "price_max": 108000,
+    "price_min": 0,
+    "price_max": 0,
     "rent_min": 73400,
     "rent_max": 73400,
-    "gapPrice": 34600,
+    "gapPrice": 0,
     "jeonseRatio": 68,
     "area_sqm": 84,
     "area_pyeong": 34,
@@ -2632,7 +2632,9 @@
     "nature_score": 86,
     "tags": [
       "공동주택",
-      "실거래가연동"
+      "청년안심주택",
+      "임대전용",
+      "매매불가"
     ],
     "image_url": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
     "lat": 37.472244,
@@ -2673,7 +2675,9 @@
       "GX룸",
       "북카페"
     ],
-    "isRealPrice": true
+    "isRealPrice": false,
+    "isRentalOnly": true,
+    "rentalType": "youth_public"
   },
   {
     "id": "kapt-A13713001",
@@ -1430054,11 +1430058,11 @@
     "name": "호반써밋양재아파트",
     "region": "서울 서초구",
     "district": "양재동",
-    "price_min": 45000,
-    "price_max": 45000,
+    "price_min": 0,
+    "price_max": 0,
     "rent_min": 29250,
     "rent_max": 29250,
-    "gapPrice": 15750,
+    "gapPrice": 0,
     "jeonseRatio": 65,
     "area_sqm": 99,
     "area_pyeong": 30,
@@ -1430069,9 +1430073,10 @@
     "nature_score": 90,
     "tags": [
       "공동주택",
-      "실거래가연동",
       "카카오실측단지",
-      "실거래인증"
+      "청년안심주택",
+      "임대전용",
+      "매매불가"
     ],
     "image_url": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
     "lat": 37.48104,
@@ -1430114,7 +1430119,9 @@
         "ratio": 100
       }
     ],
-    "isRealPrice": true
+    "isRealPrice": false,
+    "isRentalOnly": true,
+    "rentalType": "youth_public"
   },
   {
     "id": "kakao-8141219",

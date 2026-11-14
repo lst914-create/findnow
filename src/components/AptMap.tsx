@@ -29,6 +29,8 @@ export interface AptMarker {
   rawRegion?: string;    // 원본 시·군·구 (법정동 코드 매핑용)
   district?: string;     // 읍면동
   isRealPrice?: boolean; // 국토부 실거래 검증 여부
+  isRentalOnly?: boolean; // 임대전용 단지 여부 (청년주택, 공공임대 등) - 매매가 불가
+  rentalType?: string;   // 임대 유형 (youth_public, public 등)
   builtYear?: number;
   householdCount?: number;
   schoolScore?: number;
@@ -47,15 +49,17 @@ export interface AptMarker {
 }
 
 export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
-  // 중간값(min+max/2) 임의 생성 배제: 검증 실거래가 우선 적용
-  const priceNum = apt.price_max || apt.price_min || 0;
+  const isRentalOnly = (apt as any).isRentalOnly === true;
+  // 임대전용(청년주택 등) 단지는 price_max가 임대보증금이므로 매매가로 사용하지 않음
+  const priceNum = isRentalOnly ? 0 : (apt.price_max || apt.price_min || 0);
   const avgPriceStr = priceNum > 0 ? formatPrice(priceNum) : "가격없음";
 
   const jeonseRatio = apt.jeonseRatio ?? 56;
+  // 임대전용은 rent_min/max를 임대보증금으로 그대로 사용
   const rentNum = apt.rent_max || apt.rent_min
     ? (apt.rent_max || apt.rent_min || 0)
     : Math.round(priceNum * (jeonseRatio / 100));
-  const gapPrice = apt.gapPrice ?? Math.max(0, priceNum - rentNum);
+  const gapPrice = isRentalOnly ? 0 : (apt.gapPrice ?? Math.max(0, priceNum - rentNum));
 
   return {
     id: apt.id,
@@ -70,6 +74,8 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
     rawRegion: apt.region,
     district: apt.district,
     isRealPrice: (apt as any).isRealPrice ?? false,
+    isRentalOnly: isRentalOnly,
+    rentalType: (apt as any).rentalType,
     builtYear: apt.built_year,
     householdCount: apt.household_count,
     schoolScore: apt.school_score,
@@ -1658,8 +1664,10 @@ export default function AptMap({
             livePriceDetailCacheRef.current.get(normName);
 
           // realtimeTx는 useEffect에서 live 캐시를 이미 반영한 값이므로 최우선 사용
-          const resolvedPriceNum = live?.latestPrice || selectedApt.priceNum || 0;
-          const displayPrice = realtimeTx?.avgPriceStr || live?.formatted || selectedApt.avgPrice;
+          // 임대전용(청년주택 등) 단지는 가격 표시 완전 차단
+          const isRentalOnly = selectedApt.isRentalOnly === true;
+          const resolvedPriceNum = isRentalOnly ? 0 : (live?.latestPrice || selectedApt.priceNum || 0);
+          const displayPrice = isRentalOnly ? "-" : (realtimeTx?.avgPriceStr || live?.formatted || selectedApt.avgPrice);
           const displayPyeong = live?.pyeong || selectedApt.pyeong;
           const hasPrice = resolvedPriceNum > 0;
 
@@ -1667,10 +1675,10 @@ export default function AptMap({
           const currentBuiltYear = selectedApt.builtYear || kaptInfo?.builtYear;
 
           // 전세/갭: realtimeTx가 live 기반으로 이미 계산된 값 → 그대로 사용
-          const jeonseStr = realtimeTx?.jeonsePriceStr;
-          const gapStr = realtimeTx?.gapPriceStr;
+          const jeonseStr = isRentalOnly ? undefined : realtimeTx?.jeonsePriceStr;
+          const gapStr = isRentalOnly ? undefined : realtimeTx?.gapPriceStr;
           const jeonseRatio = selectedApt.jeonseRatio ?? 56;
-          const hasJeonse = jeonseStr && jeonseStr !== "가격없음";
+          const hasJeonse = !isRentalOnly && jeonseStr && jeonseStr !== "가격없음";
 
           return (
             <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-[25] bg-white rounded-3xl shadow-2xl border border-slate-200/90 p-5 sm:w-88 animate-slide-up">
@@ -1686,9 +1694,26 @@ export default function AptMap({
                 <span className="text-slate-300 shrink-0">•</span>
                 <span className="text-rose-500 font-bold shrink-0">🔥 {selectedApt.liveViewers}명 관심</span>
               </div>
-              <div className="text-lg font-extrabold text-slate-900 pr-6 leading-tight mb-2.5 truncate">{selectedApt.name}</div>
+              <div className="flex items-center gap-2 mb-2.5 pr-6">
+                <div className="text-lg font-extrabold text-slate-900 leading-tight truncate">{selectedApt.name}</div>
+                {isRentalOnly && (
+                  <span className="shrink-0 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 border border-violet-200">
+                    청년안심주택
+                  </span>
+                )}
+              </div>
 
-              {/* 시세 3종: realtimeTx(live 캐시 반영값) 최우선 사용 → 마커와 100% 동일 */}
+              {/* 임대전용 단지: 매매가 대신 임대 안내 배너 표시 */}
+              {isRentalOnly ? (
+                <div className="bg-violet-50 border border-violet-200/80 rounded-2xl p-3 mb-2.5 text-xs text-violet-800">
+                  <div className="font-extrabold mb-1">🏠 공공지원 민간임대 전용 단지</div>
+                  <div className="text-violet-600 leading-relaxed">
+                    청년·신혼부부 대상 임대주택으로, <b>매매 거래는 불가능</b>합니다.<br />
+                    임대보증금 및 거주 조건은 임대 관리 주체를 통해 확인하세요.
+                  </div>
+                </div>
+              ) : (
+              /* 시세 3종: realtimeTx(live 캐시 반영값) 최우선 사용 → 마커와 100% 동일 */
               <div className="grid grid-cols-3 gap-1.5 mb-2.5">
                 <div className="bg-rose-50/80 rounded-2xl p-2.5 border border-rose-100/90 text-center">
                   <div className="text-[10px] text-rose-500 font-bold mb-0.5">
@@ -1720,13 +1745,14 @@ export default function AptMap({
                   </div>
                 </div>
               </div>
+              )}
 
               {/* 갭가격 및 단지 주요 지표 */}
               <div className="flex items-center justify-between text-[11px] bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/70 mb-3 text-slate-600">
                 <span>
-                  갭투자{" "}
+                  {isRentalOnly ? "임대전용" : "갭투자"}{" "}
                   <b className="text-indigo-600 font-bold">
-                    {gapStr && gapStr !== "가격없음" ? gapStr : (hasPrice ? `${Math.round(resolvedPriceNum * 0.44 / 10000)}억` : "-")}
+                    {isRentalOnly ? "매매불가" : (gapStr && gapStr !== "가격없음" ? gapStr : (hasPrice ? `${Math.round(resolvedPriceNum * 0.44 / 10000)}억` : "-"))}
                   </b>
                 </span>
                 <span className="text-slate-300">|</span>

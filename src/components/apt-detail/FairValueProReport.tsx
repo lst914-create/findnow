@@ -111,10 +111,12 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
             </p>
           </div>
 
-          <div className="bg-black/50 px-5 py-3.5 rounded-2xl border border-white/10 text-right self-stretch sm:self-auto min-w-[150px]">
-            <div className="text-[11px] text-slate-400 font-medium">현재 기준 매매가</div>
-            <div className="text-2xl font-black text-white mt-0.5">{fmtWon(result.currentPrice)}</div>
-            <div className="text-[10px] text-slate-500 mt-1">평당 {result.pyeongUnitPrice.toLocaleString()}만원</div>
+          <div className="bg-black/50 px-5 py-3.5 rounded-2xl border border-white/10 text-right self-stretch sm:self-auto min-w-[170px] sm:min-w-[190px] shrink-0">
+            <div className="text-[11px] text-slate-400 font-medium whitespace-nowrap">현재 기준 매매가</div>
+            <div className="text-xl sm:text-2xl font-black text-white mt-0.5 whitespace-nowrap tracking-tight">
+              {fmtWon(result.currentPrice)}
+            </div>
+            <div className="text-[10px] text-slate-500 mt-1 whitespace-nowrap">평당 {result.pyeongUnitPrice.toLocaleString()}만원</div>
           </div>
         </div>
 
@@ -140,7 +142,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
                 <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">
                   🟢 급매 / 적극 매수선
                 </span>
-                <div className="text-lg sm:text-xl font-black text-white mt-2">
+                <div className="text-lg sm:text-xl font-black text-white mt-2 whitespace-nowrap">
                   {fmtWon(result.bargainPrice)} 이하
                 </div>
               </div>
@@ -154,7 +156,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
                 <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-500/20 text-blue-400">
                   🟡 적정 가치 기준선
                 </span>
-                <div className="text-lg sm:text-xl font-black text-white mt-2">
+                <div className="text-lg sm:text-xl font-black text-white mt-2 whitespace-nowrap">
                   {fmtWon(result.fairPrice)}
                 </div>
               </div>
@@ -168,7 +170,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
                 <span className="text-[10px] font-black px-2 py-0.5 rounded bg-rose-500/20 text-rose-400">
                   🔴 매수 보류 / 상한선
                 </span>
-                <div className="text-lg sm:text-xl font-black text-white mt-2">
+                <div className="text-lg sm:text-xl font-black text-white mt-2 whitespace-nowrap">
                   {fmtWon(result.ceilingPrice)} 이상
                 </div>
               </div>

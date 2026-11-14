@@ -119,9 +119,9 @@ export function LocationScoreProReportModal({
                       가중치 {cat.weight}%
                     </span>
                   </div>
-                  <div className="text-slate-400 text-[11px] flex items-center gap-1.5">
-                    <span>• 근거:</span>
-                    <span className="text-slate-200 font-semibold">{cat.evidence}</span>
+                  <div className="text-slate-300 text-[11px] leading-relaxed flex items-start gap-1.5 mt-0.5">
+                    <span className="text-slate-500 font-bold shrink-0">•</span>
+                    <span className="text-slate-200 font-medium break-keep">{cat.evidence}</span>
                   </div>
                 </div>
 

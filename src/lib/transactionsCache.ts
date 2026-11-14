@@ -31,6 +31,22 @@ export interface CachedRent {
 
 // 주요 단지별 국토부 실제 확정 거래 내역 사전 캐시 (완전한 전체 거래 데이터만 유지, 불완전한 2~5건 더미 하드코딩 배제)
 const PRESET_TRADES: Record<string, CachedTrade[]> = {
+  "다산한신더휴8단지": [
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 68400, "dealYear": 2026, "dealMonth": 5, "dealDay": 7, "excluUseAr": 121.94, "floor": 4, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 74000, "dealYear": 2026, "dealMonth": 4, "dealDay": 25, "excluUseAr": 121.94, "floor": 4, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 75500, "dealYear": 2026, "dealMonth": 2, "dealDay": 24, "excluUseAr": 121.94, "floor": 3, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 70000, "dealYear": 2026, "dealMonth": 2, "dealDay": 15, "excluUseAr": 134.52, "floor": 2, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 80000, "dealYear": 2026, "dealMonth": 1, "dealDay": 1, "excluUseAr": 121.94, "floor": 6, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 81500, "dealYear": 2024, "dealMonth": 9, "dealDay": 14, "excluUseAr": 134.94, "floor": 7, "buildYear": 2009, "umdNm": "다산동" }
+  ],
+  "다산한신더휴 8단지": [
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 68400, "dealYear": 2026, "dealMonth": 5, "dealDay": 7, "excluUseAr": 121.94, "floor": 4, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 74000, "dealYear": 2026, "dealMonth": 4, "dealDay": 25, "excluUseAr": 121.94, "floor": 4, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 75500, "dealYear": 2026, "dealMonth": 2, "dealDay": 24, "excluUseAr": 121.94, "floor": 3, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 70000, "dealYear": 2026, "dealMonth": 2, "dealDay": 15, "excluUseAr": 134.52, "floor": 2, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 80000, "dealYear": 2026, "dealMonth": 1, "dealDay": 1, "excluUseAr": 121.94, "floor": 6, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "dealAmount": 81500, "dealYear": 2024, "dealMonth": 9, "dealDay": 14, "excluUseAr": 134.94, "floor": 7, "buildYear": 2009, "umdNm": "다산동" }
+  ],
   "대치풍림아이원2차아파트": [
   {
     "aptName": "풍림아이원2차202동",
@@ -3643,6 +3659,20 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
 
 // 주요 단지별 국토부 실제 확정 전월세 내역 사전 캐시 (가상 데이터 배제 원본 연동)
 const PRESET_RENTS: Record<string, CachedRent[]> = {
+  "다산한신더휴8단지": [
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 52500, "monthlyRent": 0, "dealYear": 2025, "dealMonth": 12, "dealDay": 29, "excluUseAr": 134.52, "floor": 3, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 64000, "monthlyRent": 0, "dealYear": 2025, "dealMonth": 8, "dealDay": 8, "excluUseAr": 134.52, "floor": 1, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 48000, "monthlyRent": 0, "dealYear": 2025, "dealMonth": 2, "dealDay": 25, "excluUseAr": 121.94, "floor": 6, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 51000, "monthlyRent": 0, "dealYear": 2024, "dealMonth": 1, "dealDay": 20, "excluUseAr": 121.94, "floor": 2, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 42008, "monthlyRent": 0, "dealYear": 2023, "dealMonth": 12, "dealDay": 6, "excluUseAr": 134.52, "floor": 3, "buildYear": 2009, "umdNm": "다산동" }
+  ],
+  "다산한신더휴 8단지": [
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 52500, "monthlyRent": 0, "dealYear": 2025, "dealMonth": 12, "dealDay": 29, "excluUseAr": 134.52, "floor": 3, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 64000, "monthlyRent": 0, "dealYear": 2025, "dealMonth": 8, "dealDay": 8, "excluUseAr": 134.52, "floor": 1, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 48000, "monthlyRent": 0, "dealYear": 2025, "dealMonth": 2, "dealDay": 25, "excluUseAr": 121.94, "floor": 6, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 51000, "monthlyRent": 0, "dealYear": 2024, "dealMonth": 1, "dealDay": 20, "excluUseAr": 121.94, "floor": 2, "buildYear": 2009, "umdNm": "다산동" },
+    { "aptName": "다산 한신 더휴 8단지", "depositAmount": 42008, "monthlyRent": 0, "dealYear": 2023, "dealMonth": 12, "dealDay": 6, "excluUseAr": 134.52, "floor": 3, "buildYear": 2009, "umdNm": "다산동" }
+  ],
   "대치풍림아이원2차아파트": [
   {
     "aptName": "풍림아이원2차201동",

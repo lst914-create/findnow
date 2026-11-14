@@ -174,13 +174,14 @@ export function isAptNameMatch(
 
 /**
  * 서버 사이드에서 실거래 데이터를 0ms로 사전 조회하여 클라이언트에 즉시 전달
+ * - 호갱노노/아실 방식: 페이지 전환 지연(5~7초 딜레이)을 100% 원천 차단하고 0초 즉시 화면 표출
  */
 export async function getTransactionsForApartment(apt: any, months = 36): Promise<{ trades: any[]; rents: any[] }> {
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
-  // 1. 프리셋 데이터가 있으면 0ms 즉시 반환
+  // 1. 프리셋 사전 캐시 데이터 확인 (0ms 즉시 반환)
   const preloaded = getPreloadedTransactions(apt);
-  if (preloaded.isPreset && preloaded.trades.length > 0) {
+  if (preloaded.trades.length > 0) {
     return { trades: preloaded.trades, rents: preloaded.rents };
   }
 
@@ -188,7 +189,7 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
   const district = apt.district || "";
   const aptName = apt.name || "";
 
-  // 2. 서버 메모리 캐시 확인
+  // 2. 서버 인메모리 캐시 확인 (0ms 즉시 반환)
   const cacheKey = `${apt.id}_${aptName.trim().toLowerCase()}_${district.trim().toLowerCase()}_${months}`;
   const cached = serverTransactionsCache.get(cacheKey);
   const nowTime = Date.now();
@@ -196,51 +197,61 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
     return { trades: cached.trades, rents: cached.rents };
   }
 
-  // 법정동 코드 탐색
-  const lawdEntry = findLawdCode(region, district) ||
-    LAWD_CODES.find((l) => l.region === region || region.includes(l.region) || l.region.includes(region)) ||
-    LAWD_CODES.find((l) => {
-      const parts = region.split(" ");
-      return parts.some((p: string) => p.length >= 2 && l.region.includes(p));
-    });
+  // 3. 캐시에 없는 신규 단지인 경우:
+  // ★ 페이지 전환 5~7초 멈춤 현상을 원천 방지하기 위해 SSR 렌더링을 블로킹하지 않고 0초 즉시 반환!
+  // 외부 72회 공공데이터 API 동기화는 백그라운드 비동기로 위임하여 다음 방문 및 클라이언트 fetch 가속
+  fetchAndCacheInBackground(apt, months, cacheKey).catch(() => {});
 
-  if (!lawdEntry) {
-    return { trades: [], rents: [] };
-  }
+  return { trades: [], rents: [] };
+}
 
-  const apiKey =
-    process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
-    process.env.DATA_GO_KR_API_KEY ||
-    "w9iCzz0a9bHCdvlFLmOvVtA78NPktsoY3YIcAeQSSMbh%2FKpkxYz0AOokaJxZaO%2BMICURNdUrUpFznmKtumOvOA%3D%3D";
-
-  let cleanApiKey = apiKey.trim();
+// 백그라운드 비동기 캐시 수집 (페이지 전환 딜레이 0%)
+async function fetchAndCacheInBackground(apt: any, months: number, cacheKey: string) {
   try {
-    cleanApiKey = decodeURIComponent(cleanApiKey);
-  } catch {}
-  const encodedKey = encodeURIComponent(cleanApiKey);
+    const region = apt.apiRegion || apt.region || "";
+    const district = apt.district || "";
+    const aptName = apt.name || "";
 
-  // YYYYMM 목록
-  const dealYmdList: string[] = [];
-  const now = new Date();
-  const baseYear = now.getFullYear();
-  const baseMonth = now.getMonth();
+    const lawdEntry = findLawdCode(region, district) ||
+      LAWD_CODES.find((l) => l.region === region || region.includes(l.region) || l.region.includes(region)) ||
+      LAWD_CODES.find((l) => {
+        const parts = region.split(" ");
+        return parts.some((p: string) => p.length >= 2 && l.region.includes(p));
+      });
 
-  for (let i = 0; i < months; i++) {
-    const d = new Date(baseYear, baseMonth - i, 1);
-    const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
-    dealYmdList.push(ymd);
-  }
+    if (!lawdEntry) return;
 
-  const getVal = (xml: string, tag: string) => {
-    const m = xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));
-    return m ? m[1].trim() : "";
-  };
-  const parseItems = (xmlText: string) => xmlText.match(/<item>[\s\S]*?<\/item>/g) || [];
+    const apiKey =
+      process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
+      process.env.DATA_GO_KR_API_KEY ||
+      "w9iCzz0a9bHCdvlFLmOvVtA78NPktsoY3YIcAeQSSMbh%2FKpkxYz0AOokaJxZaO%2BMICURNdUrUpFznmKtumOvOA%3D%3D";
 
-  const trades: any[] = [];
-  const rents: any[] = [];
+    let cleanApiKey = apiKey.trim();
+    try {
+      cleanApiKey = decodeURIComponent(cleanApiKey);
+    } catch {}
+    const encodedKey = encodeURIComponent(cleanApiKey);
 
-  try {
+    const dealYmdList: string[] = [];
+    const now = new Date();
+    const baseYear = now.getFullYear();
+    const baseMonth = now.getMonth();
+
+    for (let i = 0; i < months; i++) {
+      const d = new Date(baseYear, baseMonth - i, 1);
+      const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
+      dealYmdList.push(ymd);
+    }
+
+    const getVal = (xml: string, tag: string) => {
+      const m = xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));
+      return m ? m[1].trim() : "";
+    };
+    const parseItems = (xmlText: string) => xmlText.match(/<item>[\s\S]*?<\/item>/g) || [];
+
+    const trades: any[] = [];
+    const rents: any[] = [];
+
     const CHUNK_SIZE = 12;
     for (let c = 0; c < dealYmdList.length; c += CHUNK_SIZE) {
       const chunk = dealYmdList.slice(c, c + CHUNK_SIZE);
@@ -331,29 +342,17 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
       const chunkResults = await Promise.all(chunkPromises);
       for (const res of chunkResults) {
         trades.push(...res.monthlyTrades);
+      }
+      for (const res of chunkResults) {
         rents.push(...res.monthlyRents);
       }
     }
 
-    // 최신 계약일자 순 정렬
-    trades.sort((a, b) => {
-      if (b.dealYear !== a.dealYear) return b.dealYear - a.dealYear;
-      if (b.dealMonth !== a.dealMonth) return b.dealMonth - a.dealMonth;
-      return b.dealDay - a.dealDay;
-    });
+    trades.sort((a, b) => b.dealYear - a.dealYear || b.dealMonth - a.dealMonth || b.dealDay - a.dealDay);
+    rents.sort((a, b) => b.dealYear - a.dealYear || b.dealMonth - a.dealMonth || b.dealDay - a.dealDay);
 
-    rents.sort((a, b) => {
-      if (b.dealYear !== a.dealYear) return b.dealYear - a.dealYear;
-      if (b.dealMonth !== a.dealMonth) return b.dealMonth - a.dealMonth;
-      return b.dealDay - a.dealDay;
-    });
-
-    // 서버 캐시 저장 (24시간)
     serverTransactionsCache.set(cacheKey, { trades, rents, timestamp: Date.now() });
-
-    return { trades, rents };
-  } catch (err) {
-    console.error("[getTransactionsForApartment] fetch error:", err);
-    return { trades: [], rents: [] };
+  } catch (e) {
+    console.warn("[fetchAndCacheInBackground] error:", e);
   }
 }

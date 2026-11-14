@@ -10,7 +10,7 @@ interface SubwayInfo {
 
 interface SchoolInfo {
   name: string;
-  type: "초등학교" | "중학교" | "고등학교" | "대학교" | "기타";
+  type: "초등학교" | "중학교" | "고등학교" | "기타";
   distanceMeters: number;
   walkMinutes: number;
   isWalkable: boolean;
@@ -93,12 +93,6 @@ export async function GET(request: NextRequest) {
       { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
     ).then((r) => (r.ok ? r.json() : { documents: [] }));
 
-    // 2-1. 대학교 추가 조회 (키워드 검색, 반경 4km)
-    const universityPromise = fetch(
-      `https://dapi.kakao.com/v2/local/search/keyword.json?query=대학교&x=${lng}&y=${lat}&radius=4000&size=5&sort=distance`,
-      { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
-    ).then((r) => (r.ok ? r.json() : { documents: [] }));
-
     // 3. 공원 조회 (키워드 검색, 반경 2km)
     const parkPromise = fetch(
       `https://dapi.kakao.com/v2/local/search/keyword.json?query=공원&x=${lng}&y=${lat}&radius=2000&sort=distance`,
@@ -117,10 +111,9 @@ export async function GET(request: NextRequest) {
       { headers: { Authorization: `KakaoAK ${kakaoKey}` } }
     ).then((r) => (r.ok ? r.json() : { documents: [] }));
 
-    const [subwayRes, schoolRes, universityRes, parkRes, martRes, hospitalRes] = await Promise.all([
+    const [subwayRes, schoolRes, parkRes, martRes, hospitalRes] = await Promise.all([
       subwayPromise,
       schoolPromise,
-      universityPromise,
       parkPromise,
       martPromise,
       hospitalPromise,
@@ -143,11 +136,8 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // 학교 + 대학교 결합 파싱
-    const allSchoolDocs = [
-      ...(schoolRes.documents || []),
-      ...(universityRes.documents || []),
-    ];
+    // 학교 파싱 (초/중/고)
+    const allSchoolDocs = schoolRes.documents || [];
 
     const seenSchools = new Set<string>();
     const schools: SchoolInfo[] = [];
@@ -160,11 +150,10 @@ export async function GET(request: NextRequest) {
       const dist = parseInt(d.distance, 10);
       const walkMin = Math.round(dist / 67);
 
-      let type: "초등학교" | "중학교" | "고등학교" | "대학교" | "기타" = "기타";
+      let type: "초등학교" | "중학교" | "고등학교" | "기타" = "기타";
       if (name.includes("초등학교") || name.endsWith("초")) type = "초등학교";
       else if (name.includes("중학교") || name.endsWith("중")) type = "중학교";
       else if (name.includes("고등학교") || name.endsWith("고")) type = "고등학교";
-      else if (name.includes("대학교") || name.includes("대학") || name.includes("캠퍼스")) type = "대학교";
 
       schools.push({
         name,

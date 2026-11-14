@@ -264,7 +264,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   const [chartRange, setChartRange] = useState<"최근 1년" | "최근 3년">("최근 3년");
   const [showCount, setShowCount] = useState(5);
   const [activeLocation, setActiveLocation] = useState<"학군" | "교통" | "쾌적성" | "편의시설">("교통");
-  const [schoolTab, setSchoolTab] = useState<"초등학교" | "중학교" | "고등학교" | "대학교">("초등학교");
+  const [schoolTab, setSchoolTab] = useState<"초등학교" | "중학교" | "고등학교">("초등학교");
 
   // 실시간 종합 교통 데이터 (지하철 호선별 + 고속철도 + 호갱노노 100% 실존 버스 노선)
   const [trafficData, setTrafficData] = useState<{
@@ -2368,9 +2368,9 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                     </span>
                   </div>
 
-                  {/* 호갱노노 스타일 학교급 탭 (초등학교 | 중학교 | 고등학교 | 대학교) */}
+                  {/* 호갱노노 스타일 학교급 탭 (초등학교 | 중학교 | 고등학교) */}
                   <div className="flex border-b border-slate-200">
-                    {(["초등학교", "중학교", "고등학교", "대학교"] as const).map((tab) => {
+                    {(["초등학교", "중학교", "고등학교"] as const).map((tab) => {
                       const count = (infraData?.schools || []).filter((s: any) => s.type === tab).length;
                       const isActive = schoolTab === tab;
                       return (
@@ -2447,7 +2447,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                                     ? "bg-emerald-100 text-emerald-700"
                                     : s.type === "고등학교"
                                     ? "bg-indigo-100 text-indigo-700"
-                                    : "bg-purple-100 text-purple-700"
+                                    : "bg-slate-100 text-slate-700"
                                 }`}
                               >
                                 {s.type}

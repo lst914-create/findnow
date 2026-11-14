@@ -296,7 +296,7 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
   }
 
 
-  // [사용자 핵심 요구사항] 밤 12시 배치 동기화 데이터 기반 0초 즉시(0ms 지연) 렌더링
+  // [호갱노노·아실 동일 구현] 영구 캐시(localStorage) 기반 0초 즉시 렌더링 + 백그라운드 무자각 동기화
   const preloaded = useMemo(() => getPreloadedTransactions(apt), [apt]);
   const [apiTrades, setApiTrades] = useState<any[]>(() => {
     if (typeof window !== "undefined") {
@@ -322,7 +322,17 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
     }
     return preloaded.rents;
   });
-  const [isLoadingApi, setIsLoadingApi] = useState(false); // 처음부터 딜레이 없이 즉시 표출
+
+  // 캐시가 이미 존재하면 0초 즉시 표출(로딩 없음), 첫 방문/미캐시 단지만 실시간 API 동기화 스켈레톤 표출
+  const [isLoadingApi, setIsLoadingApi] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const local = localStorage.getItem(`findnow_trades_${apt.id}`);
+        if (local && JSON.parse(local).length > 0) return false;
+      } catch {}
+    }
+    return preloaded.trades.length === 0;
+  });
   const [isApiConnected, setIsApiConnected] = useState(true);
 
   // 단지 변경 시 로컬 스토리지 또는 사전 캐시 데이터 즉시 동기화 (0ms 렌더링)
@@ -333,11 +343,17 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         const parsed = JSON.parse(localTrades);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setApiTrades(parsed);
+          setIsLoadingApi(false);
           return;
         }
       }
     } catch {}
-    if (preloaded.trades.length > 0) setApiTrades(preloaded.trades);
+    if (preloaded.trades.length > 0) {
+      setApiTrades(preloaded.trades);
+      setIsLoadingApi(false);
+    } else {
+      setIsLoadingApi(true);
+    }
     if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
   }, [apt.id, preloaded]);
 
@@ -529,6 +545,10 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
         }
       } catch (e) {
         // Silent catch: 사용자 화면에 에러나 딜레이를 유발하지 않음
+      } finally {
+        if (isMounted) {
+          setIsLoadingApi(false);
+        }
       }
     }
 
@@ -1330,7 +1350,13 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 </div>
               )}
 
-              {chartData.length >= 2 ? (
+              {isLoadingApi && chartData.length === 0 ? (
+                <div className="h-[210px] flex flex-col items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 animate-pulse text-center px-4">
+                  <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2" />
+                  <p className="text-xs font-bold text-slate-700">국토교통부 실거래 데이터(최근 3년) 동기화 중...</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">공식 신고된 원본 계약 내역을 안전하게 불러오고 있습니다.</p>
+                </div>
+              ) : chartData.length >= 2 ? (
                 <div className="relative">
                   <ResponsiveContainer width="100%" height={230}>
                     <ComposedChart data={chartData} margin={{ top: 22, right: 14, left: -10, bottom: 0 }}>
@@ -1497,7 +1523,13 @@ export default function ApartmentDetailPage({ params }: DetailProps) {
                 </div>
               </div>
 
-              {activeTxs.length === 0 ? (
+              {isLoadingApi && activeTxs.length === 0 ? (
+                <div className="rounded-2xl border border-slate-100 p-8 text-center bg-slate-50 animate-pulse">
+                  <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-xs font-bold text-slate-700">국토교통부 실거래 계약 내역을 확인하는 중입니다...</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">최근 3개년 체결 건을 실시간으로 가져옵니다.</p>
+                </div>
+              ) : activeTxs.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
                   <p className="text-sm font-semibold text-slate-600">
                     {isLoadingApi

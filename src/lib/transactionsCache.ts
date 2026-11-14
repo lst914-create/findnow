@@ -29,86 +29,8 @@ export interface CachedRent {
   umdNm: string;
 }
 
-// 주요 단지별 국토부 실제 확정 거래 내역 사전 캐시
+// 주요 단지별 국토부 실제 확정 거래 내역 사전 캐시 (완전한 전체 거래 데이터만 유지, 불완전한 2~5건 더미 하드코딩 배제)
 const PRESET_TRADES: Record<string, CachedTrade[]> = {
-  "대치하나빌": [
-    { aptName: "대치하나빌", dealAmount: 245000, dealYear: 2026, dealMonth: 5, dealDay: 21, excluUseAr: 197.14, floor: 1, buildYear: 2003, umdNm: "대치동" },
-    { aptName: "대치하나빌", dealAmount: 145000, dealYear: 2018, dealMonth: 7, dealDay: 15, excluUseAr: 169.19, floor: 4, buildYear: 2003, umdNm: "대치동" },
-    { aptName: "대치하나빌", dealAmount: 80000, dealYear: 2018, dealMonth: 5, dealDay: 10, excluUseAr: 166.22, floor: 5, buildYear: 2003, umdNm: "대치동" },
-  ],
-  "대치삼성2차": [
-    { aptName: "삼성2차", dealAmount: 156000, dealYear: 2019, dealMonth: 6, dealDay: 20, excluUseAr: 162.51, floor: 3, buildYear: 1999, umdNm: "대치동" },
-    { aptName: "삼성2차", dealAmount: 161000, dealYear: 2018, dealMonth: 7, dealDay: 11, excluUseAr: 162.51, floor: 1, buildYear: 1999, umdNm: "대치동" },
-    { aptName: "삼성2차", dealAmount: 165000, dealYear: 2018, dealMonth: 1, dealDay: 18, excluUseAr: 162.51, floor: 2, buildYear: 1999, umdNm: "대치동" },
-  ],
-  "창조": [
-    { aptName: "창조아파트", dealAmount: 17000, dealYear: 2026, dealMonth: 3, dealDay: 7, excluUseAr: 59.4, floor: 5, buildYear: 1999, umdNm: "다산동" },
-    { aptName: "창조아파트", dealAmount: 24500, dealYear: 2025, dealMonth: 10, dealDay: 11, excluUseAr: 59.4, floor: 2, buildYear: 1999, umdNm: "다산동" },
-    { aptName: "창조아파트", dealAmount: 19500, dealYear: 2025, dealMonth: 6, dealDay: 25, excluUseAr: 59.4, floor: 1, buildYear: 1999, umdNm: "다산동" },
-    { aptName: "창조아파트", dealAmount: 18000, dealYear: 2025, dealMonth: 2, dealDay: 14, excluUseAr: 59.4, floor: 4, buildYear: 1999, umdNm: "다산동" },
-  ],
-  "제일": [
-    { aptName: "제일아파트", dealAmount: 42000, dealYear: 2026, dealMonth: 9, dealDay: 15, excluUseAr: 59.8, floor: 8, buildYear: 1998, umdNm: "다산동" },
-    { aptName: "제일아파트", dealAmount: 43500, dealYear: 2026, dealMonth: 4, dealDay: 22, excluUseAr: 59.8, floor: 12, buildYear: 1998, umdNm: "다산동" },
-    { aptName: "제일아파트", dealAmount: 39800, dealYear: 2025, dealMonth: 11, dealDay: 5, excluUseAr: 59.8, floor: 3, buildYear: 1998, umdNm: "다산동" },
-    { aptName: "제일아파트", dealAmount: 41000, dealYear: 2025, dealMonth: 7, dealDay: 18, excluUseAr: 59.8, floor: 6, buildYear: 1998, umdNm: "다산동" },
-  ],
-  "롯데낙천대": [
-    { aptName: "남양주다산롯데낙천대아파트", dealAmount: 72800, dealYear: 2026, dealMonth: 10, dealDay: 18, excluUseAr: 84.9, floor: 14, buildYear: 2005, umdNm: "다산동" },
-    { aptName: "남양주다산롯데낙천대아파트", dealAmount: 74000, dealYear: 2026, dealMonth: 8, dealDay: 9, excluUseAr: 84.9, floor: 11, buildYear: 2005, umdNm: "다산동" },
-    { aptName: "남양주다산롯데낙천대아파트", dealAmount: 71500, dealYear: 2026, dealMonth: 5, dealDay: 27, excluUseAr: 84.9, floor: 5, buildYear: 2005, umdNm: "다산동" },
-    { aptName: "남양주다산롯데낙천대아파트", dealAmount: 69000, dealYear: 2025, dealMonth: 12, dealDay: 14, excluUseAr: 84.9, floor: 2, buildYear: 2005, umdNm: "다산동" },
-  ],
-  "꿈에그린": [
-    { aptName: "한화꿈에그린아파트", dealAmount: 75000, dealYear: 2026, dealMonth: 10, dealDay: 24, excluUseAr: 84.8, floor: 16, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "한화꿈에그린아파트", dealAmount: 76500, dealYear: 2026, dealMonth: 7, dealDay: 11, excluUseAr: 84.8, floor: 9, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "한화꿈에그린아파트", dealAmount: 73000, dealYear: 2026, dealMonth: 3, dealDay: 19, excluUseAr: 84.8, floor: 4, buildYear: 2008, umdNm: "다산동" },
-    { aptName: "한화꿈에그린아파트", dealAmount: 71000, dealYear: 2025, dealMonth: 11, dealDay: 8, excluUseAr: 84.8, floor: 7, buildYear: 2008, umdNm: "다산동" },
-  ],
-  "교문장자마을신명": [
-    { aptName: "교문장자마을신명", dealAmount: 78000, dealYear: 2026, dealMonth: 10, dealDay: 22, excluUseAr: 84.7, floor: 12, buildYear: 2001, umdNm: "교문동" },
-    { aptName: "교문장자마을신명", dealAmount: 79500, dealYear: 2026, dealMonth: 8, dealDay: 14, excluUseAr: 84.7, floor: 8, buildYear: 2001, umdNm: "교문동" },
-    { aptName: "교문장자마을신명", dealAmount: 76000, dealYear: 2026, dealMonth: 4, dealDay: 5, excluUseAr: 84.7, floor: 3, buildYear: 2001, umdNm: "교문동" },
-    { aptName: "교문장자마을신명", dealAmount: 75000, dealYear: 2025, dealMonth: 10, dealDay: 28, excluUseAr: 84.7, floor: 6, buildYear: 2001, umdNm: "교문동" },
-  ],
-  "신명스카이뷰": [
-    { aptName: "신명스카이뷰아파트", dealAmount: 53000, dealYear: 2026, dealMonth: 10, dealDay: 18, excluUseAr: 59.9, floor: 11, buildYear: 2006, umdNm: "토평동" },
-    { aptName: "신명스카이뷰아파트", dealAmount: 53500, dealYear: 2026, dealMonth: 8, dealDay: 12, excluUseAr: 59.9, floor: 14, buildYear: 2006, umdNm: "토평동" },
-    { aptName: "신명스카이뷰아파트", dealAmount: 51000, dealYear: 2026, dealMonth: 5, dealDay: 20, excluUseAr: 59.9, floor: 6, buildYear: 2006, umdNm: "토평동" },
-    { aptName: "신명스카이뷰아파트", dealAmount: 49500, dealYear: 2025, dealMonth: 11, dealDay: 15, excluUseAr: 59.9, floor: 4, buildYear: 2006, umdNm: "토평동" },
-  ],
-  "다산한강반도유보라": [
-    { aptName: "다산한강반도유보라", dealAmount: 102000, dealYear: 2026, dealMonth: 10, dealDay: 19, excluUseAr: 84.9, floor: 29, buildYear: 2019, umdNm: "다산동" },
-    { aptName: "다산한강반도유보라", dealAmount: 103700, dealYear: 2026, dealMonth: 10, dealDay: 12, excluUseAr: 84.9, floor: 18, buildYear: 2019, umdNm: "다산동" },
-    { aptName: "다산한강반도유보라", dealAmount: 101000, dealYear: 2026, dealMonth: 9, dealDay: 25, excluUseAr: 84.9, floor: 11, buildYear: 2019, umdNm: "다산동" },
-    { aptName: "다산한강반도유보라", dealAmount: 109500, dealYear: 2026, dealMonth: 9, dealDay: 1, excluUseAr: 84.9, floor: 27, buildYear: 2019, umdNm: "다산동" },
-    { aptName: "다산한강반도유보라", dealAmount: 94000, dealYear: 2026, dealMonth: 8, dealDay: 26, excluUseAr: 84.9, floor: 1, buildYear: 2019, umdNm: "다산동" },
-  ],
-  "금강펜테리움리버테라스2차": [
-    { aptName: "다산금강펜테리움리버테라스2차", dealAmount: 110000, dealYear: 2026, dealMonth: 10, dealDay: 27, excluUseAr: 84.9, floor: 21, buildYear: 2019, umdNm: "다산동" },
-    { aptName: "다산금강펜테리움리버테라스2차", dealAmount: 113500, dealYear: 2026, dealMonth: 9, dealDay: 16, excluUseAr: 84.9, floor: 15, buildYear: 2019, umdNm: "다산동" },
-    { aptName: "다산금강펜테리움리버테라스2차", dealAmount: 108000, dealYear: 2026, dealMonth: 8, dealDay: 8, excluUseAr: 84.9, floor: 6, buildYear: 2019, umdNm: "다산동" },
-  ],
-  "신안인스빌퍼스트리버": [
-    { aptName: "다산신안인스빌퍼스트리버", dealAmount: 98000, dealYear: 2026, dealMonth: 10, dealDay: 27, excluUseAr: 84.8, floor: 14, buildYear: 2019, umdNm: "다산동" },
-    { aptName: "다산신안인스빌퍼스트리버", dealAmount: 99000, dealYear: 2026, dealMonth: 9, dealDay: 20, excluUseAr: 84.8, floor: 22, buildYear: 2019, umdNm: "다산동" },
-    { aptName: "다산신안인스빌퍼스트리버", dealAmount: 95000, dealYear: 2026, dealMonth: 8, dealDay: 11, excluUseAr: 84.8, floor: 8, buildYear: 2019, umdNm: "다산동" },
-  ],
-  "금강펜테리움리버테라스1차": [
-    { aptName: "다산금강펜테리움리버테라스1차", dealAmount: 109000, dealYear: 2026, dealMonth: 10, dealDay: 21, excluUseAr: 84.9, floor: 19, buildYear: 2018, umdNm: "다산동" },
-    { aptName: "다산금강펜테리움리버테라스1차", dealAmount: 107000, dealYear: 2026, dealMonth: 8, dealDay: 15, excluUseAr: 84.9, floor: 12, buildYear: 2018, umdNm: "다산동" },
-  ],
-  "오창우림필유2차": [
-    { aptName: "오창우림필유2차아파트", dealAmount: 27150, dealYear: 2026, dealMonth: 10, dealDay: 22, excluUseAr: 84.9, floor: 15, buildYear: 2006, umdNm: "오창읍" },
-    { aptName: "오창우림필유2차아파트", dealAmount: 28100, dealYear: 2026, dealMonth: 9, dealDay: 28, excluUseAr: 84.9, floor: 18, buildYear: 2006, umdNm: "오창읍" },
-    { aptName: "오창우림필유2차아파트", dealAmount: 27100, dealYear: 2026, dealMonth: 9, dealDay: 12, excluUseAr: 84.9, floor: 11, buildYear: 2006, umdNm: "오창읍" },
-    { aptName: "오창우림필유2차아파트", dealAmount: 25500, dealYear: 2026, dealMonth: 8, dealDay: 19, excluUseAr: 84.9, floor: 3, buildYear: 2006, umdNm: "오창읍" },
-    { aptName: "오창우림필유2차아파트", dealAmount: 26800, dealYear: 2026, dealMonth: 7, dealDay: 8, excluUseAr: 84.9, floor: 14, buildYear: 2006, umdNm: "오창읍" },
-  ],
-  "오창우림필유1차": [
-    { aptName: "오창우림필유1차아파트", dealAmount: 25800, dealYear: 2026, dealMonth: 10, dealDay: 18, excluUseAr: 84.8, floor: 12, buildYear: 2006, umdNm: "오창읍" },
-    { aptName: "오창우림필유1차아파트", dealAmount: 26500, dealYear: 2026, dealMonth: 8, dealDay: 25, excluUseAr: 84.8, floor: 16, buildYear: 2006, umdNm: "오창읍" },
-  ],
   // ─── 강남구 주요 단지 ───────────────────────────────────────────────────────
   "대치아이파크": [
     { aptName: "대치아이파크", dealAmount: 486000, dealYear: 2026, dealMonth: 5, dealDay: 24, excluUseAr: 149.78, floor: 24, buildYear: 2008, umdNm: "대치동" },

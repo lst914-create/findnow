@@ -187,7 +187,7 @@ export default function AptMap({
   const [currentRegion, setCurrentRegion] = useState<string>("수도권 주요 단지");
   const [visibleCount, setVisibleCount] = useState<number>(0);
 
-  // 선택 단지 바텀시트 정보: DB 확정 데이터 기반 0초 즉시(0ms 지연) 고정 렌더링
+  // 선택 단지 바텀시트 정보: 마커 HTML과 동일한 소스(livePriceDetailCacheRef)를 우선 조회하여 100% 일치 보장
   useEffect(() => {
     if (!selectedApt) {
       setRealtimeTx(null);
@@ -195,30 +195,84 @@ export default function AptMap({
       return;
     }
 
-    // [사용자 핵심 요구사항] 마커 클릭 시 1초 뒤 세대수/준공연도가 바뀌는 현상 완전 제거
-    // 이미 검증된 단지 마스터의 세대수와 준공연도를 0초 즉시 고정 표출
     setKaptInfo({
       householdCount: selectedApt.householdCount,
       builtYear: selectedApt.builtYear,
     });
 
-    // 바텀시트 시세: 마커에 표시된 검증된 실거래가와 100% 동일하게 0초 즉시 반영 (불일치 및 깜빡임 제거)
-    const priceNum = selectedApt.priceNum || 0;
-    const avgPriceStr = selectedApt.avgPrice;
+    // ★ 핵심 수정: markerHtml()과 동일한 로직으로 livePriceDetailCacheRef를 1순위로 조회
+    // 동적 발견 단지(카카오 Places)는 마커 생성 시 priceNum=0으로 고정되지만,
+    // 이후 viewport API 응답으로 캐시에 실거래가가 채워진 상태일 수 있으므로 캐시를 반드시 재확인
+    const normName = normalizeAptName(selectedApt.name);
+    const liveDetail =
+      livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
+      livePriceDetailCacheRef.current.get(normName);
+
+    // 가격: 실거래 캐시 → 마커 내장값 순으로 폴백
+    const resolvedPriceNum = liveDetail?.latestPrice || selectedApt.priceNum || 0;
+    const resolvedPriceStr = liveDetail?.formatted || selectedApt.avgPrice;
+    const resolvedPyeong = liveDetail?.pyeong || selectedApt.pyeong;
+
     const ratio = selectedApt.jeonseRatio ?? 56;
-    const jeonseNum = selectedApt.rentNum || Math.round(priceNum * (ratio / 100));
-    const gapNum = selectedApt.gapPrice ?? Math.max(0, priceNum - jeonseNum);
+    const jeonseNum = selectedApt.rentNum || Math.round(resolvedPriceNum * (ratio / 100));
+    const gapNum = selectedApt.gapPrice ?? Math.max(0, resolvedPriceNum - jeonseNum);
 
     setRealtimeTx({
-      avgPriceStr: avgPriceStr,
-      latestPriceStr: avgPriceStr,
+      avgPriceStr: resolvedPriceStr,
+      latestPriceStr: resolvedPriceStr,
       latestDateStr: "",
       dealCount: 1,
-      jeonsePriceStr: formatPrice(jeonseNum),
-      gapPriceStr: formatPrice(gapNum),
+      jeonsePriceStr: resolvedPriceNum > 0 ? formatPrice(jeonseNum) : "가격없음",
+      gapPriceStr: resolvedPriceNum > 0 ? formatPrice(gapNum) : "가격없음",
       isLoading: false,
       isRealConnected: true,
     });
+
+    // selectedApt에 priceNum이 없는데 캐시도 아직 없는 경우(첫 클릭) → viewport API 재호출 없이 개별 단지 실거래가만 추가 조회
+    if (resolvedPriceNum === 0 && selectedApt.id.startsWith("kakao-")) {
+      const addrParts = selectedApt.region.split(" ");
+      const region = addrParts.slice(0, 2).join(" ");
+      const district = addrParts[2] || "";
+      fetch("/api/transactions/viewport", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          regions: [{ region, district }],
+          pyeong: selectedApt.pyeong,
+          months: 12,
+          singleApt: selectedApt.name, // 단일 단지 한정 조회 힌트
+        }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (!data) return;
+          if (data.detailsMap) {
+            Object.entries(data.detailsMap as Record<string, any>).forEach(([k, v]) => {
+              livePriceDetailCacheRef.current.set(k, v as any);
+            });
+          }
+          const freshDetail =
+            livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
+            livePriceDetailCacheRef.current.get(normName);
+          if (freshDetail && freshDetail.latestPrice > 0) {
+            const freshPriceNum = freshDetail.latestPrice;
+            const freshJeonse = Math.round(freshPriceNum * (ratio / 100));
+            const freshGap = Math.max(0, freshPriceNum - freshJeonse);
+            setRealtimeTx({
+              avgPriceStr: freshDetail.formatted,
+              latestPriceStr: freshDetail.formatted,
+              latestDateStr: "",
+              dealCount: 1,
+              jeonsePriceStr: formatPrice(freshJeonse),
+              gapPriceStr: formatPrice(freshGap),
+              isLoading: false,
+              isRealConnected: true,
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedApt]);
 
   // 14개 조건 필터 State
@@ -1598,11 +1652,25 @@ export default function AptMap({
         {/* 선택 단지 팝업 카드 */}
         {selectedApt && (() => {
           const normName = normalizeAptName(selectedApt.name);
-          const live = livePriceDetailCacheRef.current.get(normName);
-          const displayPrice = live?.formatted || realtimeTx?.avgPriceStr || selectedApt.avgPrice;
+          // ★ 마커 HTML과 동일하게 pyeong 키 우선, 없으면 대표 키로 조회 → 가격 완전 일치 보장
+          const live =
+            livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
+            livePriceDetailCacheRef.current.get(normName);
+
+          // realtimeTx는 useEffect에서 live 캐시를 이미 반영한 값이므로 최우선 사용
+          const resolvedPriceNum = live?.latestPrice || selectedApt.priceNum || 0;
+          const displayPrice = realtimeTx?.avgPriceStr || live?.formatted || selectedApt.avgPrice;
           const displayPyeong = live?.pyeong || selectedApt.pyeong;
+          const hasPrice = resolvedPriceNum > 0;
+
           const currentHousehold = selectedApt.householdCount || kaptInfo?.householdCount;
           const currentBuiltYear = selectedApt.builtYear || kaptInfo?.builtYear;
+
+          // 전세/갭: realtimeTx가 live 기반으로 이미 계산된 값 → 그대로 사용
+          const jeonseStr = realtimeTx?.jeonsePriceStr;
+          const gapStr = realtimeTx?.gapPriceStr;
+          const jeonseRatio = selectedApt.jeonseRatio ?? 56;
+          const hasJeonse = jeonseStr && jeonseStr !== "가격없음";
 
           return (
             <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-[25] bg-white rounded-3xl shadow-2xl border border-slate-200/90 p-5 sm:w-88 animate-slide-up">
@@ -1620,51 +1688,45 @@ export default function AptMap({
               </div>
               <div className="text-lg font-extrabold text-slate-900 pr-6 leading-tight mb-2.5 truncate">{selectedApt.name}</div>
 
-              {/* 시세 3종: 매매 평균은 지도상 실거래가(최근 3개월 평균)와 동일하게 일치, 거래 없으면 "최근 거래 없음" */}
+              {/* 시세 3종: realtimeTx(live 캐시 반영값) 최우선 사용 → 마커와 100% 동일 */}
               <div className="grid grid-cols-3 gap-1.5 mb-2.5">
                 <div className="bg-rose-50/80 rounded-2xl p-2.5 border border-rose-100/90 text-center">
                   <div className="text-[10px] text-rose-500 font-bold mb-0.5">
                     매매 평균
                   </div>
                   <div className="text-base font-black text-rose-700 leading-tight">
-                    {selectedApt.priceNum > 0 || live ? displayPrice : "-"}
+                    {hasPrice ? displayPrice : "-"}
                   </div>
                   <div className="text-[9px] text-rose-500 mt-0.5 font-bold">
-                    {selectedApt.priceNum > 0 || live ? `${displayPyeong}평` : "가격없음"}
+                    {hasPrice ? `${displayPyeong}평` : "가격없음"}
                   </div>
                 </div>
                 <div className="bg-blue-50/80 rounded-2xl p-2.5 border border-blue-100/90 text-center">
                   <div className="text-[10px] text-blue-500 font-bold mb-0.5">전세 시세</div>
                   <div className="text-base font-black text-blue-700 leading-tight">
-                    {selectedApt.rentNum && selectedApt.rentNum > 0
-                      ? (realtimeTx?.jeonsePriceStr || `${Math.round(selectedApt.rentNum / 10000)}억`)
-                      : "-"}
+                    {hasJeonse ? jeonseStr : "-"}
                   </div>
                   <div className="text-[9px] text-blue-500 mt-0.5 font-bold">
-                    {selectedApt.rentNum && selectedApt.rentNum > 0 ? `전세가율 ${selectedApt.jeonseRatio ?? 56}%` : "가격없음"}
+                    {hasJeonse ? `전세가율 ${jeonseRatio}%` : "가격없음"}
                   </div>
                 </div>
                 <div className="bg-emerald-50/80 rounded-2xl p-2.5 border border-emerald-100/90 text-center">
                   <div className="text-[10px] text-emerald-600 font-bold mb-0.5">월세 추정</div>
                   <div className="text-xs font-black text-emerald-800 leading-tight mt-1">
-                    {selectedApt.priceNum > 0
-                      ? `보 ${Math.max(1, Math.round((selectedApt.priceNum * 0.1) / 10000))}억`
-                      : "-"}
+                    {hasPrice ? `보 ${Math.max(1, Math.round((resolvedPriceNum * 0.1) / 10000))}억` : "-"}
                   </div>
                   <div className="text-[9px] text-emerald-600 mt-0.5 font-bold">
-                    {selectedApt.priceNum > 0 ? `월 ${Math.round(displayPyeong * 4.5 + 40)}만` : "가격없음"}
+                    {hasPrice ? `월 ${Math.round(displayPyeong * 4.5 + 40)}만` : "가격없음"}
                   </div>
                 </div>
               </div>
 
-              {/* 갭가격 및 단지 주요 지표 (세대수, 준공연도는 K-apt 실데이터 연동) */}
+              {/* 갭가격 및 단지 주요 지표 */}
               <div className="flex items-center justify-between text-[11px] bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200/70 mb-3 text-slate-600">
                 <span>
                   갭투자{" "}
                   <b className="text-indigo-600 font-bold">
-                    {selectedApt.priceNum > 0
-                      ? (realtimeTx?.gapPriceStr || `${Math.round((selectedApt.gapPrice || selectedApt.priceNum * 0.44) / 10000)}억`)
-                      : "-"}
+                    {gapStr && gapStr !== "가격없음" ? gapStr : (hasPrice ? `${Math.round(resolvedPriceNum * 0.44 / 10000)}억` : "-")}
                   </b>
                 </span>
                 <span className="text-slate-300">|</span>

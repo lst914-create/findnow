@@ -363,36 +363,6 @@ function SubscriptionsContent() {
                 </span>
               </button>
             </div>
-
-            {/* 상시 노출 분양 단지 검색창 (캘린더 / 공고 목록 어디서든 단지 즉시 검색) */}
-            <div className="relative w-full md:w-80 lg:w-96">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSearchQuery(val);
-                  if (val.trim() && viewMode !== "list") {
-                    setViewMode("list");
-                  }
-                }}
-                placeholder="분양 단지명, 지역, 건설사 검색 (예: 롯데캐슬, 화성)..."
-                className="w-full bg-white/15 hover:bg-white/20 focus:bg-white text-white focus:text-slate-900 placeholder:text-slate-300 focus:placeholder:text-slate-400 border border-white/25 focus:border-blue-500 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm font-semibold transition-all shadow-inner focus:shadow-xl focus:outline-none backdrop-blur-md"
-              />
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none text-sm">
-                🔍
-              </span>
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white hover:bg-white/20 text-xs w-5 h-5 rounded-full flex items-center justify-center cursor-pointer transition-all"
-                  title="검색어 지우기"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
           </div>
         </div>
       </section>
@@ -401,21 +371,6 @@ function SubscriptionsContent() {
       {viewMode === "calendar" ? (
         /* ================= 캘린더 뷰 ================= */
         <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full">
-          {searchQuery && (
-            <div className="mb-4 p-3.5 rounded-2xl bg-blue-50 border border-blue-200 flex items-center justify-between gap-3 text-xs sm:text-sm">
-              <div className="flex items-center gap-2 text-blue-900 font-bold">
-                <span>🔍</span>
-                <span>&apos;{searchQuery}&apos; 검색 결과: 총 {filteredNotices.length}개 단지 청약 일정 표시중</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="text-blue-600 hover:text-blue-800 font-extrabold hover:underline shrink-0 cursor-pointer"
-              >
-                전체 일정 보기 ↺
-              </button>
-            </div>
-          )}
           {loading ? (
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse space-y-3">
               <div className="text-3xl">📅</div>
@@ -428,6 +383,9 @@ function SubscriptionsContent() {
             <SubscriptionCalendar
               notices={searchQuery ? filteredNotices : notices}
               onSelectNotice={(notice) => setSelectedNotice(notice)}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onSwitchToList={() => setViewMode("list")}
             />
           )}
         </main>
@@ -754,10 +712,7 @@ function SubscriptionsContent() {
 
       {/* 푸터 */}
       <footer className="bg-white border-t border-slate-200 py-6 px-4 text-center text-xs text-slate-400 mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>
-            찾아줘 — 공공데이터포털 및 한국부동산원 청약홈 OpenAPI 기반 분양정보 서비스
-          </div>
+        <div className="max-w-7xl mx-auto flex items-center justify-center">
           <div>본 정보는 참고용이며, 정확한 청약 조건은 입주자모집공고문을 확인하시기 바랍니다.</div>
         </div>
       </footer>

@@ -158,8 +158,7 @@ export default function SubscriptionCalendarPage() {
 
       {/* 푸터 */}
       <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6 px-4 text-center text-xs text-slate-400 mt-auto">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div>찾아줘 — 공공데이터포털 및 한국부동산원 청약홈 OpenAPI 기반 분양정보 서비스</div>
+        <div className="max-w-7xl mx-auto flex items-center justify-center">
           <div>본 정보는 참고용이며, 정확한 청약 조건은 입주자모집공고문을 확인하시기 바랍니다.</div>
         </div>
       </footer>

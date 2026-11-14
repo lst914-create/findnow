@@ -31,6 +31,9 @@ interface SubscriptionCalendarProps {
   initialYear?: number;
   initialMonth?: number; // 1 ~ 12
   onSelectNotice?: (notice: SubscriptionNotice) => void;
+  searchQuery?: string;
+  setSearchQuery?: (q: string) => void;
+  onSwitchToList?: () => void;
 }
 
 // 이벤트 유형 메타데이터 (청약홈 컬러 매칭)
@@ -110,12 +113,26 @@ export default function SubscriptionCalendar({
   initialYear,
   initialMonth,
   onSelectNotice,
+  searchQuery,
+  setSearchQuery,
+  onSwitchToList,
 }: SubscriptionCalendarProps) {
   const today = useMemo(() => new Date(), []);
   const todayYear = today.getFullYear();
   const todayMonth = today.getMonth() + 1;
   const todayDay = today.getDate();
   const todayStr = `${todayYear}-${String(todayMonth).padStart(2, "0")}-${String(todayDay).padStart(2, "0")}`;
+
+  // 검색어 상태 동기화 (외부 prop 또는 내부 state)
+  const [internalQuery, setInternalQuery] = useState("");
+  const activeQuery = searchQuery !== undefined ? searchQuery : internalQuery;
+  const handleQueryChange = (val: string) => {
+    if (setSearchQuery) {
+      setSearchQuery(val);
+    } else {
+      setInternalQuery(val);
+    }
+  };
 
   // 현재 선택된 연도 / 월
   const [currentYear, setCurrentYear] = useState<number>(initialYear || todayYear);
@@ -482,7 +499,60 @@ export default function SubscriptionCalendar({
   return (
     <div className="space-y-6">
       {/* 1. 상단 연도/월 네비게이터 & 빠른 제어 */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-4">
+        {/* 🌟 월 선택 위쪽: 큼직하고 눈에 띄는 메인 분양 단지 검색바 */}
+        <div className="w-full">
+          <div className="flex items-center w-full bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100/90 focus-within:bg-white dark:focus-within:bg-slate-800 border-2 border-slate-200 focus-within:border-blue-600 rounded-2xl px-4 py-2.5 sm:py-3 transition-all shadow-2xs focus-within:shadow-md">
+            <span className="text-blue-600 dark:text-blue-400 text-lg sm:text-xl mr-3 shrink-0">
+              🔍
+            </span>
+            <input
+              type="text"
+              value={activeQuery}
+              onChange={(e) => handleQueryChange(e.target.value)}
+              placeholder="분양 단지명, 지역, 건설사를 검색해보세요 (예: 롯데캐슬, 화성, 강동)..."
+              className="w-full bg-transparent text-slate-900 dark:text-white placeholder:text-slate-400 text-sm sm:text-base font-bold focus:outline-none"
+            />
+            {activeQuery && (
+              <button
+                type="button"
+                onClick={() => handleQueryChange("")}
+                className="w-6 h-6 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-200 text-xs flex items-center justify-center mr-2 cursor-pointer transition-colors shrink-0"
+                title="검색어 지우기"
+              >
+                ✕
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                if (onSwitchToList && activeQuery.trim()) {
+                  onSwitchToList();
+                }
+              }}
+              className="px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition-colors shrink-0 cursor-pointer"
+            >
+              검색
+            </button>
+          </div>
+          {activeQuery && (
+            <div className="mt-2 flex items-center justify-between text-xs px-2 text-slate-600 dark:text-slate-300">
+              <span className="font-semibold">
+                &apos;<strong className="text-blue-600 dark:text-blue-400">{activeQuery}</strong>&apos; 검색 결과 청약 일정 필터링 표시중
+              </span>
+              {onSwitchToList && (
+                <button
+                  type="button"
+                  onClick={onSwitchToList}
+                  className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
+                >
+                  공고 목록으로 전체 보기 →
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           {/* 연도 & 오늘 컨트롤 */}
           <div className="flex flex-wrap items-center gap-2.5">

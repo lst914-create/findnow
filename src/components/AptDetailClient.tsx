@@ -1520,14 +1520,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">📋 실거래 신고 내역</h3>
-                {isLoadingApi && (
-                  <div className="flex-shrink-0">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 whitespace-nowrap">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
-                      동기화 중...
-                    </span>
-                  </div>
-                )}
               </div>
 
               {isLoadingApi && activeTxs.length === 0 ? (

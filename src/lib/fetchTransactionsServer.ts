@@ -44,6 +44,13 @@ function extractKeywords(name: string): Set<string> {
   return words;
 }
 
+function cleanAptNameForMatch(name: string): string {
+  let cleaned = name.replace(/\([0-9\-\s]+\)/g, ""); // 지번 (910-5) 먼저 제거
+  cleaned = cleaned.replace(/\d{1,4}동(?=$|[^가-힣])/g, ""); // 202동 등 건물 동 번호 제거
+  cleaned = normalizeAptName(cleaned);
+  return cleaned;
+}
+
 function extractAptNums(norm: string): string[] {
   return norm.match(/\d{1,3}/g) || [];
 }
@@ -101,8 +108,8 @@ export function isAptNameMatch(
     }
   }
 
-  const tNorm = normalizeAptName(targetName);
-  const cNorm = normalizeAptName(candidateName);
+  const tNorm = cleanAptNameForMatch(targetName);
+  const cNorm = cleanAptNameForMatch(candidateName);
 
   // 2. 고유 서브명칭 불일치 시 매칭 거부
   for (const sub of DISTINCT_SUB_NAMES) {
@@ -173,6 +180,38 @@ export function isAptNameMatch(
 }
 
 /**
+ * 클라이언트 API 엔드포인트(/api/transactions)용 직접 조회 함수
+ * - 프리셋 캐시 / 인메모리 캐시가 있으면 0ms 즉시 반환
+ * - 없는 단지인 경우 직접 공공데이터 API를 병렬 호출하여 실제 데이터를 반환하고 캐시에 저장
+ */
+export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<{ trades: any[]; rents: any[] }> {
+  if (!apt || !apt.name) return { trades: [], rents: [] };
+
+  // 1. 프리셋 사전 캐시 데이터 확인 (0ms 즉시 반환)
+  const preloaded = getPreloadedTransactions(apt);
+  if (preloaded.trades.length > 0) {
+    return { trades: preloaded.trades, rents: preloaded.rents };
+  }
+
+  const region = apt.apiRegion || apt.region || "";
+  const district = apt.district || "";
+  const aptName = apt.name || "";
+
+  // 2. 서버 인메모리 캐시 확인 (0ms 즉시 반환)
+  const cacheKey = `${apt.id || aptName}_${aptName.trim().toLowerCase()}_${district.trim().toLowerCase()}_${months}`;
+  const cached = serverTransactionsCache.get(cacheKey);
+  const nowTime = Date.now();
+  if (cached && (nowTime - cached.timestamp < CACHE_TTL_MS)) {
+    return { trades: cached.trades, rents: cached.rents };
+  }
+
+  // 3. 직접 국토교통부 API 병렬 조회 (타임아웃 방지를 위해 최근 24개월 집중 조회)
+  const queryMonths = Math.min(months, 24);
+  const result = await executeFetch(apt, queryMonths, cacheKey);
+  return result;
+}
+
+/**
  * 서버 사이드에서 실거래 데이터를 0ms로 사전 조회하여 클라이언트에 즉시 전달
  * - 호갱노노/아실 방식: 페이지 전환 지연(5~7초 딜레이)을 100% 원천 차단하고 0초 즉시 화면 표출
  */
@@ -190,7 +229,7 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
   const aptName = apt.name || "";
 
   // 2. 서버 인메모리 캐시 확인 (0ms 즉시 반환)
-  const cacheKey = `${apt.id}_${aptName.trim().toLowerCase()}_${district.trim().toLowerCase()}_${months}`;
+  const cacheKey = `${apt.id || aptName}_${aptName.trim().toLowerCase()}_${district.trim().toLowerCase()}_${months}`;
   const cached = serverTransactionsCache.get(cacheKey);
   const nowTime = Date.now();
   if (cached && (nowTime - cached.timestamp < CACHE_TTL_MS)) {
@@ -199,14 +238,14 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
 
   // 3. 캐시에 없는 신규 단지인 경우:
   // ★ 페이지 전환 5~7초 멈춤 현상을 원천 방지하기 위해 SSR 렌더링을 블로킹하지 않고 0초 즉시 반환!
-  // 외부 72회 공공데이터 API 동기화는 백그라운드 비동기로 위임하여 다음 방문 및 클라이언트 fetch 가속
-  fetchAndCacheInBackground(apt, months, cacheKey).catch(() => {});
+  // 외부 공공데이터 API 동기화는 백그라운드 비동기로 위임하여 다음 방문 및 클라이언트 fetch 가속
+  executeFetch(apt, months, cacheKey).catch(() => {});
 
   return { trades: [], rents: [] };
 }
 
-// 백그라운드 비동기 캐시 수집 (페이지 전환 딜레이 0%)
-async function fetchAndCacheInBackground(apt: any, months: number, cacheKey: string) {
+// 공공데이터 API 실제 조회 및 캐시 저장 공통 함수
+async function executeFetch(apt: any, months: number, cacheKey: string): Promise<{ trades: any[]; rents: any[] }> {
   try {
     const region = apt.apiRegion || apt.region || "";
     const district = apt.district || "";
@@ -219,7 +258,7 @@ async function fetchAndCacheInBackground(apt: any, months: number, cacheKey: str
         return parts.some((p: string) => p.length >= 2 && l.region.includes(p));
       });
 
-    if (!lawdEntry) return;
+    if (!lawdEntry) return { trades: [], rents: [] };
 
     const apiKey =
       process.env.NEXT_PUBLIC_DATA_GO_KR_API_KEY ||
@@ -252,7 +291,8 @@ async function fetchAndCacheInBackground(apt: any, months: number, cacheKey: str
     const trades: any[] = [];
     const rents: any[] = [];
 
-    const CHUNK_SIZE = 12;
+    // Vercel 10초 타임아웃 방지를 위해 청크 8개씩 병렬 조회
+    const CHUNK_SIZE = 8;
     for (let c = 0; c < dealYmdList.length; c += CHUNK_SIZE) {
       const chunk = dealYmdList.slice(c, c + CHUNK_SIZE);
       const chunkPromises = chunk.map(async (dealYmd) => {
@@ -352,7 +392,9 @@ async function fetchAndCacheInBackground(apt: any, months: number, cacheKey: str
     rents.sort((a, b) => b.dealYear - a.dealYear || b.dealMonth - a.dealMonth || b.dealDay - a.dealDay);
 
     serverTransactionsCache.set(cacheKey, { trades, rents, timestamp: Date.now() });
+    return { trades, rents };
   } catch (e) {
-    console.warn("[fetchAndCacheInBackground] error:", e);
+    console.warn("[executeFetch] error:", e);
+    return { trades: [], rents: [] };
   }
 }

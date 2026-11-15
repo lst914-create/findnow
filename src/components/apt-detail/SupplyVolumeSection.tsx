@@ -56,12 +56,12 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
     densityPerKm === 0
       ? { level: "낮음", label: "공급 여유", color: "text-emerald-700", bg: "bg-emerald-50", desc: "인근 공급이 적어 기존 단지 가격 방어에 유리합니다." }
       : densityPerKm < 1000
-      ? { level: "낮음", label: "공급 여유", color: "text-emerald-700", bg: "bg-emerald-50", desc: "공급 압박이 낮아 기존 단지의 가격 안정성이 높습니다." }
-      : densityPerKm < 3000
-      ? { level: "보통", label: "적정 공급", color: "text-amber-700", bg: "bg-amber-50", desc: "일반적인 공급 수준으로 시세에 큰 영향을 미치지 않습니다." }
-      : densityPerKm < 6000
-      ? { level: "높음", label: "공급 주의", color: "text-orange-700", bg: "bg-orange-50", desc: "입주 집중 시 단기 전세가 하락 가능성에 유의하세요." }
-      : { level: "매우 높음", label: "공급 과잉 위험", color: "text-red-700", bg: "bg-red-50", desc: "대규모 입주 물량으로 인해 전세·매매가 동반 하락 위험이 있습니다." };
+        ? { level: "낮음", label: "공급 여유", color: "text-emerald-700", bg: "bg-emerald-50", desc: "공급 압박이 낮아 기존 단지의 가격 안정성이 높습니다." }
+        : densityPerKm < 3000
+          ? { level: "보통", label: "적정 공급", color: "text-amber-700", bg: "bg-amber-50", desc: "일반적인 공급 수준으로 시세에 큰 영향을 미치지 않습니다." }
+          : densityPerKm < 6000
+            ? { level: "높음", label: "공급 주의", color: "text-orange-700", bg: "bg-orange-50", desc: "입주 집중 시 단기 전세가 하락 가능성에 유의하세요." }
+            : { level: "매우 높음", label: "공급 과잉 위험", color: "text-red-700", bg: "bg-red-50", desc: "대규모 입주 물량으로 인해 전세·매매가 동반 하락 위험이 있습니다." };
 
   return (
     <div id="supply-volume" className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden scroll-mt-24">
@@ -97,11 +97,10 @@ export function SupplyVolumeSection({ aptId, aptName }: Props) {
                   key={r}
                   type="button"
                   onClick={() => setRadius(r)}
-                  className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap ${
-                    radius === r
+                  className={`px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap ${radius === r
                       ? "bg-white text-slate-900 font-bold shadow-sm"
                       : "text-slate-500 hover:text-slate-800"
-                  }`}
+                    }`}
                 >
                   {`${r / 1000}km`}
                 </button>

@@ -547,10 +547,10 @@ export default function CommunityPage() {
                     className="p-5 bg-white rounded-2xl border border-slate-200/90 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer group"
                   >
                     {/* 상단 메타 (카테고리 뱃지, 작성자, 작성시간) */}
-                    <div className="flex items-center justify-between gap-2 mb-2 text-xs">
-                      <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-y-1.5 gap-x-2 mb-2.5 text-xs">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`px-2 py-0.5 rounded-md font-bold text-[11px] ${
+                          className={`px-2 py-0.5 rounded-md font-bold text-[11px] whitespace-nowrap ${
                             post.category === "apt"
                               ? "bg-blue-100 text-blue-700"
                               : post.category === "redev"
@@ -563,32 +563,32 @@ export default function CommunityPage() {
                           {post.categoryLabel}
                         </span>
                         {post.subBadge && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold text-[10px]">
+                          <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold text-[10px] whitespace-nowrap">
                             {post.subBadge}
                           </span>
                         )}
                         {post.isHot && (
-                          <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600 font-bold text-[10px] flex items-center gap-0.5">
+                          <span className="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-600 font-bold text-[10px] flex items-center gap-0.5 whitespace-nowrap">
                             <span>🔥</span>
                             <span>인기</span>
                           </span>
                         )}
                       </div>
 
-                      <div className="flex items-center gap-2 text-slate-400 text-[11px]">
+                      <div className="flex items-center gap-1.5 text-slate-400 text-[11px] whitespace-nowrap shrink-0 ml-auto">
                         <span className="font-medium text-slate-700">{post.author}</span>
                         {post.authorBadge && (
-                          <span className="px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-500 font-semibold text-[9px] border border-slate-200">
+                          <span className="px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold text-[9px] border border-slate-200">
                             {post.authorBadge}
                           </span>
                         )}
-                        <span>•</span>
-                        <span>{post.createdAt}</span>
+                        <span className="text-slate-300">·</span>
+                        <span className="text-slate-500 whitespace-nowrap">{post.createdAt}</span>
                       </div>
                     </div>
 
                     {/* 제목 */}
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1 mb-2">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 break-keep mb-2 leading-snug">
                       {post.title}
                     </h2>
 
@@ -648,12 +648,12 @@ export default function CommunityPage() {
                     {/* 투표 미리보기 (있을 경우) */}
                     {post.poll && (
                       <div className="mb-3 p-3 rounded-xl bg-indigo-50/60 border border-indigo-100 text-xs">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-bold text-indigo-900 flex items-center gap-1">
-                            <span>📊</span>
-                            <span>{post.poll.question}</span>
+                        <div className="flex items-start justify-between gap-2.5 mb-2.5">
+                          <span className="font-bold text-indigo-950 flex items-start gap-1.5 leading-snug">
+                            <span className="shrink-0">📊</span>
+                            <span className="break-keep">{post.poll.question}</span>
                           </span>
-                          <span className="text-[11px] text-indigo-600 font-semibold">
+                          <span className="text-[11px] text-indigo-600 font-semibold shrink-0 whitespace-nowrap bg-indigo-100/70 px-2 py-0.5 rounded-full">
                             총 {post.poll.totalVotes}명 참여
                           </span>
                         </div>
@@ -694,11 +694,11 @@ export default function CommunityPage() {
 
                     {/* 하단 태그 및 인터랙션 (추천, 댓글, 조회수) */}
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
-                      <div className="flex items-center gap-1.5 overflow-hidden">
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 min-w-0">
                         {post.tags.map((tag) => (
                           <span
                             key={tag}
-                            className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-medium"
+                            className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-medium whitespace-nowrap shrink-0"
                           >
                             #{tag}
                           </span>
@@ -1011,12 +1011,12 @@ export default function CommunityPage() {
               {/* 투표 위젯 */}
               {activePost.poll && (
                 <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="text-sm font-bold text-indigo-950 flex items-center gap-1.5">
-                      <span>📊</span>
-                      <span>{activePost.poll.question}</span>
+                  <div className="flex items-start justify-between gap-2.5 mb-3">
+                    <div className="text-sm font-bold text-indigo-950 flex items-start gap-1.5 leading-snug">
+                      <span className="shrink-0">📊</span>
+                      <span className="break-keep">{activePost.poll.question}</span>
                     </div>
-                    <span className="text-xs font-semibold text-indigo-600">
+                    <span className="text-xs font-semibold text-indigo-600 shrink-0 whitespace-nowrap bg-indigo-100/70 px-2.5 py-0.5 rounded-full">
                       총 {activePost.poll.totalVotes}명 참여
                     </span>
                   </div>

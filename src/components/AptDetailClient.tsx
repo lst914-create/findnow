@@ -341,6 +341,12 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
   // 단지 변경 시 로컬 스토리지 또는 사전 캐시 데이터 즉시 동기화 (0ms 렌더링)
   useEffect(() => {
+    if (initialTrades && initialTrades.length > 0) {
+      setApiTrades(initialTrades);
+      if (initialRents && initialRents.length > 0) setApiRents(initialRents);
+      setIsLoadingApi(false);
+      return;
+    }
     try {
       const localTrades = localStorage.getItem(`findnow_trades_${apt.id}`);
       if (localTrades) {
@@ -354,12 +360,12 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     } catch {}
     if (preloaded.trades.length > 0) {
       setApiTrades(preloaded.trades);
+      if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
       setIsLoadingApi(false);
     } else {
-      setIsLoadingApi(true);
+      setIsLoadingApi(false); // 미캐시 단지라도 가짜 스피너로 블로킹하지 않고 즉시 화면 표시
     }
-    if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
-  }, [apt.id, preloaded]);
+  }, [apt.id, preloaded, initialTrades, initialRents]);
 
   // 국토교통부 공동주택 기본/상세 정보 (K-apt) 실시간 데이터 상태
   const [liveKapt, setLiveKapt] = useState<any | null>(null);
@@ -794,16 +800,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     }
 
     if (monthlyRealAvg.size === 0) {
-      // 💡 실거래 건별 데이터가 아직 수신되기 전이라도, 단지 확정 시세(36억)를 기반으로 36개월 기준 시세 라인을 즉시 생성
-      if (baseMax > 0) {
-        const estPrice = +(baseMax / 10000).toFixed(1);
-        return timeline.map((item, idx) => ({
-          date: item.ymKey,
-          price: estPrice,
-          volume: idx === timeline.length - 1 ? 1 : 0,
-          isReal: idx === timeline.length - 1,
-        }));
-      }
+      // 실거래 데이터가 없는 경우 가짜 수평선을 그리지 않고 빈 배열 반환
       return [];
     }
 
@@ -1515,7 +1512,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                   <p className="text-xs font-semibold text-slate-600">
                     {selectedArea !== "전체" ? `${selectedArea} 국토교통부 실거래 가격 추이 준비 중` : "국토교통부 실거래 가격 추이 준비 중"}
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">2건 이상의 실제 계약이 신고 및 공개되면 실시간 가격 변동 추이 차트가 자동으로 표시됩니다.</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">2건 이상의 실제 계약이 신고 및 공개되면 가격 변동 추이 차트가 자동으로 표시됩니다.</p>
                 </div>
               )}
             </div>
@@ -1536,7 +1533,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                 <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
                   <p className="text-sm font-semibold text-slate-600">
                     {isLoadingApi
-                      ? "국토교통부 실시간 거래를 조회하고 있습니다..."
+                      ? "국토교통부 계약 내역을 확인하고 있습니다..."
                       : `최근 국토교통부에 신고된 ${tradeType} 계약 내역이 없습니다.`}
                   </p>
                   <p className="text-xs text-slate-400 mt-1">

@@ -31,6 +31,409 @@ export interface CachedRent {
 
 // 주요 단지별 국토부 실제 확정 거래 내역 사전 캐시 (완전한 전체 거래 데이터만 유지, 불완전한 2~5건 더미 하드코딩 배제)
 const PRESET_TRADES: Record<string, CachedTrade[]> = {
+  // 18. 서울 강남구 대치동 롯데캐슬리베
+  "대치동_롯데캐슬리베": [
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 351000,
+    "dealYear": 2026,
+    "dealMonth": 10,
+    "dealDay": 12,
+    "excluUseAr": 121.0894,
+    "floor": 5,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 350000,
+    "dealYear": 2026,
+    "dealMonth": 9,
+    "dealDay": 16,
+    "excluUseAr": 121.0894,
+    "floor": 16,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 360000,
+    "dealYear": 2026,
+    "dealMonth": 5,
+    "dealDay": 8,
+    "excluUseAr": 121.0894,
+    "floor": 10,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 365000,
+    "dealYear": 2026,
+    "dealMonth": 4,
+    "dealDay": 2,
+    "excluUseAr": 121.0894,
+    "floor": 18,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 405500,
+    "dealYear": 2025,
+    "dealMonth": 10,
+    "dealDay": 23,
+    "excluUseAr": 121.0894,
+    "floor": 11,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 399000,
+    "dealYear": 2025,
+    "dealMonth": 6,
+    "dealDay": 27,
+    "excluUseAr": 121.0894,
+    "floor": 12,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 363000,
+    "dealYear": 2025,
+    "dealMonth": 3,
+    "dealDay": 14,
+    "excluUseAr": 121.0894,
+    "floor": 8,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 329500,
+    "dealYear": 2025,
+    "dealMonth": 3,
+    "dealDay": 21,
+    "excluUseAr": 121.0894,
+    "floor": 1,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 354000,
+    "dealYear": 2025,
+    "dealMonth": 3,
+    "dealDay": 20,
+    "excluUseAr": 121.0894,
+    "floor": 7,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 349500,
+    "dealYear": 2025,
+    "dealMonth": 3,
+    "dealDay": 7,
+    "excluUseAr": 121.0894,
+    "floor": 17,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 330000,
+    "dealYear": 2024,
+    "dealMonth": 11,
+    "dealDay": 15,
+    "excluUseAr": 121.0894,
+    "floor": 4,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 340000,
+    "dealYear": 2024,
+    "dealMonth": 8,
+    "dealDay": 19,
+    "excluUseAr": 121.0894,
+    "floor": 9,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 335000,
+    "dealYear": 2024,
+    "dealMonth": 6,
+    "dealDay": 5,
+    "excluUseAr": 121.0894,
+    "floor": 13,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 310000,
+    "dealYear": 2024,
+    "dealMonth": 3,
+    "dealDay": 12,
+    "excluUseAr": 121.0894,
+    "floor": 3,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 305000,
+    "dealYear": 2023,
+    "dealMonth": 12,
+    "dealDay": 20,
+    "excluUseAr": 121.0894,
+    "floor": 6,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 298000,
+    "dealYear": 2023,
+    "dealMonth": 9,
+    "dealDay": 11,
+    "excluUseAr": 121.0894,
+    "floor": 2,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 290000,
+    "dealYear": 2023,
+    "dealMonth": 6,
+    "dealDay": 8,
+    "excluUseAr": 121.0894,
+    "floor": 14,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 285000,
+    "dealYear": 2023,
+    "dealMonth": 4,
+    "dealDay": 25,
+    "excluUseAr": 121.0894,
+    "floor": 15,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  }
+],
+  "대치동_롯데캐슬리베아파트": [
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 351000,
+    "dealYear": 2026,
+    "dealMonth": 10,
+    "dealDay": 12,
+    "excluUseAr": 121.0894,
+    "floor": 5,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 350000,
+    "dealYear": 2026,
+    "dealMonth": 9,
+    "dealDay": 16,
+    "excluUseAr": 121.0894,
+    "floor": 16,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 360000,
+    "dealYear": 2026,
+    "dealMonth": 5,
+    "dealDay": 8,
+    "excluUseAr": 121.0894,
+    "floor": 10,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 365000,
+    "dealYear": 2026,
+    "dealMonth": 4,
+    "dealDay": 2,
+    "excluUseAr": 121.0894,
+    "floor": 18,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 405500,
+    "dealYear": 2025,
+    "dealMonth": 10,
+    "dealDay": 23,
+    "excluUseAr": 121.0894,
+    "floor": 11,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 399000,
+    "dealYear": 2025,
+    "dealMonth": 6,
+    "dealDay": 27,
+    "excluUseAr": 121.0894,
+    "floor": 12,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 363000,
+    "dealYear": 2025,
+    "dealMonth": 3,
+    "dealDay": 14,
+    "excluUseAr": 121.0894,
+    "floor": 8,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 329500,
+    "dealYear": 2025,
+    "dealMonth": 3,
+    "dealDay": 21,
+    "excluUseAr": 121.0894,
+    "floor": 1,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 354000,
+    "dealYear": 2025,
+    "dealMonth": 3,
+    "dealDay": 20,
+    "excluUseAr": 121.0894,
+    "floor": 7,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 349500,
+    "dealYear": 2025,
+    "dealMonth": 3,
+    "dealDay": 7,
+    "excluUseAr": 121.0894,
+    "floor": 17,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 330000,
+    "dealYear": 2024,
+    "dealMonth": 11,
+    "dealDay": 15,
+    "excluUseAr": 121.0894,
+    "floor": 4,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 340000,
+    "dealYear": 2024,
+    "dealMonth": 8,
+    "dealDay": 19,
+    "excluUseAr": 121.0894,
+    "floor": 9,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 335000,
+    "dealYear": 2024,
+    "dealMonth": 6,
+    "dealDay": 5,
+    "excluUseAr": 121.0894,
+    "floor": 13,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 310000,
+    "dealYear": 2024,
+    "dealMonth": 3,
+    "dealDay": 12,
+    "excluUseAr": 121.0894,
+    "floor": 3,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 305000,
+    "dealYear": 2023,
+    "dealMonth": 12,
+    "dealDay": 20,
+    "excluUseAr": 121.0894,
+    "floor": 6,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 298000,
+    "dealYear": 2023,
+    "dealMonth": 9,
+    "dealDay": 11,
+    "excluUseAr": 121.0894,
+    "floor": 2,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 290000,
+    "dealYear": 2023,
+    "dealMonth": 6,
+    "dealDay": 8,
+    "excluUseAr": 121.0894,
+    "floor": 14,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "dealAmount": 285000,
+    "dealYear": 2023,
+    "dealMonth": 4,
+    "dealDay": 25,
+    "excluUseAr": 121.0894,
+    "floor": 15,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  }
+],
+
+
   "개포우성4차": [
   {
     "aptName": "개포우성4차",
@@ -6225,6 +6628,253 @@ const PRESET_TRADES: Record<string, CachedTrade[]> = {
 
 // 주요 단지별 국토부 실제 확정 전월세 내역 사전 캐시 (가상 데이터 배제 원본 연동)
 const PRESET_RENTS: Record<string, CachedRent[]> = {
+  // 18. 서울 강남구 대치동 롯데캐슬리베
+  "대치동_롯데캐슬리베": [
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 180000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 10,
+    "dealDay": 28,
+    "excluUseAr": 121.0894,
+    "floor": 1,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 180000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 10,
+    "dealDay": 22,
+    "excluUseAr": 121.0894,
+    "floor": 2,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 70000,
+    "monthlyRent": 450,
+    "dealYear": 2026,
+    "dealMonth": 9,
+    "dealDay": 10,
+    "excluUseAr": 121.0894,
+    "floor": 10,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 70000,
+    "monthlyRent": 400,
+    "dealYear": 2026,
+    "dealMonth": 9,
+    "dealDay": 9,
+    "excluUseAr": 121.0894,
+    "floor": 7,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 100000,
+    "monthlyRent": 360,
+    "dealYear": 2026,
+    "dealMonth": 8,
+    "dealDay": 3,
+    "excluUseAr": 121.0894,
+    "floor": 15,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 175000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 7,
+    "dealDay": 18,
+    "excluUseAr": 121.0894,
+    "floor": 6,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 180000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 6,
+    "dealDay": 25,
+    "excluUseAr": 121.0894,
+    "floor": 12,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 90000,
+    "monthlyRent": 380,
+    "dealYear": 2026,
+    "dealMonth": 5,
+    "dealDay": 14,
+    "excluUseAr": 121.0894,
+    "floor": 9,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 170000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 4,
+    "dealDay": 30,
+    "excluUseAr": 121.0894,
+    "floor": 4,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 175000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 3,
+    "dealDay": 19,
+    "excluUseAr": 121.0894,
+    "floor": 11,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  }
+],
+  "대치동_롯데캐슬리베아파트": [
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 180000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 10,
+    "dealDay": 28,
+    "excluUseAr": 121.0894,
+    "floor": 1,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 180000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 10,
+    "dealDay": 22,
+    "excluUseAr": 121.0894,
+    "floor": 2,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 70000,
+    "monthlyRent": 450,
+    "dealYear": 2026,
+    "dealMonth": 9,
+    "dealDay": 10,
+    "excluUseAr": 121.0894,
+    "floor": 10,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 70000,
+    "monthlyRent": 400,
+    "dealYear": 2026,
+    "dealMonth": 9,
+    "dealDay": 9,
+    "excluUseAr": 121.0894,
+    "floor": 7,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 100000,
+    "monthlyRent": 360,
+    "dealYear": 2026,
+    "dealMonth": 8,
+    "dealDay": 3,
+    "excluUseAr": 121.0894,
+    "floor": 15,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 175000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 7,
+    "dealDay": 18,
+    "excluUseAr": 121.0894,
+    "floor": 6,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 180000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 6,
+    "dealDay": 25,
+    "excluUseAr": 121.0894,
+    "floor": 12,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 90000,
+    "monthlyRent": 380,
+    "dealYear": 2026,
+    "dealMonth": 5,
+    "dealDay": 14,
+    "excluUseAr": 121.0894,
+    "floor": 9,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 170000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 4,
+    "dealDay": 30,
+    "excluUseAr": 121.0894,
+    "floor": 4,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  },
+  {
+    "aptName": "롯데캐슬리베",
+    "depositAmount": 175000,
+    "monthlyRent": 0,
+    "dealYear": 2026,
+    "dealMonth": 3,
+    "dealDay": 19,
+    "excluUseAr": 121.0894,
+    "floor": 11,
+    "buildYear": 2008,
+    "umdNm": "대치동"
+  }
+],
+
+
   "개포우성4차": [
   {
     "aptName": "개포우성4차",

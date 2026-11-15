@@ -5,6 +5,7 @@ import Link from "next/link";
 import { APARTMENTS_DATA, Apartment } from "@/lib/apartments";
 import { loadKakaoMap } from "@/lib/kakaoMapLoader";
 import { normalizeAptName } from "@/lib/normalizeAptName";
+import { getPreloadedTransactions } from "@/lib/transactionsCache";
 
 function formatPrice(manwon: number): string {
   if (manwon >= 10000) {
@@ -73,16 +74,27 @@ export function getStandardExclusiveAreaSqm(pyeong: number, existingSqm?: number
 
 export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
   const isRentalOnly = (apt as any).isRentalOnly === true;
-  // 임대전용(청년주택 등) 단지는 price_max가 임대보증금이므로 매매가로 사용하지 않음
-  const priceNum = isRentalOnly ? 0 : (apt.price_max || apt.price_min || 0);
+
+  // [호갱노노 방식 100% 동기화] 사전 캐시 실거래가 우선 적용 (지도 마커와 상세 페이지 가격 완전 일치)
+  const preloaded = getPreloadedTransactions(apt);
+  let resolvedPrice = apt.price_max || apt.price_min || 0;
+  let resolvedRent = apt.rent_max || apt.rent_min || 0;
+  let isReal = (apt as any).isRealPrice ?? false;
+
+  if (preloaded.trades.length > 0 && preloaded.trades[0].dealAmount > 0) {
+    resolvedPrice = preloaded.trades[0].dealAmount;
+    isReal = true;
+  }
+  if (preloaded.rents.length > 0 && preloaded.rents[0].depositAmount > 0) {
+    resolvedRent = preloaded.rents[0].depositAmount;
+  }
+
+  const priceNum = isRentalOnly ? 0 : resolvedPrice;
   const avgPriceStr = priceNum > 0 ? formatPrice(priceNum) : "가격없음";
 
   const jeonseRatio = apt.jeonseRatio ?? 56;
-  // 임대전용은 rent_min/max를 임대보증금으로 그대로 사용
-  const rentNum = apt.rent_max || apt.rent_min
-    ? (apt.rent_max || apt.rent_min || 0)
-    : Math.round(priceNum * (jeonseRatio / 100));
-  const gapPrice = isRentalOnly ? 0 : (apt.gapPrice ?? Math.max(0, priceNum - rentNum));
+  const rentNum = resolvedRent > 0 ? resolvedRent : Math.round(priceNum * (jeonseRatio / 100));
+  const gapPrice = isRentalOnly ? 0 : Math.max(0, priceNum - rentNum);
 
   return {
     id: apt.id,
@@ -97,7 +109,7 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
     region: `${apt.region} ${apt.district}`,
     rawRegion: apt.region,
     district: apt.district,
-    isRealPrice: (apt as any).isRealPrice ?? false,
+    isRealPrice: isReal,
     isRentalOnly: isRentalOnly,
     rentalType: (apt as any).rentalType,
     builtYear: apt.built_year,

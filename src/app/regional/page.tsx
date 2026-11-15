@@ -4,19 +4,169 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { RegionalPlace, RegionalCategory, getCategoryLabel } from "@/lib/regionalApi";
 
-const POPULAR_REGIONS = [
-  { label: "서울 강남구", value: "서울 강남구" },
-  { label: "서울 종로구", value: "서울 종로구" },
-  { label: "서울 용산구", value: "서울 용산구" },
-  { label: "서울 송파구", value: "서울 송파구" },
-  { label: "서울 마포구", value: "서울 마포구" },
-  { label: "경기 성남시(판교·분당)", value: "경기 성남시" },
-  { label: "경기 수원시(광교)", value: "경기 수원시" },
-  { label: "경기 화성시(동탄)", value: "경기 화성시" },
-  { label: "경기 남양주시(다산)", value: "경기 남양주시" },
-  { label: "부산 해운대구", value: "부산 해운대구" },
-  { label: "부산 수영구", value: "부산 수영구" },
-  { label: "제주 제주시", value: "제주 제주시" },
+// 시·도 그룹 + 하위 지역 목록
+const REGION_GROUPS: { sido: string; areas: { label: string; value: string }[] }[] = [
+  {
+    sido: "서울",
+    areas: [
+      { label: "강남구", value: "서울 강남구" },
+      { label: "서초구", value: "서울 서초구" },
+      { label: "송파구", value: "서울 송파구" },
+      { label: "강동구", value: "서울 강동구" },
+      { label: "마포구", value: "서울 마포구" },
+      { label: "용산구", value: "서울 용산구" },
+      { label: "종로구", value: "서울 종로구" },
+      { label: "중구", value: "서울 중구" },
+      { label: "성동구", value: "서울 성동구" },
+      { label: "광진구", value: "서울 광진구" },
+      { label: "노원구", value: "서울 노원구" },
+      { label: "강북구", value: "서울 강북구" },
+      { label: "은평구", value: "서울 은평구" },
+      { label: "강서구", value: "서울 강서구" },
+      { label: "영등포구", value: "서울 영등포구" },
+      { label: "동작구", value: "서울 동작구" },
+      { label: "관악구", value: "서울 관악구" },
+    ],
+  },
+  {
+    sido: "경기",
+    areas: [
+      { label: "성남시(판교·분당)", value: "경기 성남시" },
+      { label: "수원시(광교)", value: "경기 수원시" },
+      { label: "화성시(동탄)", value: "경기 화성시" },
+      { label: "남양주시(다산)", value: "경기 남양주시" },
+      { label: "고양시(일산)", value: "경기 고양시" },
+      { label: "용인시(기흥)", value: "경기 용인시" },
+      { label: "과천시", value: "경기 과천시" },
+      { label: "하남시(미사)", value: "경기 하남시" },
+      { label: "의왕시", value: "경기 의왕시" },
+      { label: "안양시", value: "경기 안양시" },
+      { label: "부천시", value: "경기 부천시" },
+      { label: "평택시", value: "경기 평택시" },
+      { label: "파주시", value: "경기 파주시" },
+      { label: "김포시", value: "경기 김포시" },
+      { label: "광주시", value: "경기 광주시" },
+    ],
+  },
+  {
+    sido: "인천",
+    areas: [
+      { label: "연수구(송도)", value: "인천 연수구" },
+      { label: "서구(청라)", value: "인천 서구" },
+      { label: "계양구", value: "인천 계양구" },
+      { label: "남동구(논현)", value: "인천 남동구" },
+      { label: "부평구", value: "인천 부평구" },
+      { label: "중구(영종)", value: "인천 중구" },
+    ],
+  },
+  {
+    sido: "부산",
+    areas: [
+      { label: "해운대구", value: "부산 해운대구" },
+      { label: "수영구(광안리)", value: "부산 수영구" },
+      { label: "남구(대연)", value: "부산 남구" },
+      { label: "동래구", value: "부산 동래구" },
+      { label: "북구(화명)", value: "부산 북구" },
+      { label: "기장군(정관)", value: "부산 기장군" },
+    ],
+  },
+  {
+    sido: "대구",
+    areas: [
+      { label: "수성구", value: "대구 수성구" },
+      { label: "달서구(성서)", value: "대구 달서구" },
+      { label: "북구", value: "대구 북구" },
+      { label: "달성군(테크노)", value: "대구 달성군" },
+    ],
+  },
+  {
+    sido: "대전",
+    areas: [
+      { label: "유성구(세종로)", value: "대전 유성구" },
+      { label: "서구(둔산)", value: "대전 서구" },
+      { label: "중구", value: "대전 중구" },
+    ],
+  },
+  {
+    sido: "세종",
+    areas: [
+      { label: "세종시", value: "세종 세종시" },
+    ],
+  },
+  {
+    sido: "광주",
+    areas: [
+      { label: "남구(봉선)", value: "광주 남구" },
+      { label: "북구", value: "광주 북구" },
+      { label: "서구(상무)", value: "광주 서구" },
+    ],
+  },
+  {
+    sido: "울산",
+    areas: [
+      { label: "남구(삼산)", value: "울산 남구" },
+      { label: "북구", value: "울산 북구" },
+    ],
+  },
+  {
+    sido: "강원",
+    areas: [
+      { label: "춘천시", value: "강원 춘천시" },
+      { label: "원주시", value: "강원 원주시" },
+      { label: "강릉시", value: "강원 강릉시" },
+    ],
+  },
+  {
+    sido: "충북",
+    areas: [
+      { label: "청주시", value: "충북 청주시" },
+      { label: "충주시", value: "충북 충주시" },
+    ],
+  },
+  {
+    sido: "충남",
+    areas: [
+      { label: "천안시", value: "충남 천안시" },
+      { label: "아산시", value: "충남 아산시" },
+    ],
+  },
+  {
+    sido: "전북",
+    areas: [
+      { label: "전주시", value: "전북 전주시" },
+      { label: "익산시", value: "전북 익산시" },
+    ],
+  },
+  {
+    sido: "전남",
+    areas: [
+      { label: "여수시", value: "전남 여수시" },
+      { label: "순천시", value: "전남 순천시" },
+    ],
+  },
+  {
+    sido: "경북",
+    areas: [
+      { label: "포항시", value: "경북 포항시" },
+      { label: "구미시", value: "경북 구미시" },
+      { label: "경주시", value: "경북 경주시" },
+    ],
+  },
+  {
+    sido: "경남",
+    areas: [
+      { label: "창원시", value: "경남 창원시" },
+      { label: "김해시", value: "경남 김해시" },
+      { label: "양산시", value: "경남 양산시" },
+    ],
+  },
+  {
+    sido: "제주",
+    areas: [
+      { label: "제주시", value: "제주 제주시" },
+      { label: "서귀포시", value: "제주 서귀포시" },
+    ],
+  },
 ];
 
 const CATEGORY_TABS = [
@@ -28,6 +178,7 @@ const CATEGORY_TABS = [
 ];
 
 export default function RegionalInfoPage() {
+  const [selectedSido, setSelectedSido] = useState("서울");
   const [selectedRegion, setSelectedRegion] = useState("서울 강남구");
   const [selectedCategory, setSelectedCategory] = useState<RegionalCategory | "all">("all");
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -39,6 +190,12 @@ export default function RegionalInfoPage() {
     specialCount: 0,
     foodCount: 0,
   });
+
+  // 현재 선택된 시·도의 하위 지역 목록
+  const currentAreas = useMemo(
+    () => REGION_GROUPS.find((g) => g.sido === selectedSido)?.areas || [],
+    [selectedSido]
+  );
 
   // 데이터 조회 함수
   const fetchPlaces = async (region: string, category: string, keyword: string) => {
@@ -167,16 +324,39 @@ export default function RegionalInfoPage() {
       {/* 3. 컨트롤 바 (지역 칩, 카테고리 탭, 검색바) */}
       <section className="bg-white border-b border-slate-200/80 sticky top-16 z-20 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 space-y-3">
-          {/* 주요 지역 칩 바로가기 */}
+
+          {/* 1단계: 시·도 선택 탭 */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-xs font-semibold border-b border-slate-100 pb-2.5">
+            <span className="text-slate-400 font-bold shrink-0 mr-1.5 whitespace-nowrap">시·도:</span>
+            {REGION_GROUPS.map((g) => (
+              <button
+                key={g.sido}
+                onClick={() => {
+                  setSelectedSido(g.sido);
+                  // 해당 시·도 첫 번째 지역 자동 선택
+                  if (g.areas.length > 0) setSelectedRegion(g.areas[0].value);
+                }}
+                className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-all cursor-pointer shrink-0 ${
+                  selectedSido === g.sido
+                    ? "bg-slate-900 text-white font-bold shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
+                }`}
+              >
+                {g.sido}
+              </button>
+            ))}
+          </div>
+
+          {/* 2단계: 구·시 칩 선택 */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-semibold">
-            <span className="text-slate-400 font-bold shrink-0 mr-1">지역 선택:</span>
-            {POPULAR_REGIONS.map((r) => (
+            <span className="text-slate-400 font-bold shrink-0 mr-1 whitespace-nowrap">지역:</span>
+            {currentAreas.map((r) => (
               <button
                 key={r.value}
                 onClick={() => setSelectedRegion(r.value)}
-                className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                   selectedRegion === r.value
-                    ? "bg-slate-900 text-white shadow-xs font-bold"
+                    ? "bg-blue-600 text-white shadow-xs font-bold"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
                 }`}
               >

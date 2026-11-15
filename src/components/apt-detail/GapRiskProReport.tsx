@@ -198,7 +198,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
         <div className="relative">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <span>하락장 스트레스 테스트 & AI 리스크 진단</span>
+              <span>하락장 스트레스 테스트 & 리스크 진단</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">
                   🔒 PRO 전용
@@ -227,7 +227,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
             <div className="bg-slate-900/80 border border-amber-500/30 rounded-xl p-4 space-y-2 text-xs">
               <div className="font-extrabold text-amber-400 flex items-center gap-1.5">
                 <span>💡</span>
-                <span>AI 갭투자 및 역전세 방어력 브리핑</span>
+                <span>갭투자 및 역전세 방어력 분석</span>
               </div>
               {result.analysisComments.map((comment, idx) => (
                 <div key={idx} className="text-slate-300 leading-relaxed flex items-start gap-1.5">

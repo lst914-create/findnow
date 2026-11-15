@@ -70,15 +70,15 @@ export function ProReportPreviewSection({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm">
-                  AI PRO REPORT
+                  심층 분석 리포트
                 </span>
-                <span className="text-xs text-slate-400">데이터 기반 심층 정밀 리포트</span>
+                <span className="text-xs text-slate-400">데이터 기반 정밀 분석</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-white mt-2">
-                {aptName} 심층 가치평가 분석 리포트
+                {aptName} 심층 가치 분석
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-                입지 점수 산출 근거, 20년 거래 이력, 정비사업 분담금, 세금 시뮬레이션 및 적정 매수가 판정까지 AI 종합 분석 결과를 확인하세요.
+                입지 점수 산출 근거, 20년 거래 이력, 정비사업 분담금, 세금 시뮬레이션 및 적정 매수가 판정까지 종합적으로 분석합니다.
               </p>
             </div>
 
@@ -97,7 +97,7 @@ export function ProReportPreviewSection({
                 onClick={() => handleOpenReport("pro")}
                 className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-extrabold text-xs text-white shadow-lg shadow-blue-500/25 transition-all transform active:scale-95 cursor-pointer"
               >
-                ⚡ PRO 리포트 무료 열람
+                무료 열람하기
               </button>
             </div>
           </div>
@@ -156,7 +156,7 @@ export function ProReportPreviewSection({
                       </span>
                     ) : isTarget04 ? (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-purple-500 text-white shadow-sm">
-                        분담금 AI
+                        분담금 분석
                       </span>
                     ) : isTarget05 ? (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-500 text-white shadow-sm">
@@ -168,11 +168,11 @@ export function ProReportPreviewSection({
                       </span>
                     ) : isTarget07 ? (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-sm">
-                        AI 시뮬
+                        세금 계산
                       </span>
                     ) : isTarget08 ? (
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500 text-white shadow-sm animate-pulse">
-                        HOT PRO
+                        적정가 판정
                       </span>
                     ) : !sec.isPreview ? (
                       <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30">

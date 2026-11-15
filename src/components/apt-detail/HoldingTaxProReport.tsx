@@ -57,7 +57,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
               PRO REPORT #07
             </span>
             <div className="text-xs text-slate-400 font-medium mt-1.5 break-keep">
-              부동산 세금 및 종합부동산세 AI 시뮬레이터
+              부동산 세금 및 종합부동산세 시뮬레이터
             </div>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
@@ -207,7 +207,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
         <div className="relative">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <span>AI 세무 분석 & 절세 전략 리포트</span>
+              <span>세무 분석 & 절세 전략 리포트</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                   🔒 PRO 전용
@@ -243,7 +243,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
             <div className="bg-slate-900/80 border border-emerald-500/30 rounded-xl p-4 space-y-2 text-xs">
               <div className="font-extrabold text-emerald-400 flex items-center gap-1.5">
                 <span>💡</span>
-                <span>AI 세무 진단 및 절세 가이드</span>
+                <span>세무 진단 및 절세 가이드</span>
               </div>
               {simulation.aiStrategyComment.map((comment, idx) => (
                 <div key={idx} className="text-slate-300 leading-relaxed flex items-start gap-1.5">
@@ -259,7 +259,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-[2px] rounded-2xl p-4">
               <div className="text-center max-w-sm">
                 <div className="text-base font-extrabold text-white mb-1">
-                  📊 상세 세무 명세 및 AI 절세 가이드
+                  📊 상세 세무 명세 및 절세 가이드
                 </div>
                 <p className="text-xs text-slate-300 mb-4">
                   오픈 베타 기간 동안 부부 공동명의 절세 효과 및 맞춤형 양도세 시뮬레이션을 무료로 확인하실 수 있습니다.

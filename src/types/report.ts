@@ -140,10 +140,10 @@ export const REPORT_SECTIONS: ReportSection[] = [
   },
   {
     id: "redevelopment_sim",
-    title: "정비사업 분담금·비례율 AI 시뮬레이션",
+    title: "정비사업 분담금·비례율 시뮬레이션",
     type: "redevelopment",
     isPreview: false,
-    description: "사업시행인가 기준 예상 분담금과 비례율을 AI로 계산합니다.",
+    description: "사업시행인가 기준 예상 분담금과 비례율을 계산합니다.",
   },
   {
     id: "school_district_detail",
@@ -161,16 +161,16 @@ export const REPORT_SECTIONS: ReportSection[] = [
   },
   {
     id: "holding_tax_calculator",
-    title: "취득세·보유세·양도세 다주택 세금 및 종부세 AI 시뮬레이션",
+    title: "취득세·보유세·양도세 다주택 세금 및 종부세 시뮬레이션",
     type: "apt_location",
     isPreview: false,
-    description: "공시가격 현실화율과 1주택/다주택자 기준 연도별 재산세·종부세 및 보유 기간별 예상 양도세를 자동 계산합니다.",
+    description: "공시가격 현실화율과 1주택/다주택자 기준 연도별 재산세·종부세 및 보유 기간별 예상 양도세를 계산합니다.",
   },
   {
     id: "fair_value_model",
-    title: "AI 적정 가치 평가 및 고평가/저평가 적정 매수가 판정",
+    title: "적정 가치 평가 및 고평가/저평가 적정 매수가 판정",
     type: "apt_location",
     isPreview: false,
-    description: "동일 생활권 랜드마크 대비 평당가 갭, 전세가 기반 내재가치, 금리 변동 시나리오별 AI 적정 매수가 밴드를 제시합니다.",
+    description: "동일 생활권 랜드마크 대비 평당가 갭, 전세가 기반 내재가치, 금리 변동 시나리오별 적정 매수가 밴드를 제시합니다.",
   },
 ];

@@ -69,7 +69,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
               EQUITY VALUATION PRO #08
             </span>
             <div className="text-xs text-slate-400 font-semibold mt-1.5 break-keep">
-              기관급 AI 가치평가 및 호가 협상 모델
+              가치평가 및 호가 협상 분석 모델
             </div>
           </div>
           <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight break-keep">
@@ -124,7 +124,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                AI 산출 3단 매수 가치 밴드 (Price Valuation Range)
+                3단 매수 가치 밴드 (Price Valuation Range)
               </h4>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 전세가 역산 본질가치({fmtWon(result.intrinsicValue)}) 기준 급매·적정·상한선 산출

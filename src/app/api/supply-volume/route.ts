@@ -51,6 +51,44 @@ function parseExpectedMoveIn(text?: string): string {
 // 주소 -> 좌표 지오코딩 캐시
 const geocodeCache = new Map<string, { lat: number; lng: number }>();
 
+const KNOWN_REDEV_MAP: Record<string, { totalUnits: number; saleUnits: number }> = {
+  "아크로드서초": { totalUnits: 1161, saleUnits: 56 },
+  "아크로서초": { totalUnits: 1161, saleUnits: 56 },
+  "아크로서초아파트": { totalUnits: 1161, saleUnits: 56 },
+  "역삼센트럴자이": { totalUnits: 237, saleUnits: 87 },
+  "도곡아테라": { totalUnits: 82, saleUnits: 41 },
+  "도곡아테라아파트": { totalUnits: 82, saleUnits: 41 },
+  "디에이치대치에델루이": { totalUnits: 282, saleUnits: 72 },
+  "래미안원펜타스": { totalUnits: 641, saleUnits: 292 },
+  "메이플자이": { totalUnits: 3307, saleUnits: 162 },
+  "디에이치방배": { totalUnits: 3064, saleUnits: 1244 },
+  "청담르엘": { totalUnits: 1261, saleUnits: 149 },
+  "아크로리츠카운티": { totalUnits: 707, saleUnits: 140 },
+  "아크로리츠카운티아파트": { totalUnits: 707, saleUnits: 140 },
+  "래미안레벤투스": { totalUnits: 308, saleUnits: 133 },
+  "마포자이힐스테이트": { totalUnits: 1101, saleUnits: 463 },
+  "마포자이힐스테이트라첼스": { totalUnits: 1101, saleUnits: 463 },
+  "장위라디우스파크푸르지오": { totalUnits: 1637, saleUnits: 718 },
+  "올림픽파크포레온": { totalUnits: 12032, saleUnits: 4786 },
+  "힐스테이트이편한세상문정": { totalUnits: 1265, saleUnits: 299 },
+  "매교역팰루시드": { totalUnits: 2178, saleUnits: 154 },
+  "남부터미널역청년주택": { totalUnits: 35, saleUnits: 35 },
+  "남부터미널역청년주택아파트": { totalUnits: 35, saleUnits: 35 },
+};
+
+function getAccurateUnits(name: string, rawTotal: number, rawSale?: number): { totalUnits: number; saleUnits: number } {
+  const norm = name.replace(/[\s\-_(),.·[\]{}<>]/g, "").toLowerCase();
+  for (const [key, val] of Object.entries(KNOWN_REDEV_MAP)) {
+    const normKey = key.replace(/[\s\-_(),.·[\]{}<>]/g, "").toLowerCase();
+    if (norm.includes(normKey) || normKey.includes(norm)) {
+      return { totalUnits: val.totalUnits, saleUnits: val.saleUnits };
+    }
+  }
+  const sale = rawSale && rawSale > 0 ? rawSale : rawTotal;
+  const total = rawTotal && rawTotal > 0 ? rawTotal : sale;
+  return { totalUnits: total, saleUnits: sale };
+}
+
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null;
   const cleanAddr = address.split("(")[0].trim();
@@ -128,12 +166,12 @@ export async function GET(req: NextRequest) {
         if (distM <= maxRadiusM) {
           seenIds.add(notice.id);
           const supplyType: SupplyType = notice.rentType?.includes("임대") ? "임대" : "분양";
-          const saleUnits = (notice as any).generalSupplyUnits || notice.totalUnits || 0;
+          const { totalUnits, saleUnits } = getAccurateUnits(notice.name, notice.totalUnits || 0, (notice as any).generalSupplyUnits);
           units.push({
             id: `applyhome-${notice.id}`,
             name: notice.name,
             supplyType,
-            totalUnits: notice.totalUnits || 0,
+            totalUnits,
             saleUnits,
             expectedMoveIn: moveIn,
             address: notice.address,
@@ -205,12 +243,14 @@ export async function GET(req: NextRequest) {
         .replace(/\s*\d{4}년\s*\d{1,2}월예정$/, "")
         .replace(/\s*예정$/, "");
 
+      const { totalUnits, saleUnits } = getAccurateUnits(cleanDisplayName, apt.household_count, (apt as any).general_units);
+
       units.push({
         id: apt.id,
         name: cleanDisplayName,
         supplyType: "분양" as SupplyType,
-        totalUnits: apt.household_count,
-        saleUnits: apt.household_count,
+        totalUnits,
+        saleUnits,
         expectedMoveIn,
         address: `${apt.region} ${apt.district}`,
         lat: apt.lat,
@@ -242,12 +282,13 @@ export async function GET(req: NextRequest) {
           return normU === normZ || (normU.length >= 4 && normZ.includes(normU)) || (normZ.length >= 4 && normU.includes(normZ));
         });
         if (!alreadyAdded) {
+          const { totalUnits, saleUnits } = getAccurateUnits(zone.name, zone.totalUnits || 0, zone.generalUnits);
           units.push({
             id: `redev-${zone.id}`,
             name: zone.name,
             supplyType: zone.type === "공공주택" ? ("분양" as SupplyType) : ("분양" as SupplyType),
-            totalUnits: zone.totalUnits || 0,
-            saleUnits: zone.generalUnits || zone.totalUnits || 0,
+            totalUnits,
+            saleUnits,
             rentalUnits: zone.rentalUnits || 0,
             expectedMoveIn: zone.status === "착공" ? "2026-12" : zone.status === "사업승인" ? "2029-06" : "2028-12",
             address: zone.address || `${zone.region} ${zone.district}`,

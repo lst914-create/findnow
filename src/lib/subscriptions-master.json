@@ -14708,7 +14708,7 @@
     "type": "APT",
     "detailType": "민영",
     "rentType": "분양주택",
-    "totalUnits": 56,
+    "totalUnits": 1161,
     "recruitDate": "2026-03-20",
     "receptStartDate": "2026-03-31",
     "receptEndDate": "2026-04-03",
@@ -14727,7 +14727,8 @@
     "pblancUrl": "https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2025000497&pblancNo=2025000497",
     "status": "발표완료",
     "statusBadgeColor": "bg-slate-100 text-slate-500 border-slate-200",
-    "dDayText": "접수마감"
+    "dDayText": "접수마감",
+    "generalSupplyUnits": 56
   },
   {
     "id": "2026950024",
@@ -19794,7 +19795,7 @@
     "type": "APT",
     "detailType": "민영",
     "rentType": "분양주택",
-    "totalUnits": 87,
+    "totalUnits": 237,
     "recruitDate": "2025-12-05",
     "receptStartDate": "2025-12-15",
     "receptEndDate": "2025-12-18",
@@ -19813,7 +19814,8 @@
     "pblancUrl": "https://www.applyhome.co.kr/ai/aia/selectAPTLttotPblancDetail.do?houseManageNo=2025000566&pblancNo=2025000566",
     "status": "발표완료",
     "statusBadgeColor": "bg-slate-100 text-slate-500 border-slate-200",
-    "dDayText": "접수마감"
+    "dDayText": "접수마감",
+    "generalSupplyUnits": 87
   },
   {
     "id": "2025000582",

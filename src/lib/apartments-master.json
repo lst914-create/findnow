@@ -18981,7 +18981,7 @@
     "area_sqm": 84,
     "area_pyeong": 34,
     "built_year": 1996,
-    "household_count": 930,
+    "household_count": 282,
     "school_score": 88,
     "traffic_score": 94,
     "nature_score": 86,
@@ -19028,7 +19028,8 @@
       "GX룸",
       "북카페"
     ],
-    "isRealPrice": true
+    "isRealPrice": true,
+    "general_units": 72
   },
   {
     "id": "kapt-A10023162",
@@ -1412058,7 +1412059,7 @@
     "area_sqm": 106,
     "area_pyeong": 32,
     "built_year": 2019,
-    "household_count": 84,
+    "household_count": 1161,
     "school_score": 86,
     "traffic_score": 88,
     "nature_score": 90,
@@ -1412071,7 +1412072,7 @@
     "lng": 127.023756,
     "walk_minutes": 5,
     "description": "서울 서초구 서초동에 위치한 아크로서초아파트 2029년02월예정입니다. 카카오 공식 위치 정보 및 실거래 데이터가",
-    "dong_count": 1,
+    "dong_count": 16,
     "floor_top": 35,
     "floor_base": 2,
     "approval_date": "2019.12.22",
@@ -1412107,7 +1412108,8 @@
         "ratio": 100
       }
     ],
-    "isRealPrice": true
+    "isRealPrice": true,
+    "general_units": 56
   },
   {
     "id": "kakao-13190965",
@@ -1413106,7 +1413108,7 @@
     "area_sqm": 106,
     "area_pyeong": 32,
     "built_year": 2018,
-    "household_count": 36,
+    "household_count": 707,
     "school_score": 86,
     "traffic_score": 88,
     "nature_score": 90,
@@ -1413119,7 +1413121,7 @@
     "lng": 127.001752,
     "walk_minutes": 5,
     "description": "서울 서초구 방배동에 위치한 아크로리츠카운티아파트 2027년10월예정입니다. 카카오 공식 위치 정보 및 실거래 데이터가",
-    "dong_count": 1,
+    "dong_count": 8,
     "floor_top": 23,
     "floor_base": 2,
     "approval_date": "2018.12.22",
@@ -1413155,7 +1413157,8 @@
         "ratio": 100
       }
     ],
-    "isRealPrice": true
+    "isRealPrice": true,
+    "general_units": 140
   },
   {
     "id": "kakao-1100991722",
@@ -1414087,7 +1414090,7 @@
     "area_sqm": 106,
     "area_pyeong": 32,
     "built_year": 2009,
-    "household_count": 41,
+    "household_count": 82,
     "school_score": 86,
     "traffic_score": 88,
     "nature_score": 90,
@@ -1414136,7 +1414139,8 @@
         "ratio": 100
       }
     ],
-    "isRealPrice": true
+    "isRealPrice": true,
+    "general_units": 41
   },
   {
     "id": "kakao-11329203",
@@ -1416397,7 +1416401,7 @@
     "area_sqm": 109,
     "area_pyeong": 33,
     "built_year": 2028,
-    "household_count": 87,
+    "household_count": 237,
     "school_score": 86,
     "traffic_score": 88,
     "nature_score": 90,
@@ -1416411,7 +1416415,7 @@
     "lng": 127.047716,
     "walk_minutes": 5,
     "description": "서울 강남구 역삼동에 위치한 2028년 8월 입주 예정 신축 아파트입니다. 국토교통부 실거래가 공개시스템 및 청약홈 공식 공공데이터가",
-    "dong_count": 1,
+    "dong_count": 4,
     "floor_top": 33,
     "floor_base": 2,
     "approval_date": "2028.08.31",
@@ -1416447,7 +1416451,8 @@
         "ratio": 100
       }
     ],
-    "isRealPrice": true
+    "isRealPrice": true,
+    "general_units": 87
   },
   {
     "id": "kakao-2111015989",

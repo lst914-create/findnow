@@ -415,21 +415,21 @@ export default function UnifiedSearchResultsView({
       {/* 5. 아파트 실거래 섹션 (apt 탭이거나 all 탭에서 결과가 있을 때) */}
       {(activeTab === "all" || activeTab === "apt") && apartments.length > 0 && (
         <section className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl">🏢</span>
-              <h3 className="text-lg font-black text-slate-900">
-                아파트 실거래 추천 단지 ({apartments.length}단지)
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xl shrink-0">🏢</span>
+              <h3 className="text-base sm:text-lg font-black text-slate-900 break-keep">
+                아파트 실거래 추천 단지 <span className="text-indigo-600">({apartments.length}단지)</span>
               </h3>
               {intent.stationName && (
-                <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-100 text-indigo-800">
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-100 text-indigo-800 shrink-0 whitespace-nowrap">
                   🚇 {intent.stationName} 인근 단지
                 </span>
               )}
             </div>
             <Link
               href="/search"
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 shrink-0 whitespace-nowrap self-end sm:self-auto"
             >
               <span>아파트 조건 검색 전체보기</span>
               <span>&gt;</span>
@@ -444,12 +444,12 @@ export default function UnifiedSearchResultsView({
                 className="p-5 rounded-2xl bg-slate-50 hover:bg-white border border-slate-200 hover:border-indigo-400 hover:shadow-lg transition-all group flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-xs font-bold text-slate-500">
+                  <div className="flex items-center justify-between gap-1.5 mb-2">
+                    <span className="text-xs font-bold text-slate-500 whitespace-nowrap shrink-0">
                       {apt.region} {apt.district}
                     </span>
                     {apt.station && (
-                      <span className="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                      <span className="text-[11px] sm:text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200 shrink-0 whitespace-nowrap">
                         🚇 {apt.station} {apt.walk_minutes ? `도보 ${apt.walk_minutes}분` : ""}
                       </span>
                     )}

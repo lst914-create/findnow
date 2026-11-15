@@ -276,9 +276,8 @@ export default function AptCommunitySection({
       {/* 1. 섹션 헤더 */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
         <div>
-          <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span>💬</span>
-            <span>{aptName} 단지 이야기 & 토론</span>
+          <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            <span>{aptName} 단지 이야기</span>
           </h3>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             {aptName} 입주민들과 예비 매수자들이 실거주 만족도, 층간소음, 관리비, 통학로 정보를 단지별로 나누는 전용 공간입니다.

@@ -2065,7 +2065,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                     { label: "배정 초등학교", value: info.school_name, icon: "🏫" },
                     { label: "학교 통학 거리", value: info.school_dist, icon: "🎒" },
                     {
-                      label: "인근 지하철 / 대중교통",
+                      label: "지하철 / 대중교통",
                       value: infraData?.subways && infraData.subways.length > 0
                         ? `${infraData.subways[0].name} (도보 약 ${infraData.subways[0].walkMinutes}분, ${infraData.subways[0].distanceMeters.toLocaleString()}m)`
                         : info.subwayStation

@@ -2446,19 +2446,19 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                       })()
                     )}
 
-                    {/* 실시간 버스 도착 정보 네이버 지도 CTA */}
+                    {/* 버스 도착 정보 네이버 지도 CTA */}
                     <div className="pt-2 border-t border-slate-100">
                       <a
                         href={`https://map.naver.com/v5/search/${encodeURIComponent(apt.name + " 버스정류장")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-between w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 transition-colors group shadow-xs"
+                        className="flex items-center justify-between gap-2 w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-3.5 sm:px-4 py-2.5 transition-colors group shadow-xs"
                       >
-                        <div className="text-left">
-                          <div className="text-xs font-bold">정류소별 실시간 버스 도착 정보 확인</div>
-                          <div className="text-[10px] text-indigo-200">남은 시간 · 실시간 버스 위치 · 첫차/막차 정보</div>
+                        <div className="text-left min-w-0">
+                          <div className="text-xs font-bold whitespace-nowrap break-keep">정류소별 버스 도착 정보 확인</div>
+                          <div className="text-[10px] text-indigo-200 whitespace-nowrap break-keep">남은 시간 · 버스 위치 · 첫차/막차 정보</div>
                         </div>
-                        <span className="text-white/80 group-hover:translate-x-0.5 transition-transform text-sm font-bold">
+                        <span className="text-white/90 group-hover:translate-x-0.5 transition-transform text-xs sm:text-sm font-bold shrink-0 whitespace-nowrap">
                           확인하기 →
                         </span>
                       </a>

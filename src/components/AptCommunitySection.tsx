@@ -458,13 +458,13 @@ export default function AptCommunitySection({
 
       {/* 5. 간편 이야기 작성창 */}
       <form onSubmit={handleAddComment} className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5 break-keep">
             <span>✏️</span>
-            <span>{aptName}에 대해 이야기 남기기</span>
+            <span className="break-keep">{aptName}에 대해 이야기 남기기</span>
           </div>
-          <span className="text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-            ⚡ 고화질 경량 WebP 자동 압축
+          <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 shrink-0 whitespace-nowrap">
+            ⚡ WebP 자동 압축
           </span>
         </div>
 
@@ -535,12 +535,12 @@ export default function AptCommunitySection({
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100">
+          <div className="flex items-center justify-between gap-2 mt-2 pt-1 border-t border-slate-100">
             {/* 사진 첨부 버튼 */}
-            <div className="flex items-center gap-2">
-              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer transition-colors">
+            <div className="flex items-center gap-2 shrink-0">
+              <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer transition-colors shrink-0 whitespace-nowrap">
                 <span>📷</span>
-                <span>사진 첨부 ({attachedImages.length}/3)</span>
+                <span className="whitespace-nowrap">사진 첨부 ({attachedImages.length}/3)</span>
                 <input
                   type="file"
                   accept="image/*"
@@ -551,9 +551,9 @@ export default function AptCommunitySection({
                 />
               </label>
               {isCompressing && (
-                <span className="text-xs text-blue-600 font-medium flex items-center gap-1 animate-pulse">
+                <span className="text-[11px] text-blue-600 font-medium flex items-center gap-1 animate-pulse shrink-0 whitespace-nowrap">
                   <span className="inline-block w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  WebP 압축 변환 중...
+                  압축 중...
                 </span>
               )}
             </div>
@@ -561,9 +561,9 @@ export default function AptCommunitySection({
             <button
               type="submit"
               disabled={isCompressing}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+              className="px-3.5 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50 shrink-0 whitespace-nowrap"
             >
-              {aptName}에 소통글 등록하기
+              <span className="hidden sm:inline">{aptName} </span>소통글 등록하기
             </button>
           </div>
         </div>

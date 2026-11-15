@@ -219,14 +219,10 @@ export function CommercialDistrictSection({ aptId, aptName }: Props) {
           <div className="space-y-6">
             {/* 업종별 분포 카드 그리드 (클릭하여 해당 업종 점포 목록 필터링) */}
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-xs font-bold text-slate-700">주요 대분류 업종 구성 비율</h4>
-                  <span className="text-[11px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md font-semibold">
-                    💡 업종 클릭 시 관련 점포 필터링
-                  </span>
-                </div>
-                <span className="text-slate-400 text-xs">총 {totalStores.toLocaleString()}개 점포 기준</span>
+              <div className="mb-3">
+                <span className="text-[11px] text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md font-semibold inline-block">
+                  💡 업종 클릭 시 관련 점포 필터링
+                </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">

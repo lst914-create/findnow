@@ -102,10 +102,12 @@ export function CommercialDistrictSection({ aptId, aptName }: Props) {
           return s.indsLclsNm?.includes("소매") || s.indsMclsNm?.includes("편의점") || s.indsMclsNm?.includes("슈퍼") || s.indsMclsNm?.includes("마트") || s.indsMclsNm?.includes("유통");
         }
         if (selectedCategory === "R") {
-          return s.indsLclsNm?.includes("생활서비스") || s.indsMclsNm?.includes("미용") || s.indsMclsNm?.includes("세탁") || s.indsMclsNm?.includes("수리") || s.indsMclsNm?.includes("사진");
+          return s.indsLclsNm?.includes("생활서비스") || s.indsMclsNm?.includes("미용") || s.indsMclsNm?.includes("세탁") || s.indsMclsNm?.includes("수리") || s.indsMclsNm?.includes("사진") || s.indsMclsNm?.includes("공공기관");
         }
         if (selectedCategory === "F") {
-          return s.indsLclsNm?.includes("부동산") || s.indsMclsNm?.includes("부동산") || s.indsMclsNm?.includes("중개");
+          // 부동산: 중개업, 공인중개사 등 (학원/교육 제외)
+          return (s.indsLclsNm?.includes("부동산") || s.indsMclsNm?.includes("부동산") || s.indsMclsNm?.includes("중개"))
+            && !s.indsMclsNm?.includes("학원") && !s.indsMclsNm?.includes("교습");
         }
         if (selectedCategory === "K") {
           return s.indsLclsNm?.includes("금융") || s.indsLclsNm?.includes("보험") || s.indsMclsNm?.includes("은행") || s.indsMclsNm?.includes("ATM");

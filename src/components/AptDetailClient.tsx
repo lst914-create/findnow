@@ -1378,13 +1378,13 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
               {tradeType === "매매/전월세" ? (
                 <div>
-                  {/* 매매/전세 가격: 한 줄에 나오도록 폰트 자동 축소 */}
-                  <div className="flex items-baseline gap-1.5 min-w-0 overflow-hidden">
-                    <span className="text-[1.6rem] leading-tight font-black text-indigo-600 tracking-tight whitespace-nowrap shrink-0">
+                  {/* 매매/전세 가격: 한 줄에 무조건 표시 (폰트 축소) */}
+                  <div className="flex items-baseline gap-1 min-w-0 w-full overflow-hidden">
+                    <span className="text-[1.25rem] sm:text-[1.4rem] leading-tight font-black text-indigo-600 tracking-tight whitespace-nowrap shrink-0">
                       {currentAverageDisplay}
                     </span>
-                    <span className="text-slate-300 font-bold text-xl shrink-0">/</span>
-                    <span className="text-[1.6rem] leading-tight font-black text-emerald-600 tracking-tight whitespace-nowrap shrink-0">
+                    <span className="text-slate-300 font-bold text-base shrink-0">/</span>
+                    <span className="text-[1.25rem] sm:text-[1.4rem] leading-tight font-black text-emerald-600 tracking-tight whitespace-nowrap shrink-0">
                       {currentRentAvgDisplay}
                     </span>
                   </div>
@@ -1494,7 +1494,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
               ) : chartData.length >= 2 ? (
                 <div className="relative">
                   <ResponsiveContainer width="100%" height={230}>
-                    <ComposedChart data={chartData} margin={{ top: 22, right: 14, left: -10, bottom: 0 }}>
+                    <ComposedChart data={chartData} margin={{ top: 22, right: 14, left: 2, bottom: 0 }}>
                       <CartesianGrid stroke="#f1f5f9" vertical={false} />
                       <XAxis
                         dataKey="date"

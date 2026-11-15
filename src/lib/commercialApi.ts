@@ -155,12 +155,13 @@ export async function fetchKakaoStoresInRadius(
   const categories: Array<{ code: string; lclsCd: IndustryCategoryCode; lclsNm: string; mclsNm: string }> = [
     { code: "FD6", lclsCd: "Q", lclsNm: "음식", mclsNm: "일반음식점" },
     { code: "CE7", lclsCd: "Q", lclsNm: "음식", mclsNm: "카페/디저트" },
-    { code: "HP8", lclsCd: "R", lclsNm: "의료", mclsNm: "병원/의원" },
-    { code: "PM9", lclsCd: "R", lclsNm: "의료", mclsNm: "약국" },
-    { code: "AC5", lclsCd: "F", lclsNm: "교육", mclsNm: "학원/교습소" },
+    { code: "HP8", lclsCd: "H", lclsNm: "의료", mclsNm: "병원/의원" },
+    { code: "PM9", lclsCd: "H", lclsNm: "의료", mclsNm: "약국" },
+    { code: "AC5", lclsCd: "I", lclsNm: "학문/교육", mclsNm: "학원/교습소" },
     { code: "CS2", lclsCd: "D", lclsNm: "소매", mclsNm: "편의점" },
     { code: "MT1", lclsCd: "D", lclsNm: "소매", mclsNm: "대형마트" },
     { code: "BK9", lclsCd: "K", lclsNm: "금융", mclsNm: "은행" },
+    { code: "PO3", lclsCd: "R", lclsNm: "생활서비스", mclsNm: "공공기관" },
   ];
 
   const searchRadius = Math.min(20000, Math.max(100, radiusM));

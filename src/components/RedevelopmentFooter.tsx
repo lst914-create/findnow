@@ -31,7 +31,7 @@ export default function RedevelopmentFooter({ className = "" }: RedevelopmentFoo
         setModalContent("구역 목록: 좌측 구역 목록 패널 또는 지도 상의 마커를 클릭하여 서울, 경기, 인천, 부산 등 전국 주요 정비사업 구역의 실거래가와 추진 현황을 확인하실 수 있습니다.");
         break;
       case "notice":
-        setModalContent("공지사항: 국토교통부 실거래가 공개시스템 및 건축HUB 건축물대장 3대 공공 API 실시간 다이렉트 연동이 활성화되었습니다.");
+        setModalContent("공지사항: 전국 250개 시군구 정비사업 구역의 실거래가 및 건축물대장 데이터가 정기 업데이트되었습니다.");
         break;
     }
   };
@@ -194,16 +194,11 @@ export default function RedevelopmentFooter({ className = "" }: RedevelopmentFoo
                   <span className="font-bold text-blue-900 text-sm flex items-center gap-1.5">
                     <span>1️⃣</span> 실거래가 정보
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                    실시간 연동 완료
-                  </span>
                 </div>
                 <div className="text-slate-700 space-y-1 text-[11px] leading-relaxed">
-                  <p>• <strong>출처:</strong> 국토교통부 실거래가 공개시스템 (공공데이터포털 data.go.kr)</p>
-                  <p>• <strong>API:</strong> 연립다세대 매매 실거래자료 (RTMSDataSvcRHTrade)</p>
-                  <p>• <strong>API:</strong> 단독/다가구 매매 실거래자료 (RTMSDataSvcSHTrade)</p>
-                  <p>• <strong>API:</strong> 아파트 매매 실거래자료 (RTMSDataSvcAptTrade)</p>
-                  <p>• <strong>범위:</strong> 전국 250개 시군구 구역 내 지번 단위 매매 실거래 내역 실시간 연동</p>
+                  <p>• <strong>출처:</strong> 국토교통부 실거래가 공개시스템</p>
+                  <p>• <strong>내용:</strong> 연립다세대, 단독/다가구, 아파트 매매 실거래 신고 자료</p>
+                  <p>• <strong>범위:</strong> 전국 250개 시군구 구역 내 지번 단위 매매 실거래 내역</p>
                 </div>
               </div>
 
@@ -213,14 +208,9 @@ export default function RedevelopmentFooter({ className = "" }: RedevelopmentFoo
                   <span className="font-bold text-indigo-900 text-sm flex items-center gap-1.5">
                     <span>2️⃣</span> 구역별 진행 정보 (인허가/추진현황)
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                    전국 표준 연동
-                  </span>
                 </div>
                 <div className="text-slate-700 space-y-1 text-[11px] leading-relaxed">
-                  <p>• <strong>출처:</strong> 각 지자체 고시·공고 및 서울시 정비사업 정보몽땅(cleanup.seoul.go.kr)</p>
-                  <p>• <strong>API:</strong> 전국재개발재건축정비사업표준데이터 (행정안전부/국토교통부)</p>
-                  <p>• <strong>API:</strong> 서울 열린데이터광장 HsmpInfo (정비사업 구역정보)</p>
+                  <p>• <strong>출처:</strong> 각 지자체 고시·공고 및 서울시 정비사업 정보몽땅</p>
                   <p>• <strong>내용:</strong> 정비구역지정, 조합설립, 사업시행인가, 관리처분인가 등 11단계 인허가 현황</p>
                 </div>
               </div>
@@ -231,25 +221,11 @@ export default function RedevelopmentFooter({ className = "" }: RedevelopmentFoo
                   <span className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
                     <span>3️⃣</span> 건물 정보 및 노후도
                   </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                    건축HUB 실시간 연동
-                  </span>
                 </div>
                 <div className="text-slate-700 space-y-1 text-[11px] leading-relaxed">
-                  <p>• <strong>출처:</strong> 국토교통부 건축HUB 건축물대장 정보 서비스</p>
-                  <p>• <strong>API:</strong> 표제부 조회 (BldRgstHubService / getBrTitleInfo)</p>
-                  <p>• <strong>내용:</strong> 사용승인일자(준공연도), 구조, 연면적, 층수, 건폐율, 용적률 실시간 조회</p>
+                  <p>• <strong>출처:</strong> 국토교통부 건축HUB 건축물대장 정보</p>
+                  <p>• <strong>내용:</strong> 사용승인일자(준공연도), 구조, 연면적, 층수, 건폐율, 용적률</p>
                 </div>
-              </div>
-
-              {/* API 연동 성공 안내 */}
-              <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-900">
-                <p className="font-bold flex items-center gap-1 mb-1">
-                  <span>✅</span> 국토교통부 3대 공공 API 실시간 다이렉트 연동 활성화
-                </p>
-                <p className="text-emerald-700 leading-relaxed">
-                  공공데이터포털(data.go.kr) 인증키를 통해 전국 250개 시군구의 <strong>연립·다세대, 단독·다가구, 아파트 매매 실거래가</strong>와 <strong>건축HUB 건축물대장</strong>이 실시간으로 호출 및 반영되고 있습니다.
-                </p>
               </div>
             </div>
 

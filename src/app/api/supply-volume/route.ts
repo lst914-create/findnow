@@ -349,7 +349,7 @@ export async function GET(req: NextRequest) {
       "RONE_APPLY",
       new Date().toISOString().slice(0, 10),
       {
-        providerLabel: "한국부동산원 청약홈 분양정보 및\n국토교통부 신축 단지 실시간 연동",
+        providerLabel: "한국부동산원 청약홈 분양정보 및 국토교통부 신축 단지 기준",
       }
     ),
   };

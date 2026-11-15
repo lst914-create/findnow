@@ -32,13 +32,11 @@ const getVal = (xml: string, tag: string) => {
 const parseItems = (xmlText: string) =>
   xmlText.match(/<item>[\s\S]*?<\/item>/g) || [];
 
-/** 금액을 'XX.X억' 또는 'XXXX만' 형식으로 포맷 */
+/** 금액을 'XX.X억' 또는 'XXXX만' 형식으로 포맷 (소수점 첫째자리까지 반올림) */
 function formatPrice(manwon: number): string {
-  const uk = Math.floor(manwon / 10000);
-  const remainder = manwon % 10000;
-  const cheon = Math.floor(remainder / 1000);
-  if (uk > 0) {
-    return cheon > 0 ? `${uk}.${cheon}억` : `${uk}억`;
+  if (manwon >= 10000) {
+    const ukVal = Number((manwon / 10000).toFixed(1));
+    return `${ukVal}억`;
   }
   return `${manwon.toLocaleString()}만`;
 }

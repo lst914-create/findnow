@@ -235,7 +235,9 @@ function CustomTooltip({ active, payload, label }: any) {
       <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/60 rounded-xl px-3.5 py-2.5 shadow-2xl text-xs z-50">
         <p className="text-slate-400 font-medium text-[11px] mb-1">{label}</p>
         {priceVal ? (
-          <p className="font-extrabold text-indigo-300 text-sm tracking-tight">{priceVal}억원</p>
+          <p className="font-extrabold text-indigo-300 text-sm tracking-tight">
+            {typeof priceVal === "number" ? `${+(priceVal.toFixed(1))}억원` : `${priceVal}억원`}
+          </p>
         ) : null}
         {volVal > 0 ? (
           <p className="text-emerald-400 text-[11px] mt-1 font-semibold flex items-center gap-1.5">
@@ -1342,11 +1344,11 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
               {(displayMaxPrice > 0 || chartData.length > 0) && (
                 <div className="flex flex-wrap items-center justify-between gap-y-1.5 mb-2.5 text-xs">
                   <div className="flex items-center gap-x-3 text-slate-500">
-                    <span>최저 <strong className="text-blue-600 font-bold">{displayMinPrice}억</strong></span>
+                    <span>최저 <strong className="text-blue-600 font-bold">{typeof displayMinPrice === "number" ? +(displayMinPrice.toFixed(1)) : displayMinPrice}억</strong></span>
                     <span className="text-slate-300">|</span>
-                    <span>최고 <strong className="text-red-500 font-bold">{displayMaxPrice}억</strong></span>
+                    <span>최고 <strong className="text-red-500 font-bold">{typeof displayMaxPrice === "number" ? +(displayMaxPrice.toFixed(1)) : displayMaxPrice}억</strong></span>
                     <span className="text-slate-300">|</span>
-                    <span>최근 <strong className="text-indigo-600 font-bold">{displayLatestPrice}억</strong></span>
+                    <span>최근 <strong className="text-indigo-600 font-bold">{typeof displayLatestPrice === "number" ? +(displayLatestPrice.toFixed(1)) : displayLatestPrice}억</strong></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md font-medium">
@@ -1500,7 +1502,9 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
               ) : chartData.length === 1 ? (
                 <div className="h-[180px] flex flex-col items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 text-center px-4">
                   <span className="text-2xl mb-1">📈</span>
-                  <p className="text-xs font-semibold text-slate-700">최근 실거래가: {chartData[0].price}억원 ({chartData[0].date})</p>
+                  <p className="text-xs font-semibold text-slate-700">
+                    최근 실거래가: {typeof chartData[0].price === "number" ? +(chartData[0].price.toFixed(1)) : chartData[0].price}억원 ({chartData[0].date})
+                  </p>
                   <p className="text-[11px] text-slate-400 mt-0.5">
                     {selectedArea !== "전체" ? `${selectedArea} 평형의 ` : ""}추가 거래가 신고되면 월별 변동 추이 차트가 자동으로 표시됩니다.
                   </p>

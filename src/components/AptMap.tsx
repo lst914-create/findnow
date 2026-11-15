@@ -7,11 +7,9 @@ import { loadKakaoMap } from "@/lib/kakaoMapLoader";
 import { normalizeAptName } from "@/lib/normalizeAptName";
 
 function formatPrice(manwon: number): string {
-  const uk = Math.floor(manwon / 10000);
-  const remainder = manwon % 10000;
-  const cheon = Math.floor(remainder / 1000);
-  if (uk > 0) {
-    return cheon > 0 ? `${uk}.${cheon}억` : `${uk}억`;
+  if (manwon >= 10000) {
+    const ukVal = Number((manwon / 10000).toFixed(1));
+    return `${ukVal}억`;
   }
   return `${manwon.toLocaleString()}만`;
 }

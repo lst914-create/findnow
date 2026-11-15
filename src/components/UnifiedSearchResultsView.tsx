@@ -115,11 +115,10 @@ export default function UnifiedSearchResultsView({
           <button
             type="button"
             onClick={() => setActiveTab("all")}
-            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeTab === "all"
+            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${activeTab === "all"
                 ? "bg-white text-indigo-950 shadow-md scale-[1.02]"
                 : "bg-white/10 text-slate-300 hover:text-white hover:bg-white/15"
-            }`}
+              }`}
           >
             <span>🌟 전체 종합</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 text-slate-800">
@@ -130,11 +129,10 @@ export default function UnifiedSearchResultsView({
           <button
             type="button"
             onClick={() => setActiveTab("apt")}
-            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeTab === "apt"
+            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${activeTab === "apt"
                 ? "bg-white text-indigo-950 shadow-md scale-[1.02]"
                 : "bg-white/10 text-slate-300 hover:text-white hover:bg-white/15"
-            }`}
+              }`}
           >
             <span>🏢 아파트</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-100 text-indigo-800 font-extrabold">
@@ -145,11 +143,10 @@ export default function UnifiedSearchResultsView({
           <button
             type="button"
             onClick={() => setActiveTab("redev")}
-            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeTab === "redev"
+            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${activeTab === "redev"
                 ? "bg-white text-indigo-950 shadow-md scale-[1.02]"
                 : "bg-white/10 text-slate-300 hover:text-white hover:bg-white/15"
-            }`}
+              }`}
           >
             <span>🔨 재개발·정비사업</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-extrabold">
@@ -160,11 +157,10 @@ export default function UnifiedSearchResultsView({
           <button
             type="button"
             onClick={() => setActiveTab("subscription")}
-            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeTab === "subscription"
+            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${activeTab === "subscription"
                 ? "bg-white text-indigo-950 shadow-md scale-[1.02]"
                 : "bg-white/10 text-slate-300 hover:text-white hover:bg-white/15"
-            }`}
+              }`}
           >
             <span>🏗️ 분양·청약</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-800 font-extrabold">
@@ -175,11 +171,10 @@ export default function UnifiedSearchResultsView({
           <button
             type="button"
             onClick={() => setActiveTab("regional")}
-            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${
-              activeTab === "regional"
+            className={`px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer ${activeTab === "regional"
                 ? "bg-white text-indigo-950 shadow-md scale-[1.02]"
                 : "bg-white/10 text-slate-300 hover:text-white hover:bg-white/15"
-            }`}
+              }`}
           >
             <span>📍 지역 명소·인프라</span>
             <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-sky-100 text-sky-800 font-extrabold">

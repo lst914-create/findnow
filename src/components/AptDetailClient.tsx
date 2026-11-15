@@ -222,14 +222,52 @@ const APARTMENT_DATA: Record<string, any> = Object.fromEntries(
   ])
 );
 
-// 호갱노노 스타일 정밀 툴팁 (가격 + 월간 거래량 표시)
+// 호갱노노 스타일 정밀 툴팁 (매매/전세 비교 + 갭/전세가율 + 월간 거래량 표시)
 function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const pricePayload = payload.find((p: any) => p.dataKey === "price");
+    const jeonsePayload = payload.find((p: any) => p.dataKey === "jeonsePrice");
     const volumePayload = payload.find((p: any) => p.dataKey === "volume");
+
     const priceVal = pricePayload ? pricePayload.value : null;
+    const jeonseVal = jeonsePayload ? jeonsePayload.value : null;
     const volVal = volumePayload ? volumePayload.value : (pricePayload?.payload?.volume || 0);
-    const isReal = pricePayload?.payload?.isReal;
+    const rentVol = pricePayload?.payload?.rentVolume || 0;
+    const isReal = pricePayload?.payload?.isReal || jeonsePayload?.payload?.isRealJeonse;
+
+    // 매매/전세 동시 비교 모드
+    if (priceVal !== null && jeonseVal !== null) {
+      const gap = Number((priceVal - jeonseVal).toFixed(1));
+      const ratio = priceVal > 0 ? Math.round((jeonseVal / priceVal) * 100) : 0;
+      return (
+        <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/60 rounded-xl px-3.5 py-2.5 shadow-2xl text-xs z-50 min-w-[170px]">
+          <p className="text-slate-400 font-medium text-[11px] mb-1.5 border-b border-slate-700/60 pb-1">{label}</p>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-indigo-300 font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-indigo-500"></span>매매
+              </span>
+              <span className="font-extrabold text-white text-xs">{priceVal.toFixed(1)}억원</span>
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-emerald-300 font-semibold flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>전세
+              </span>
+              <span className="font-extrabold text-emerald-300 text-xs">{jeonseVal.toFixed(1)}억원</span>
+            </div>
+          </div>
+          <div className="mt-2 pt-1.5 border-t border-slate-700/60 flex items-center justify-between text-[11px]">
+            <span className="text-slate-400">갭 {gap > 0 ? `${gap}억` : "0억"}</span>
+            <span className="text-amber-400 font-bold">전세가율 {ratio}%</span>
+          </div>
+          {(volVal > 0 || rentVol > 0) && (
+            <p className="text-slate-400 text-[10px] mt-1 pt-1 border-t border-slate-800">
+              월 거래: 매매 {volVal}건 / 전세 {rentVol}건
+            </p>
+          )}
+        </div>
+      );
+    }
 
     return (
       <div className="bg-slate-900/95 backdrop-blur-md text-white border border-slate-700/60 rounded-xl px-3.5 py-2.5 shadow-2xl text-xs z-50">
@@ -261,7 +299,7 @@ const apiTransactionsCache = new Map<string, { trades: any[]; rents: any[] }>();
 export default function AptDetailClient({ apt: initialApt, initialTrades = [], initialRents = [] }: { apt: any; initialTrades?: any[]; initialRents?: any[]; }) {
   const apt = initialApt;
 
-  const [tradeType, setTradeType] = useState<"매매" | "전월세">("매매");
+  const [tradeType, setTradeType] = useState<"매매" | "전월세" | "매매/전월세">("매매");
   const [chartRange, setChartRange] = useState<"최근 1년" | "최근 3년" | "전체">("최근 3년");
   const [showCount, setShowCount] = useState(5);
   const [activeLocation, setActiveLocation] = useState<"학군" | "교통" | "쾌적성" | "편의시설">("교통");
@@ -679,7 +717,12 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   }, [apiRents, officialAreaDistributions]);
 
   // 가짜 더미 데이터 배제 — 100% 실제 공공데이터 실거래 신고 건만 사용
-  const allActiveTxs = tradeType === "매매" ? realSaleTxs : realRentTxs;
+  const allActiveTxs = useMemo(() => {
+    if (tradeType === "매매") return realSaleTxs;
+    if (tradeType === "전월세") return realRentTxs;
+    // "매매/전월세" 동시 비교 탭: 매매와 전세를 합치고 계약일자 최신순 정렬
+    return [...realSaleTxs, ...realRentTxs].sort((a, b) => b.date.localeCompare(a.date));
+  }, [tradeType, realSaleTxs, realRentTxs]);
   const hasRealDataForCurrentTab = allActiveTxs.length > 0;
 
   // 평형별 고유 면적 목록 추출 (단지 공식 평형 우선, 없으면 실거래 데이터 기반)
@@ -743,46 +786,65 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     return source.filter((r) => normalizeAreaStr(r.excluUseAr) === selectedArea);
   }, [apiRents, selectedArea, officialAreaDistributions]);
 
-  // 36개월 풀 타임라인 기반 국토부 실거래가 월별 추이 (호갱노노 스타일: 가격 계단/곡선 + 월별 거래량 볼륨)
+  // 36개월 풀 타임라인 기반 국토부 실거래가 월별 추이 (호갱노노 스타일: 매매선 + 전세선 동시 비교 지원)
   const activeTrend = useMemo(() => {
-    const rawTxs = tradeType === "매매" ? filteredApiTrades : filteredApiRents;
-    const baseMin = tradeType === "매매" ? (apt.price_min || 50000) : (apt.rent_min || 30000);
-    const baseMax = tradeType === "매매" ? (apt.price_max || baseMin) : (apt.rent_max || baseMin);
-    const fallbackCenter = (baseMin + baseMax) / 2;
-
-    // 1. 유효 실거래 월별 집계 (1층 제외 & 전월세는 순수 전세)
-    const validTxs = rawTxs.filter((t: any) => {
-      const amount = t.dealAmount || t.depositAmount;
+    // 1. 유효 매매 거래 월별 집계 (1층 제외)
+    const validTrades = filteredApiTrades.filter((t: any) => {
+      const amount = t.dealAmount;
       if (!amount || amount <= 0) return false;
       const floorRaw = t.floor;
       const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
       if (!isNaN(floorNum) && floorNum <= 1) return false;
-      if (tradeType === "전월세" && t.monthlyRent && t.monthlyRent > 0) return false;
       return true;
     });
 
-    const monthlyMap = new Map<string, number[]>();
-    for (const t of validTxs) {
+    const monthlySaleMap = new Map<string, number[]>();
+    for (const t of validTrades) {
       const ym = `${t.dealYear}.${String(t.dealMonth).padStart(2, "0")}`;
-      const amount = t.dealAmount || t.depositAmount;
-      if (!monthlyMap.has(ym)) monthlyMap.set(ym, []);
-      monthlyMap.get(ym)!.push(amount);
+      if (!monthlySaleMap.has(ym)) monthlySaleMap.set(ym, []);
+      monthlySaleMap.get(ym)!.push(t.dealAmount);
     }
 
-    const monthlyRealAvg = new Map<string, number>();
-    const monthlyCount = new Map<string, number>();
-    for (const [ym, amounts] of monthlyMap.entries()) {
+    const monthlySaleAvg = new Map<string, number>();
+    const monthlySaleCount = new Map<string, number>();
+    for (const [ym, amounts] of monthlySaleMap.entries()) {
       const avg = Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length);
-      monthlyRealAvg.set(ym, avg);
-      monthlyCount.set(ym, amounts.length);
+      monthlySaleAvg.set(ym, avg);
+      monthlySaleCount.set(ym, amounts.length);
     }
 
-    // 2. 기준 종료 월 결정 (실제 거래 최신 월 또는 현재 기준)
+    // 2. 유효 전세 거래 월별 집계 (1층 제외 & 순수 전세 월세=0)
+    const validRents = filteredApiRents.filter((r: any) => {
+      const amount = r.depositAmount;
+      if (!amount || amount <= 0) return false;
+      const floorRaw = r.floor;
+      const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
+      if (!isNaN(floorNum) && floorNum <= 1) return false;
+      if (r.monthlyRent && r.monthlyRent > 0) return false; // 순수 전세만 집계
+      return true;
+    });
+
+    const monthlyJeonseMap = new Map<string, number[]>();
+    for (const r of validRents) {
+      const ym = `${r.dealYear}.${String(r.dealMonth).padStart(2, "0")}`;
+      if (!monthlyJeonseMap.has(ym)) monthlyJeonseMap.set(ym, []);
+      monthlyJeonseMap.get(ym)!.push(r.depositAmount);
+    }
+
+    const monthlyJeonseAvg = new Map<string, number>();
+    const monthlyJeonseCount = new Map<string, number>();
+    for (const [ym, amounts] of monthlyJeonseMap.entries()) {
+      const avg = Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length);
+      monthlyJeonseAvg.set(ym, avg);
+      monthlyJeonseCount.set(ym, amounts.length);
+    }
+
+    // 3. 기준 종료 월 결정 (실거래 최신 월 또는 현재 기준)
     let endYear = 2026;
     let endMonth = 10;
-    if (monthlyRealAvg.size > 0) {
-      const sortedYms = Array.from(monthlyRealAvg.keys()).sort();
-      const lastYm = sortedYms[sortedYms.length - 1];
+    const allYms = [...Array.from(monthlySaleAvg.keys()), ...Array.from(monthlyJeonseAvg.keys())].sort();
+    if (allYms.length > 0) {
+      const lastYm = allYms[allYms.length - 1];
       const [y, m] = lastYm.split(".").map(Number);
       if (y && m) {
         endYear = y;
@@ -790,7 +852,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       }
     }
 
-    // 3. 최대 10년(120개월) 연속 타임라인 생성
+    // 4. 최대 10년(120개월) 연속 타임라인 생성
     const timeline: { ymKey: string }[] = [];
     for (let i = 119; i >= 0; i--) {
       const d = new Date(endYear, endMonth - 1 - i, 1);
@@ -799,49 +861,71 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       timeline.push({ ymKey: `${y}.${m}` });
     }
 
-    if (monthlyRealAvg.size === 0) {
-      // 실거래 데이터가 없는 경우 가짜 수평선을 그리지 않고 빈 배열 반환
+    if (monthlySaleAvg.size === 0 && monthlyJeonseAvg.size === 0) {
       return [];
     }
 
-    // 4. 호갱노노 스타일 연속 가격 궤적 및 거래량 생성 (거래 없는 월은 직전 실거래가 유지)
-    const sortedRealEntries = Array.from(monthlyRealAvg.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-    const firstRealYm = sortedRealEntries.length > 0 ? sortedRealEntries[0][0] : null;
+    // 5. 연속 가격 궤적 및 거래량 생성 (거래 없는 월은 직전 실거래가 유지)
+    let currentHoldingSale: number | null = null;
+    let currentHoldingJeonse: number | null = null;
 
-    let currentHoldingPrice: number | null = null;
-    const result: { date: string; price: number | null; volume: number; isReal: boolean }[] = [];
+    const result: {
+      date: string;
+      price: number | null;
+      jeonsePrice: number | null;
+      volume: number;
+      rentVolume: number;
+      isReal: boolean;
+      isRealJeonse: boolean;
+    }[] = [];
 
     for (const item of timeline) {
       const ym = item.ymKey;
-      if (monthlyRealAvg.has(ym)) {
-        currentHoldingPrice = monthlyRealAvg.get(ym)!;
+      const hasSale = monthlySaleAvg.has(ym);
+      const hasJeonse = monthlyJeonseAvg.has(ym);
+
+      if (hasSale) currentHoldingSale = monthlySaleAvg.get(ym)!;
+      if (hasJeonse) currentHoldingJeonse = monthlyJeonseAvg.get(ym)!;
+
+      const salePriceDisplay = currentHoldingSale !== null ? +(currentHoldingSale / 10000).toFixed(1) : null;
+      const jeonsePriceDisplay = currentHoldingJeonse !== null ? +(currentHoldingJeonse / 10000).toFixed(1) : null;
+
+      if (tradeType === "매매") {
         result.push({
           date: ym,
-          price: +(currentHoldingPrice / 10000).toFixed(1),
-          volume: monthlyCount.get(ym) || 1,
-          isReal: true,
+          price: salePriceDisplay,
+          jeonsePrice: null,
+          volume: monthlySaleCount.get(ym) || 0,
+          rentVolume: 0,
+          isReal: hasSale,
+          isRealJeonse: false,
         });
-      } else if (currentHoldingPrice !== null) {
-        // 최초 실거래 발생 이후 거래가 없는 월은 직전 실거래가 계단식 유지
+      } else if (tradeType === "전월세") {
         result.push({
           date: ym,
-          price: +(currentHoldingPrice / 10000).toFixed(1),
-          volume: 0,
-          isReal: false,
+          price: jeonsePriceDisplay,
+          jeonsePrice: null,
+          volume: monthlyJeonseCount.get(ym) || 0,
+          rentVolume: 0,
+          isReal: hasJeonse,
+          isRealJeonse: false,
         });
       } else {
-        // 최초 실거래 발생 이전 월은 가짜 수평선 왜곡을 방지하기 위해 null 처리
+        // "매매/전월세" 동시 비교 모드: 매매선과 전세선 둘 다 전달
         result.push({
           date: ym,
-          price: null,
-          volume: 0,
-          isReal: false,
+          price: salePriceDisplay,
+          jeonsePrice: jeonsePriceDisplay,
+          volume: monthlySaleCount.get(ym) || 0,
+          rentVolume: monthlyJeonseCount.get(ym) || 0,
+          isReal: hasSale,
+          isRealJeonse: hasJeonse,
         });
       }
     }
 
     return result;
-  }, [tradeType, filteredApiTrades, filteredApiRents, apt.price_min, apt.price_max, apt.rent_min, apt.rent_max]);
+  }, [tradeType, filteredApiTrades, filteredApiRents]);
 
   const chartData = chartRange === "최근 1년"
     ? activeTrend.slice(-12)
@@ -852,30 +936,32 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   // 호갱노노 스타일 최고가 / 최저가 / 최신 거래 핀포인트 계산
   const chartHighlights = useMemo(() => {
     if (!chartData || chartData.length === 0) {
-      return { maxPoint: null, minPoint: null, latestPoint: null, maxVolume: 1, turnoverRatio: "0" };
+      return { maxPoint: null, minPoint: null, latestPoint: null, maxVolume: 1, turnoverRatio: "0", totalTxs: 0 };
     }
 
     const realPoints = chartData.filter((d) => d.isReal && d.price !== null) as { date: string; price: number; volume: number; isReal: boolean }[];
     const validPoints = chartData.filter((d) => d.price !== null) as { date: string; price: number; volume: number; isReal: boolean }[];
     const targetPoints = realPoints.length > 0 ? realPoints : validPoints;
 
-    if (targetPoints.length === 0) {
-      return { maxPoint: null, minPoint: null, latestPoint: null, maxVolume: 1, turnoverRatio: "0" };
+    let maxP = targetPoints.length > 0 ? targetPoints[0] : null;
+    let minP = targetPoints.length > 0 ? targetPoints[0] : null;
+
+    if (targetPoints.length > 0 && maxP && minP) {
+      for (const p of targetPoints) {
+        if (p.price > maxP.price) maxP = p;
+        if (p.price < minP.price) minP = p;
+      }
     }
 
-    let maxP = targetPoints[0];
-    let minP = targetPoints[0];
-
-    for (const p of targetPoints) {
-      if (p.price > maxP.price) maxP = p;
-      if (p.price < minP.price) minP = p;
-    }
-
-    const latestP = realPoints.length > 0 ? realPoints[realPoints.length - 1] : targetPoints[targetPoints.length - 1];
-    const maxVol = Math.max(...chartData.map((d) => d.volume), 1);
+    const latestP = realPoints.length > 0 ? realPoints[realPoints.length - 1] : (targetPoints.length > 0 ? targetPoints[targetPoints.length - 1] : null);
+    const maxVol = Math.max(...chartData.map((d) => Math.max(d.volume || 0, d.rentVolume || 0)), 1);
 
     // 단지 총 세대수 대비 실거래 회전율 계산
-    const totalTxs = tradeType === "매매" ? filteredApiTrades.length : filteredApiRents.length;
+    const totalTxs = tradeType === "매매"
+      ? filteredApiTrades.length
+      : tradeType === "전월세"
+        ? filteredApiRents.length
+        : filteredApiTrades.length + filteredApiRents.length;
     const households = apt.household_count || 500;
     const turnover = ((totalTxs / households) * 100).toFixed(1);
 
@@ -893,7 +979,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   const validPeriodTxs = useMemo(() => {
     const nonFirstFloor = activeTxs.filter((t: any) => {
       if (!t.rawPrice || t.rawPrice <= 0) return false;
-      // 1층 제외: floor 형식(숫자/문자열/"1층"/NaN층 등) 모두 견고 처리
       const floorRaw = t.floorNum ?? t.floor;
       const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
       if (!isNaN(floorNum) && floorNum <= 1) return false;
@@ -903,14 +988,11 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
     if (nonFirstFloor.length <= 1) return nonFirstFloor;
 
-    // 정상 거래가 2건 이상인 경우, 정상 시세의 60% 미만으로 급락한 비정상/특수거래(직거래, 증여성 거래 등) 배제
-    // 임계값: 가격대 무관하게 전국 모든 아파트에 적용 (10억 이상 한정 조건 제거)
     const prices = nonFirstFloor.map((t: any) => t.rawPrice).sort((a: number, b: number) => a - b);
     const medianPrice = prices[Math.floor(prices.length / 2)];
 
     return nonFirstFloor.filter((t: any) => {
       if (medianPrice > 0 && t.rawPrice < medianPrice * 0.6) {
-        // 예: 인창어반포레 정상 시세 13.5억인데 7억 직거래인 경우 대표 시세 산출에서 제외
         return false;
       }
       return true;
@@ -920,7 +1002,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   // [사용자 요구사항] 실거래가 원본 기준 최고가 / 최저가 / 최근 거래가 (가상 거래 배제, 마지막 실거래 우선, 없으면 단지 확정 시세 0초 즉시 제공)
   const priceStatsSummary = useMemo(() => {
     if (validPeriodTxs.length === 0) {
-      // 💡 단지 확정 시세(price_max, price_min)가 있으면 0초 즉시 베이스라인 시세로 제공하여 "가격없음", "-" 깜빡임 100% 방지
       const basePrice = apt.price_max || apt.price_min || 0;
       const minPrice = apt.price_min || basePrice;
       const maxPrice = apt.price_max || basePrice;
@@ -935,7 +1016,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       };
     }
 
-    // 실제 체결된 거래 중 최고가/최저가 (신고 내역과 100% 일치)
+    // 실제 체결된 거래 중 최고가/최저가 (조회 기간 전체 기준 정직 반영!)
     const allPrices = validPeriodTxs.map((t: any) => t.rawPrice);
     const periodMin = Math.min(...allPrices);
     const periodMax = Math.max(...allPrices);
@@ -963,24 +1044,15 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       return latestTime - tTime <= ONE_MONTH_MS;
     });
 
-    // 최근 1개월 내 거래가 2건 이상이면 그 범위의 평균, 그 외에는 가장 마지막 거래(latestTx) 반영
-    let displayMin = periodMin;
-    let displayMax = periodMax;
     let displayLatest = latestTx.rawPrice;
-
     if (recent1MonthTxs.length >= 2) {
       const rPrices = recent1MonthTxs.map((t: any) => t.rawPrice);
-      displayMin = Math.min(...rPrices);
-      displayMax = Math.max(...rPrices);
       displayLatest = Math.round(rPrices.reduce((a: number, b: number) => a + b, 0) / rPrices.length);
-    } else {
-      displayMax = periodMax;
-      displayLatest = latestTx.rawPrice;
     }
 
     return {
-      min: +(displayMin / 10000).toFixed(1),
-      max: +(displayMax / 10000).toFixed(1),
+      min: +(periodMin / 10000).toFixed(1),
+      max: +(periodMax / 10000).toFixed(1),
       latest: +(displayLatest / 10000).toFixed(1),
       isFromRealTxs: true,
       hasBaselinePrice: true,
@@ -1151,6 +1223,15 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     return formatPrice(baseRent);
   }, [realJeonseStats, realMonthlyStats, selectedArea, displayAreaSqm, apt.rent_min, apt.rent_max]);
 
+  // 전세 최근 가격 (억원 단위 숫자)
+  const displayLatestRentPrice = useMemo(() => {
+    if (realJeonseStats && realJeonseStats.avg > 0) {
+      return +(realJeonseStats.avg / 10000).toFixed(1);
+    }
+    const fallback = apt.rent_max || apt.rent_min || 0;
+    return fallback > 0 ? +(fallback / 10000).toFixed(1) : 0;
+  }, [realJeonseStats, apt.rent_max, apt.rent_min]);
+
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans pb-24">
@@ -1250,9 +1331,9 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         {/* ===== 시세/실거래 섹션 ===== */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
-          {/* 매매 / 전월세 탭 */}
+          {/* 매매 / 전월세 / 매매/전월세 탭 */}
           <div className="flex border-b border-slate-200">
-            {(["매매", "전월세"] as const).map((type) => (
+            {(["매매", "전월세", "매매/전월세"] as const).map((type) => (
               <button
                 key={type}
                 onClick={() => { setTradeType(type); setShowCount(5); setSelectedArea(majorArea); }}
@@ -1289,10 +1370,38 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                 <p className="text-xs text-slate-400">
                   {tradeType === "전월세" && (realJeonseStats || realMonthlyStats)
                     ? "국토교통부 전월세 실거래 기준"
-                    : "국토교통부 실거래 기준 (최근 거래 평균)"}
+                    : tradeType === "매매/전월세"
+                      ? "국토교통부 실거래 기준 (매매/전세 동시 비교)"
+                      : "국토교통부 실거래 기준 (최근 거래 평균)"}
                 </p>
               </div>
-              {((tradeType === "전월세" ? currentRentAvgDisplay : currentAverageDisplay) === "가격없음") ? (
+
+              {tradeType === "매매/전월세" ? (
+                <div>
+                  <div className="flex items-baseline gap-2.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black text-indigo-600 tracking-tight">
+                      {currentAverageDisplay}
+                    </span>
+                    <span className="text-slate-300 font-bold text-2xl">/</span>
+                    <span className="text-3xl sm:text-4xl font-black text-emerald-600 tracking-tight">
+                      {currentRentAvgDisplay}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 mt-2 flex items-center gap-2 flex-wrap font-medium">
+                    <span className="text-indigo-600 font-semibold">매매 {currentAverageDisplay}</span>
+                    <span className="text-slate-300">·</span>
+                    <span className="text-emerald-600 font-semibold">전세 {currentRentAvgDisplay}</span>
+                    {displayLatestPrice > 0 && displayLatestRentPrice > 0 && (
+                      <>
+                        <span className="text-slate-300">·</span>
+                        <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md font-bold text-[11px] border border-amber-200/60">
+                          갭 {+(Math.max(0, displayLatestPrice - displayLatestRentPrice).toFixed(1))}억 (전세가율 {Math.round((displayLatestRentPrice / displayLatestPrice) * 100)}%)
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : ((tradeType === "전월세" ? currentRentAvgDisplay : currentAverageDisplay) === "가격없음") ? (
                 <div>
                   <p className="text-4xl font-black text-slate-900 tracking-tight leading-none">-</p>
                   <p className="text-sm font-bold text-slate-500 mt-1.5">가격없음</p>
@@ -1302,27 +1411,42 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                   {tradeType === "전월세" ? currentRentAvgDisplay : currentAverageDisplay}
                 </p>
               )}
-              <p className="text-xs text-slate-400 mt-1">
-                {tradeType === "전월세"
-                  ? (realJeonseStats
-                    ? `전세 기준 · ${selectedArea === "전체" ? "전체 평형" : `전용 ${selectedArea}`} · 최근 ${realJeonseStats.count}건 평균`
-                    : selectedArea === "전체"
-                      ? `전체 평형 (전용 ${displayAreaSqm}㎡ 기준)`
-                      : `전용 ${selectedArea} 기준`)
-                  : (priceStatsSummary.isFromRealTxs && priceStatsSummary.latestTx
-                    ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 최종 실거래 (${priceStatsSummary.latestTx.date} 체결)`
-                    : (priceStatsSummary.hasBaselinePrice
-                      ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 단지 기준 시세`
-                      : `국토교통부 실거래가 공개시스템 기준 · 최근 신고 내역 없음`))}
-              </p>
+
+              {tradeType !== "매매/전월세" && (
+                <p className="text-xs text-slate-400 mt-1">
+                  {tradeType === "전월세"
+                    ? (realJeonseStats
+                      ? `전세 기준 · ${selectedArea === "전체" ? "전체 평형" : `전용 ${selectedArea}`} · 최근 ${realJeonseStats.count}건 평균`
+                      : selectedArea === "전체"
+                        ? `전체 평형 (전용 ${displayAreaSqm}㎡ 기준)`
+                        : `전용 ${selectedArea} 기준`)
+                    : (priceStatsSummary.isFromRealTxs && priceStatsSummary.latestTx
+                      ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 최종 실거래 (${priceStatsSummary.latestTx.date} 체결)`
+                      : (priceStatsSummary.hasBaselinePrice
+                        ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 단지 기준 시세`
+                        : `국토교통부 실거래가 공개시스템 기준 · 최근 신고 내역 없음`))}
+                </p>
+              )}
             </div>
 
             {/* ===== 가격 추이 그래프 ===== */}
             <div>
               <div className="flex items-center justify-between mb-3 gap-2">
-                <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">
-                  📈 {tradeType} 가격 추이
-                </h3>
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">
+                    📈 {tradeType === "매매/전월세" ? "매매/전세 동시 비교" : `${tradeType} 가격 추이`}
+                  </h3>
+                  {tradeType === "매매/전월세" && (
+                    <div className="flex items-center gap-2 text-[11px] font-semibold">
+                      <span className="flex items-center gap-1 text-indigo-600">
+                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>매매
+                      </span>
+                      <span className="flex items-center gap-1 text-emerald-600">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>전세
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <div className="flex gap-1 shrink-0">
                   {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
                     <button
@@ -1416,7 +1540,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                         radius={[2, 2, 0, 0]}
                       />
 
-                      {/* 2. 호갱노노 스타일 가격 궤적 곡선 */}
+                      {/* 2. 호갱노노 스타일 매매 가격 궤적 곡선 */}
                       <Line
                         yAxisId="price"
                         type="monotone"
@@ -1426,7 +1550,23 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                         dot={false}
                         connectNulls={true}
                         activeDot={{ r: 6, fill: "#4f46e5", stroke: "#ffffff", strokeWidth: 2 }}
+                        name="매매"
                       />
+
+                      {/* 2-1. 매매/전월세 동시 비교 모드 시 전세 궤적 곡선 */}
+                      {tradeType === "매매/전월세" && (
+                        <Line
+                          yAxisId="price"
+                          type="monotone"
+                          dataKey="jeonsePrice"
+                          stroke="#10b981"
+                          strokeWidth={2.4}
+                          dot={false}
+                          connectNulls={true}
+                          activeDot={{ r: 5.5, fill: "#10b981", stroke: "#ffffff", strokeWidth: 2 }}
+                          name="전세"
+                        />
+                      )}
 
                       {/* 3. 최고가 핀포인트 */}
                       {chartHighlights.maxPoint && (
@@ -1577,7 +1717,16 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                               <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">
                                 <div className="flex items-center gap-1 whitespace-nowrap flex-wrap">
                                   <span className="font-medium text-slate-600 text-[11px] sm:text-xs">{tx.date}</span>
-                                  {tx.isReal && (
+                                  {tradeType === "매매/전월세" && (
+                                    <span className={`px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold border whitespace-nowrap ${
+                                      tx.type === "매매"
+                                        ? "bg-indigo-50 text-indigo-700 border-indigo-200"
+                                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                    }`}>
+                                      {tx.type === "매매" ? "매매" : "전세"}
+                                    </span>
+                                  )}
+                                  {tx.isReal && tradeType !== "매매/전월세" && (
                                     <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
                                       실거래
                                     </span>
@@ -1596,7 +1745,13 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                                 {tx.floor}
                               </td>
                               <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 font-bold text-right text-xs sm:text-sm tracking-tight whitespace-nowrap">
-                                <span className={isExcludedFromAvg ? "text-slate-400" : "text-blue-600"}>
+                                <span className={
+                                  isExcludedFromAvg
+                                    ? "text-slate-400"
+                                    : tradeType === "매매/전월세"
+                                      ? tx.type === "매매" ? "text-indigo-600" : "text-emerald-600"
+                                      : "text-blue-600"
+                                }>
                                   {tx.price}
                                 </span>
                               </td>

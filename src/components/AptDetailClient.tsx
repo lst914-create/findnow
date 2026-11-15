@@ -262,7 +262,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   const apt = initialApt;
 
   const [tradeType, setTradeType] = useState<"매매" | "전월세">("매매");
-  const [chartRange, setChartRange] = useState<"최근 1년" | "최근 3년">("최근 3년");
+  const [chartRange, setChartRange] = useState<"최근 1년" | "최근 3년" | "전체">("최근 3년");
   const [showCount, setShowCount] = useState(5);
   const [activeLocation, setActiveLocation] = useState<"학군" | "교통" | "쾌적성" | "편의시설">("교통");
   const [schoolTab, setSchoolTab] = useState<"초등학교" | "중학교" | "고등학교">("초등학교");
@@ -308,7 +308,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
           const parsed = JSON.parse(local);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
-      } catch {}
+      } catch { }
     }
     return preloaded.trades;
   });
@@ -321,7 +321,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
           const parsed = JSON.parse(local);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
         }
-      } catch {}
+      } catch { }
     }
     return preloaded.rents;
   });
@@ -333,7 +333,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       try {
         const local = localStorage.getItem(`findnow_trades_${apt.id}`);
         if (local && JSON.parse(local).length > 0) return false;
-      } catch {}
+      } catch { }
     }
     return preloaded.trades.length === 0;
   });
@@ -357,7 +357,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
           return;
         }
       }
-    } catch {}
+    } catch { }
     if (preloaded.trades.length > 0) {
       setApiTrades(preloaded.trades);
       if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
@@ -559,13 +559,13 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
               });
               try {
                 localStorage.setItem(`findnow_trades_${apt.id}`, JSON.stringify(data.trades));
-              } catch {}
+              } catch { }
             }
             if (data.rents && data.rents.length > 0) {
               setApiRents(data.rents);
               try {
                 localStorage.setItem(`findnow_rents_${apt.id}`, JSON.stringify(data.rents));
-              } catch {}
+              } catch { }
             }
           }
         }
@@ -790,9 +790,9 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       }
     }
 
-    // 3. 36개월 연속 타임라인 생성
+    // 3. 최대 10년(120개월) 연속 타임라인 생성
     const timeline: { ymKey: string }[] = [];
-    for (let i = 35; i >= 0; i--) {
+    for (let i = 119; i >= 0; i--) {
       const d = new Date(endYear, endMonth - 1 - i, 1);
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -845,7 +845,9 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
   const chartData = chartRange === "최근 1년"
     ? activeTrend.slice(-12)
-    : activeTrend.slice(-36);
+    : chartRange === "최근 3년"
+      ? activeTrend.slice(-36)
+      : activeTrend;
 
   // 호갱노노 스타일 최고가 / 최저가 / 최신 거래 핀포인트 계산
   const chartHighlights = useMemo(() => {
@@ -1322,7 +1324,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                   📈 {tradeType} 가격 추이
                 </h3>
                 <div className="flex gap-1 shrink-0">
-                  {(["최근 1년", "최근 3년"] as const).map((r) => (
+                  {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
                     <button
                       key={r}
                       onClick={() => setChartRange(r)}
@@ -1404,7 +1406,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                         hide={true}
                       />
                       <Tooltip content={<CustomTooltip />} />
-                      
+
                       {/* 1. 하단 월간 거래량 볼륨 바 */}
                       <Bar
                         yAxisId="volume"
@@ -1571,34 +1573,34 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                           const isAbnormalLow = !isFirstFloor && validMedian > 0 && tx.rawPrice > 0 && tx.rawPrice < validMedian * 0.6;
                           const isExcludedFromAvg = isFirstFloor || isAbnormalLow;
                           return (
-                          <tr key={idx} className={`hover:bg-blue-50/30 transition-colors ${isExcludedFromAvg ? "opacity-60" : ""}`}>
-                            <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">
-                              <div className="flex items-center gap-1 whitespace-nowrap flex-wrap">
-                                <span className="font-medium text-slate-600 text-[11px] sm:text-xs">{tx.date}</span>
-                                {tx.isReal && (
-                                  <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
-                                    실거래
-                                  </span>
-                                )}
-                                {isExcludedFromAvg && (
-                                  <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-slate-100 text-slate-400 border border-slate-200 whitespace-nowrap">
-                                    {isFirstFloor ? "1층제외" : "특수거래"}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-700 text-center text-xs sm:text-sm font-medium whitespace-nowrap">
-                              {tx.area}
-                            </td>
-                            <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-500 text-center text-xs sm:text-sm whitespace-nowrap">
-                              {tx.floor}
-                            </td>
-                            <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 font-bold text-right text-xs sm:text-sm tracking-tight whitespace-nowrap">
-                              <span className={isExcludedFromAvg ? "text-slate-400" : "text-blue-600"}>
-                                {tx.price}
-                              </span>
-                            </td>
-                          </tr>
+                            <tr key={idx} className={`hover:bg-blue-50/30 transition-colors ${isExcludedFromAvg ? "opacity-60" : ""}`}>
+                              <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">
+                                <div className="flex items-center gap-1 whitespace-nowrap flex-wrap">
+                                  <span className="font-medium text-slate-600 text-[11px] sm:text-xs">{tx.date}</span>
+                                  {tx.isReal && (
+                                    <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 whitespace-nowrap">
+                                      실거래
+                                    </span>
+                                  )}
+                                  {isExcludedFromAvg && (
+                                    <span className="px-1 py-0.5 rounded text-[8px] sm:text-[9px] font-bold bg-slate-100 text-slate-400 border border-slate-200 whitespace-nowrap">
+                                      {isFirstFloor ? "1층제외" : "특수거래"}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-700 text-center text-xs sm:text-sm font-medium whitespace-nowrap">
+                                {tx.area}
+                              </td>
+                              <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-slate-500 text-center text-xs sm:text-sm whitespace-nowrap">
+                                {tx.floor}
+                              </td>
+                              <td className="px-2.5 sm:px-4 py-2.5 sm:py-3 font-bold text-right text-xs sm:text-sm tracking-tight whitespace-nowrap">
+                                <span className={isExcludedFromAvg ? "text-slate-400" : "text-blue-600"}>
+                                  {tx.price}
+                                </span>
+                              </td>
+                            </tr>
                           );
                         })}
                       </tbody>
@@ -2492,20 +2494,18 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                         <button
                           key={tab}
                           onClick={() => setSchoolTab(tab)}
-                          className={`flex-1 py-2.5 text-center text-xs sm:text-sm font-bold transition-all border-b-2 cursor-pointer ${
-                            isActive
+                          className={`flex-1 py-2.5 text-center text-xs sm:text-sm font-bold transition-all border-b-2 cursor-pointer ${isActive
                               ? "border-blue-600 text-blue-600 font-black"
                               : "border-transparent text-slate-400 hover:text-slate-600 font-medium"
-                          }`}
+                            }`}
                         >
                           <span>{tab}</span>
                           {count > 0 && (
                             <span
-                              className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
-                                isActive
+                              className={`ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive
                                   ? "bg-blue-100 text-blue-700"
                                   : "bg-slate-100 text-slate-500"
-                              }`}
+                                }`}
                             >
                               {count}
                             </span>
@@ -2526,13 +2526,12 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                           {filteredSchools.map((s: any, i: number) => (
                             <div
                               key={i}
-                              className={`flex items-center justify-between rounded-xl px-4 py-3.5 border transition-all ${
-                                s.isChoPumAh
+                              className={`flex items-center justify-between rounded-xl px-4 py-3.5 border transition-all ${s.isChoPumAh
                                   ? "bg-amber-50/80 border-amber-200 shadow-2xs"
                                   : s.type === "초등학교"
-                                  ? "bg-blue-50/60 border-blue-200"
-                                  : "bg-white border-slate-200 hover:border-slate-300 shadow-2xs"
-                              }`}
+                                    ? "bg-blue-50/60 border-blue-200"
+                                    : "bg-white border-slate-200 hover:border-slate-300 shadow-2xs"
+                                }`}
                             >
                               <div className="flex-1 min-w-0 pr-3">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -2550,20 +2549,19 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                                   {s.distanceMeters <= 400
                                     ? " · 단지 바로 앞 안심통학"
                                     : s.distanceMeters <= 800
-                                    ? " · 도보 통학권"
-                                    : ""}
+                                      ? " · 도보 통학권"
+                                      : ""}
                                 </div>
                               </div>
                               <span
-                                className={`text-[11px] font-bold px-2.5 py-1 rounded-md shrink-0 whitespace-nowrap ${
-                                  s.type === "초등학교"
+                                className={`text-[11px] font-bold px-2.5 py-1 rounded-md shrink-0 whitespace-nowrap ${s.type === "초등학교"
                                     ? "bg-blue-100 text-blue-700"
                                     : s.type === "중학교"
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : s.type === "고등학교"
-                                    ? "bg-indigo-100 text-indigo-700"
-                                    : "bg-slate-100 text-slate-700"
-                                }`}
+                                      ? "bg-emerald-100 text-emerald-700"
+                                      : s.type === "고등학교"
+                                        ? "bg-indigo-100 text-indigo-700"
+                                        : "bg-slate-100 text-slate-700"
+                                  }`}
                               >
                                 {s.type}
                               </span>

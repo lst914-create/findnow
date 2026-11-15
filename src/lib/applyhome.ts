@@ -6,7 +6,6 @@
  * - 무순위 주택형별 분양가 (getRemndrLttotPblancMdl)
  */
 
-import masterSubscriptionsRaw from "./subscriptions-master.json";
 
 export interface SubscriptionModel {
   modelNo: string;
@@ -416,23 +415,15 @@ export async function getAllSubscriptionNotices(forceRefresh = false): Promise<S
 
   const fetched = [...aptNotices, ...remndrNotices];
 
-  // 마스터 데이터(1000건)와 최신 API 데이터 병합 (중복 방지 및 항상 전국 1000+건 보장)
-  const masterList = (masterSubscriptionsRaw as any[]) as SubscriptionNotice[];
-  const mergedMap = new Map<string, SubscriptionNotice>();
-
-  // 1. 마스터 데이터 먼저 로드
-  for (const item of masterList) {
-    const key = `${item.id}_${item.pblancNo}`;
-    mergedMap.set(key, item);
-  }
-
-  // 2. 실시간 새로 수집된 공고로 덮어쓰기/추가
+  // 실 API에서 가져온 데이터만 사용 (마스터 JSON 하드코딩 데이터 미사용)
+  // API 실패 시에만 폴백 사용
+  const dedupeMap = new Map<string, SubscriptionNotice>();
   for (const item of fetched) {
     const key = `${item.id}_${item.pblancNo}`;
-    mergedMap.set(key, item);
+    dedupeMap.set(key, item);
   }
 
-  let combined = Array.from(mergedMap.values());
+  let combined = Array.from(dedupeMap.values());
 
   // 만약 비어있을 경우 폴백
   if (combined.length === 0) {

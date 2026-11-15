@@ -4,170 +4,118 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { RegionalPlace, RegionalCategory, getCategoryLabel } from "@/lib/regionalApi";
 
-// 시·도 그룹 + 하위 지역 목록
-const REGION_GROUPS: { sido: string; areas: { label: string; value: string }[] }[] = [
-  {
-    sido: "서울",
-    areas: [
-      { label: "강남구", value: "서울 강남구" },
-      { label: "서초구", value: "서울 서초구" },
-      { label: "송파구", value: "서울 송파구" },
-      { label: "강동구", value: "서울 강동구" },
-      { label: "마포구", value: "서울 마포구" },
-      { label: "용산구", value: "서울 용산구" },
-      { label: "종로구", value: "서울 종로구" },
-      { label: "중구", value: "서울 중구" },
-      { label: "성동구", value: "서울 성동구" },
-      { label: "광진구", value: "서울 광진구" },
-      { label: "노원구", value: "서울 노원구" },
-      { label: "강북구", value: "서울 강북구" },
-      { label: "은평구", value: "서울 은평구" },
-      { label: "강서구", value: "서울 강서구" },
-      { label: "영등포구", value: "서울 영등포구" },
-      { label: "동작구", value: "서울 동작구" },
-      { label: "관악구", value: "서울 관악구" },
-    ],
+// 아파트 찾기와 동일한 전국 17개 시·도 및 시·군·구 매핑
+const NATIONWIDE_REGIONS: Record<string, { fullName: string; sigungus: string[] }> = {
+  "서울": {
+    fullName: "서울특별시",
+    sigungus: [
+      "강남구", "강동구", "강북구", "강서구", "관악구", "광진구", "구로구", "금천구",
+      "노원구", "도봉구", "동대문구", "동작구", "마포구", "서대문구", "서초구", "성동구",
+      "성북구", "송파구", "양천구", "영등포구", "용산구", "은평구", "종로구", "중구", "중랑구"
+    ]
   },
-  {
-    sido: "경기",
-    areas: [
-      { label: "성남시(판교·분당)", value: "경기 성남시" },
-      { label: "수원시(광교)", value: "경기 수원시" },
-      { label: "화성시(동탄)", value: "경기 화성시" },
-      { label: "남양주시(다산)", value: "경기 남양주시" },
-      { label: "고양시(일산)", value: "경기 고양시" },
-      { label: "용인시(기흥)", value: "경기 용인시" },
-      { label: "과천시", value: "경기 과천시" },
-      { label: "하남시(미사)", value: "경기 하남시" },
-      { label: "의왕시", value: "경기 의왕시" },
-      { label: "안양시", value: "경기 안양시" },
-      { label: "부천시", value: "경기 부천시" },
-      { label: "평택시", value: "경기 평택시" },
-      { label: "파주시", value: "경기 파주시" },
-      { label: "김포시", value: "경기 김포시" },
-      { label: "광주시", value: "경기 광주시" },
-    ],
+  "경기": {
+    fullName: "경기도",
+    sigungus: [
+      "수원영통구", "수원팔달구", "수원장안구", "수원권선구",
+      "성남분당구", "성남수정구", "성남중원구",
+      "고양일산동구", "고양일산서구", "고양덕양구",
+      "용인수지구", "용인기흥구", "용인처인구",
+      "안양동안구", "안양만안구",
+      "부천원미구", "부천소사구", "부천오정구",
+      "안산단원구", "안산상록구",
+      "화성동탄구", "화성병점구", "화성만세구", "화성효행구",
+      "남양주시", "평택시", "시흥시", "파주시", "의정부시", "김포시", "광명시",
+      "광주시", "군포시", "이천시", "오산시", "하남시", "양주시", "구리시",
+      "안성시", "포천시", "의왕시", "여주시", "양평군", "동두천시", "과천시", "가평군", "연천군"
+    ]
   },
-  {
-    sido: "인천",
-    areas: [
-      { label: "연수구(송도)", value: "인천 연수구" },
-      { label: "서구(청라)", value: "인천 서구" },
-      { label: "계양구", value: "인천 계양구" },
-      { label: "남동구(논현)", value: "인천 남동구" },
-      { label: "부평구", value: "인천 부평구" },
-      { label: "중구(영종)", value: "인천 중구" },
-    ],
+  "인천": {
+    fullName: "인천광역시",
+    sigungus: ["연수구", "남동구", "부평구", "서해구", "검단구", "미추홀구", "계양구", "중구", "동구", "영종구", "제물포구", "강화군", "옹진군"]
   },
-  {
-    sido: "부산",
-    areas: [
-      { label: "해운대구", value: "부산 해운대구" },
-      { label: "수영구(광안리)", value: "부산 수영구" },
-      { label: "남구(대연)", value: "부산 남구" },
-      { label: "동래구", value: "부산 동래구" },
-      { label: "북구(화명)", value: "부산 북구" },
-      { label: "기장군(정관)", value: "부산 기장군" },
-    ],
+  "부산": {
+    fullName: "부산광역시",
+    sigungus: [
+      "해운대구", "수영구", "동래구", "남구", "연제구", "부산진구", "금정구", "북구",
+      "강서구", "사상구", "사하구", "영도구", "중구", "서구", "동구", "기장군"
+    ]
   },
-  {
-    sido: "대구",
-    areas: [
-      { label: "수성구", value: "대구 수성구" },
-      { label: "달서구(성서)", value: "대구 달서구" },
-      { label: "북구", value: "대구 북구" },
-      { label: "달성군(테크노)", value: "대구 달성군" },
-    ],
+  "대구": {
+    fullName: "대구광역시",
+    sigungus: ["수성구", "달서구", "중구", "동구", "서구", "남구", "북구", "달성군", "군위군"]
   },
-  {
-    sido: "대전",
-    areas: [
-      { label: "유성구(세종로)", value: "대전 유성구" },
-      { label: "서구(둔산)", value: "대전 서구" },
-      { label: "중구", value: "대전 중구" },
-    ],
+  "대전": {
+    fullName: "대전광역시",
+    sigungus: ["유성구", "서구", "중구", "동구", "대덕구"]
   },
-  {
-    sido: "세종",
-    areas: [
-      { label: "세종시", value: "세종 세종시" },
-    ],
+  "광주": {
+    fullName: "광주광역시",
+    sigungus: ["광산구", "서구", "남구", "북구", "동구"]
   },
-  {
-    sido: "광주",
-    areas: [
-      { label: "남구(봉선)", value: "광주 남구" },
-      { label: "북구", value: "광주 북구" },
-      { label: "서구(상무)", value: "광주 서구" },
-    ],
+  "울산": {
+    fullName: "울산광역시",
+    sigungus: ["남구", "중구", "북구", "동구", "울주군"]
   },
-  {
-    sido: "울산",
-    areas: [
-      { label: "남구(삼산)", value: "울산 남구" },
-      { label: "북구", value: "울산 북구" },
-    ],
+  "세종": {
+    fullName: "세종특별자치시",
+    sigungus: ["세종시 전체"]
   },
-  {
-    sido: "강원",
-    areas: [
-      { label: "춘천시", value: "강원 춘천시" },
-      { label: "원주시", value: "강원 원주시" },
-      { label: "강릉시", value: "강원 강릉시" },
-    ],
+  "강원": {
+    fullName: "강원특별자치도",
+    sigungus: [
+      "춘천시", "원주시", "강릉시", "속초시", "동해시", "삼척시", "태백시",
+      "홍천군", "횡성군", "영월군", "평창군", "정선군", "철원군", "화천군", "양구군", "인제군", "고성군", "양양군"
+    ]
   },
-  {
-    sido: "충북",
-    areas: [
-      { label: "청주시", value: "충북 청주시" },
-      { label: "충주시", value: "충북 충주시" },
-    ],
+  "충북": {
+    fullName: "충청북도",
+    sigungus: [
+      "청주흥덕구", "청주상당구", "청주청원구", "청주서원구",
+      "충주시", "제천시", "보은군", "옥천군", "영동군", "증평군", "진천군", "괴산군", "음성군", "단양군"
+    ]
   },
-  {
-    sido: "충남",
-    areas: [
-      { label: "천안시", value: "충남 천안시" },
-      { label: "아산시", value: "충남 아산시" },
-    ],
+  "충남": {
+    fullName: "충청남도",
+    sigungus: [
+      "천안서북구", "천안동남구", "아산시", "서산시", "당진시", "공주시", "논산시",
+      "보령시", "계룡시", "홍성군", "예산군", "부여군", "서천군", "청양군", "태안군", "금산군"
+    ]
   },
-  {
-    sido: "전북",
-    areas: [
-      { label: "전주시", value: "전북 전주시" },
-      { label: "익산시", value: "전북 익산시" },
-    ],
+  "전북": {
+    fullName: "전북특별자치도",
+    sigungus: [
+      "전주완산구", "전주덕진구", "익산시", "군산시", "정읍시", "남원시", "김제시",
+      "완주군", "진안군", "무주군", "장수군", "임실군", "순창군", "고창군", "부안군"
+    ]
   },
-  {
-    sido: "전남",
-    areas: [
-      { label: "여수시", value: "전남 여수시" },
-      { label: "순천시", value: "전남 순천시" },
-    ],
+  "전남": {
+    fullName: "전라남도",
+    sigungus: [
+      "순천시", "여수시", "목포시", "나주시", "광양시", "담양군", "곡성군", "구례군",
+      "고흥군", "보성군", "화순군", "장흥군", "강진군", "해남군", "영암군", "무안군", "함평군", "영광군", "장성군", "완도군", "진도군", "신안군"
+    ]
   },
-  {
-    sido: "경북",
-    areas: [
-      { label: "포항시", value: "경북 포항시" },
-      { label: "구미시", value: "경북 구미시" },
-      { label: "경주시", value: "경북 경주시" },
-    ],
+  "경북": {
+    fullName: "경상북도",
+    sigungus: [
+      "포항남구", "포항북구", "구미시", "경주시", "경산시", "안동시", "김천시", "영주시",
+      "영천시", "상주시", "문경시", "의성군", "청송군", "영양군", "영덕군", "청도군", "고령군", "성주군", "칠곡군", "예천군", "봉화군", "울진군", "울릉군"
+    ]
   },
-  {
-    sido: "경남",
-    areas: [
-      { label: "창원시", value: "경남 창원시" },
-      { label: "김해시", value: "경남 김해시" },
-      { label: "양산시", value: "경남 양산시" },
-    ],
+  "경남": {
+    fullName: "경상남도",
+    sigungus: [
+      "창원의창구", "창원성산구", "창원마산합포구", "창원마산회원구", "창원진해구",
+      "김해시", "양산시", "진주시", "거제시", "통영시", "사천시", "밀양시",
+      "함안군", "거창군", "창녕군", "고성군", "하동군", "합천군", "남해군", "산청군", "함양군", "의령군"
+    ]
   },
-  {
-    sido: "제주",
-    areas: [
-      { label: "제주시", value: "제주 제주시" },
-      { label: "서귀포시", value: "제주 서귀포시" },
-    ],
-  },
-];
+  "제주": {
+    fullName: "제주특별자치도",
+    sigungus: ["제주시", "서귀포시"]
+  }
+};
 
 const CATEGORY_TABS = [
   { label: "전체 모아보기", value: "all", icon: "🌟" },
@@ -178,8 +126,8 @@ const CATEGORY_TABS = [
 ];
 
 export default function RegionalInfoPage() {
-  const [selectedSido, setSelectedSido] = useState("서울");
-  const [selectedRegion, setSelectedRegion] = useState("서울 강남구");
+  const [sido, setSido] = useState("서울");
+  const [sigungu, setSigungu] = useState("강남구");
   const [selectedCategory, setSelectedCategory] = useState<RegionalCategory | "all">("all");
   const [searchKeyword, setSearchKeyword] = useState("");
   const [places, setPlaces] = useState<RegionalPlace[]>([]);
@@ -191,11 +139,14 @@ export default function RegionalInfoPage() {
     foodCount: 0,
   });
 
-  // 현재 선택된 시·도의 하위 지역 목록
-  const currentAreas = useMemo(
-    () => REGION_GROUPS.find((g) => g.sido === selectedSido)?.areas || [],
-    [selectedSido]
-  );
+  // 현재 선택된 지역 문자열 (API 호출용)
+  const selectedRegion = sigungu === "전체" ? sido : `${sido} ${sigungu}`;
+
+  // 시·도 변경 시 시·군·구 초기화
+  const handleSidoChange = (newSido: string) => {
+    setSido(newSido);
+    setSigungu("전체");
+  };
 
   // 데이터 조회 함수
   const fetchPlaces = async (region: string, category: string, keyword: string) => {
@@ -321,48 +272,41 @@ export default function RegionalInfoPage() {
         </div>
       </section>
 
-      {/* 3. 컨트롤 바 (지역 칩, 카테고리 탭, 검색바) */}
+      {/* 3. 컨트롤 바 (지역 선택, 카테고리 탭, 검색바) */}
       <section className="bg-white border-b border-slate-200/80 sticky top-16 z-20 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 space-y-3">
 
-          {/* 1단계: 시·도 선택 탭 */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-xs font-semibold border-b border-slate-100 pb-2.5">
-            <span className="text-slate-400 font-bold shrink-0 mr-1.5 whitespace-nowrap">시·도:</span>
-            {REGION_GROUPS.map((g) => (
-              <button
-                key={g.sido}
-                onClick={() => {
-                  setSelectedSido(g.sido);
-                  // 해당 시·도 첫 번째 지역 자동 선택
-                  if (g.areas.length > 0) setSelectedRegion(g.areas[0].value);
-                }}
-                className={`px-2.5 py-1 rounded-lg whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                  selectedSido === g.sido
-                    ? "bg-slate-900 text-white font-bold shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                }`}
+          {/* 아파트 찾기와 동일한 2단계 드롭다운 지역 선택 */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-slate-500 flex items-center gap-1 shrink-0">
+              <span>📍</span> 지역 선택:
+            </span>
+            <div className="flex items-center gap-2">
+              {/* 1단계: 시·도 선택 */}
+              <select
+                value={sido}
+                onChange={(e) => handleSidoChange(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all cursor-pointer"
               >
-                {g.sido}
-              </button>
-            ))}
-          </div>
+                {Object.keys(NATIONWIDE_REGIONS).map((s) => (
+                  <option key={s} value={s}>
+                    {s} ({NATIONWIDE_REGIONS[s].fullName})
+                  </option>
+                ))}
+              </select>
 
-          {/* 2단계: 구·시 칩 선택 */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs font-semibold">
-            <span className="text-slate-400 font-bold shrink-0 mr-1 whitespace-nowrap">지역:</span>
-            {currentAreas.map((r) => (
-              <button
-                key={r.value}
-                onClick={() => setSelectedRegion(r.value)}
-                className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-all cursor-pointer shrink-0 ${
-                  selectedRegion === r.value
-                    ? "bg-blue-600 text-white shadow-xs font-bold"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900"
-                }`}
+              {/* 2단계: 시·군·구 선택 */}
+              <select
+                value={sigungu}
+                onChange={(e) => setSigungu(e.target.value)}
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all cursor-pointer"
               >
-                {r.label}
-              </button>
-            ))}
+                <option value="전체">시·군·구 전체</option>
+                {NATIONWIDE_REGIONS[sido]?.sigungus.map((sg) => (
+                  <option key={sg} value={sg}>{sg}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* 카테고리 탭 & 검색창 */}

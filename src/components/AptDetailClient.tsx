@@ -1378,28 +1378,24 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
               {tradeType === "매매/전월세" ? (
                 <div>
-                  <div className="flex items-baseline gap-2.5 flex-wrap">
-                    <span className="text-3xl sm:text-4xl font-black text-indigo-600 tracking-tight">
+                  {/* 매매/전세 가격: 한 줄에 나오도록 폰트 자동 축소 */}
+                  <div className="flex items-baseline gap-1.5 min-w-0 overflow-hidden">
+                    <span className="text-[1.6rem] leading-tight font-black text-indigo-600 tracking-tight whitespace-nowrap shrink-0">
                       {currentAverageDisplay}
                     </span>
-                    <span className="text-slate-300 font-bold text-2xl">/</span>
-                    <span className="text-3xl sm:text-4xl font-black text-emerald-600 tracking-tight">
+                    <span className="text-slate-300 font-bold text-xl shrink-0">/</span>
+                    <span className="text-[1.6rem] leading-tight font-black text-emerald-600 tracking-tight whitespace-nowrap shrink-0">
                       {currentRentAvgDisplay}
                     </span>
                   </div>
-                  <div className="text-xs text-slate-500 mt-2 flex items-center gap-2 flex-wrap font-medium">
-                    <span className="text-indigo-600 font-semibold">매매 {currentAverageDisplay}</span>
-                    <span className="text-slate-300">·</span>
-                    <span className="text-emerald-600 font-semibold">전세 {currentRentAvgDisplay}</span>
-                    {displayLatestPrice > 0 && displayLatestRentPrice > 0 && (
-                      <>
-                        <span className="text-slate-300">·</span>
-                        <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md font-bold text-[11px] border border-amber-200/60">
-                          갭 {+(Math.max(0, displayLatestPrice - displayLatestRentPrice).toFixed(1))}억 (전세가율 {Math.round((displayLatestRentPrice / displayLatestPrice) * 100)}%)
-                        </span>
-                      </>
-                    )}
-                  </div>
+                  {/* 갭/전세가율 한 줄 */}
+                  {displayLatestPrice > 0 && displayLatestRentPrice > 0 && (
+                    <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                      <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-md font-bold text-[11px] border border-amber-200/60 whitespace-nowrap">
+                        갭 {+(Math.max(0, displayLatestPrice - displayLatestRentPrice).toFixed(1))}억 (전세가율 {Math.round((displayLatestRentPrice / displayLatestPrice) * 100)}%)
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : ((tradeType === "전월세" ? currentRentAvgDisplay : currentAverageDisplay) === "가격없음") ? (
                 <div>
@@ -1431,23 +1427,26 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
             {/* ===== 가격 추이 그래프 ===== */}
             <div>
-              <div className="flex items-center justify-between mb-3 gap-2">
+              {/* 그래프 헤더: 2행 레이아웃 (제목+범례 / 기간 버튼) */}
+              <div className="mb-3 space-y-2">
+                {/* 1행: 제목 + 매매/전세 범례 */}
                 <div className="flex items-center gap-2.5">
                   <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">
                     📈 {tradeType === "매매/전월세" ? "매매/전세 동시 비교" : `${tradeType} 가격 추이`}
                   </h3>
                   {tradeType === "매매/전월세" && (
                     <div className="flex items-center gap-2 text-[11px] font-semibold">
-                      <span className="flex items-center gap-1 text-indigo-600">
-                        <span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>매매
+                      <span className="flex items-center gap-1 text-indigo-600 whitespace-nowrap">
+                        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>매매
                       </span>
-                      <span className="flex items-center gap-1 text-emerald-600">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>전세
+                      <span className="flex items-center gap-1 text-emerald-600 whitespace-nowrap">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>전세
                       </span>
                     </div>
                   )}
                 </div>
-                <div className="flex gap-1 shrink-0">
+                {/* 2행: 기간 선택 버튼 */}
+                <div className="flex gap-1">
                   {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
                     <button
                       key={r}

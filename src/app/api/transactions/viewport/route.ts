@@ -57,10 +57,10 @@ function getSupplyPyeong(excluUseAr: number): number {
 /**
  * [사용자 핵심 가격 규칙]
  * 1. 거래 목록을 최신순 정렬
- * 2. 가장 최근 거래의 날짜(dealDate) 기준 31일(최근 1개월) 이내 거래들을 추출
- * 3. 최근 1개월 내 거래가 2건 이상이면 -> 최근 1개월 실거래 평균가격!
- * 4. 최근 1개월 내 거래가 1건이거나, 수개월/1년 전이 마지막 거래라면 -> 마지막 실거래가 그대로!
- * ※ 중간값(min/max 평균)은 절대 사용하지 않음
+ * 2. 가장 최근 거래의 날짜(dealDate) 기준 최근 3개월(약 92일) 이내 거래들을 추출
+ * 3. 최근 3개월 내 거래가 2건 이상이면 -> 최근 3개월 실거래 산술 평균가격!
+ * 4. 최근 3개월 내 거래가 1건이거나, 수개월/1년 전이 마지막 거래라면 -> 마지막 실거래가 그대로!
+ * ※ 중간값(min/max 임의 평균)은 절대 사용하지 않음
  */
 function computeAccurateTradePrice(trades: TradeInfo[]) {
   if (!trades.length) return null;
@@ -69,26 +69,26 @@ function computeAccurateTradePrice(trades: TradeInfo[]) {
   trades.sort((a, b) => b.dealTime - a.dealTime);
 
   const latest = trades[0];
-  const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
+  const THREE_MONTHS_MS = 92 * 24 * 60 * 60 * 1000;
 
-  // 최신 거래일로부터 1개월(31일) 이내 거래 필터
-  const recent1MonthTrades = trades.filter(
-    (t) => latest.dealTime - t.dealTime <= ONE_MONTH_MS
+  // 최신 거래일로부터 3개월(92일) 이내 거래 필터
+  const recent3MonthsTrades = trades.filter(
+    (t) => latest.dealTime - t.dealTime <= THREE_MONTHS_MS
   );
 
   let finalPrice: number;
-  let isAverageOf1Month = false;
+  let isAverageOf3Months = false;
 
-  if (recent1MonthTrades.length >= 2) {
-    // 최근 1개월 내 복수 거래 -> 산술 평균
+  if (recent3MonthsTrades.length >= 2) {
+    // 최근 3개월 내 복수 거래 -> 산술 평균
     finalPrice = Math.round(
-      recent1MonthTrades.reduce((sum, t) => sum + t.amount, 0) / recent1MonthTrades.length
+      recent3MonthsTrades.reduce((sum, t) => sum + t.amount, 0) / recent3MonthsTrades.length
     );
-    isAverageOf1Month = true;
+    isAverageOf3Months = true;
   } else {
     // 1건이거나 과거 마지막 거래 -> 마지막 실거래가 그대로
     finalPrice = latest.amount;
-    isAverageOf1Month = false;
+    isAverageOf3Months = false;
   }
 
   return {
@@ -100,8 +100,9 @@ function computeAccurateTradePrice(trades: TradeInfo[]) {
     areaSqm: Math.round(latest.areaSqm * 10) / 10,
     pyeong: latest.supplyPyeong, // 아파트 마스터와 일치하는 공급 평형
     rawPyeong: latest.pyeong,    // 전용 평형
-    isAverageOf1Month,
-    recentCount: recent1MonthTrades.length,
+    isAverageOf3Months,
+    isAverageOf1Month: isAverageOf3Months, // 하위 호환성 유지
+    recentCount: recent3MonthsTrades.length,
     totalTradeCount: trades.length,
   };
 }

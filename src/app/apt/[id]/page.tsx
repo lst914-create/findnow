@@ -2,6 +2,7 @@
 import { notFound } from "next/navigation";
 import { APARTMENTS_DATA } from "@/lib/apartments";
 import { getTransactionsForApartment } from "@/lib/fetchTransactionsServer";
+import { normalizeAptName } from "@/lib/normalizeAptName";
 import AptDetailClient from "@/components/AptDetailClient";
 
 interface PageProps {
@@ -27,10 +28,29 @@ const APARTMENT_DATA_MAP: Record<string, any> = Object.fromEntries(
 
 export default async function ApartmentDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const apt = APARTMENT_DATA_MAP[id] || APARTMENT_DATA_MAP["1"];
+  const decodedId = decodeURIComponent(id);
+
+  let apt = APARTMENT_DATA_MAP[id] || APARTMENT_DATA_MAP[decodedId];
+  if (!apt) {
+    const raw = APARTMENTS_DATA.find(
+      (a) =>
+        a.id === id ||
+        a.id === decodedId ||
+        normalizeAptName(a.name) === normalizeAptName(decodedId) ||
+        a.name.includes(decodedId) ||
+        decodedId.includes(a.name)
+    );
+    if (raw) {
+      apt = APARTMENT_DATA_MAP[raw.id] || raw;
+    }
+  }
+
+  if (!apt) {
+    apt = APARTMENTS_DATA[0];
+  }
   if (!apt) return notFound();
 
-  // 서버 사이드에서 실거래 데이터 사전 조회 (0초 즉시 렌더링, 클라이언트 깜빡임 및 지연 0%)
+  // 서버 사이드에서 국토부 실거래 데이터 사전 조회 (0초 즉시 렌더링, 클라이언트 깜빡임 및 지연 0%)
   const { trades, rents } = await getTransactionsForApartment(apt);
 
   return <AptDetailClient apt={apt} initialTrades={trades} initialRents={rents} />;

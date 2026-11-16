@@ -75,9 +75,9 @@ export function getStandardExclusiveAreaSqm(pyeong: number, existingSqm?: number
 export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
   const isRentalOnly = (apt as any).isRentalOnly === true;
 
-  // [호갱노노 방식 100% 동기화] 사전 캐시 실거래가 우선 적용 (지도 마커와 상세 페이지 가격 완전 일치)
+  // [호갱노노 방식 100% 동기화] 국토부 실거래가(최근 3개월 평균 또는 실거래가) 최우선 적용
   const preloaded = getPreloadedTransactions(apt);
-  let resolvedPrice = apt.price_max || apt.price_min || 0;
+  let resolvedPrice = (apt as any).avgPrice || apt.price_max || apt.price_min || 0;
   let resolvedRent = apt.rent_max || apt.rent_min || 0;
   let isReal = (apt as any).isRealPrice ?? false;
 

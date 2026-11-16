@@ -528,7 +528,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   };
   const normalizeAreaStr = (sqm: number) => `${normalizeAreaSqm(sqm)}㎡`;
 
-  const displayAreaSqm = normalizeAreaSqm(apt.area_sqm);
+  const displayAreaSqm = normalizeAreaSqm(apt.area_sqm || 84);
 
   // [사용자 핵심 요구사항] 상세분석 진입 시 해당 단지에서 가장 세대수가 많은 평형(주력 평형)을 자동 계산
   // 예: 25평 190세대, 34평 350세대인 경우 → 34평(84㎡)이 기본 선택되어 모든 데이터가 주력 평형 기준으로 표현됨

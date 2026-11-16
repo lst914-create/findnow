@@ -1,12 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
-
-const notoSansKR = Noto_Sans_KR({
-  variable: "--font-noto-sans-kr",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -75,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className={`${notoSansKR.variable} h-full antialiased`}>
+    <html lang="ko" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans pb-16 md:pb-0">
         <main className="flex-1 flex flex-col">{children}</main>
         <MobileBottomNav />

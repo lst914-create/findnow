@@ -90,10 +90,13 @@ export async function GET(request: NextRequest) {
     }));
 
     // 3. 반경 내 아파트 단지 집계
+    const apts_with_coords = APARTMENTS_DATA
+      .filter((a) => !!(a.lat && a.lng))
+      .map((a) => ({ ...a, lat: a.lat as number, lng: a.lng as number }));
     const nearbyApartments = filterNearbyEntities(
       lat,
       lng,
-      APARTMENTS_DATA.filter((a) => !!(a.lat && a.lng)),
+      apts_with_coords,
       radius
     ).slice(0, 10).map((a) => ({
       id: a.id,

@@ -155,9 +155,118 @@ export interface DataSourceEntity {
   updateCycle: string;
   usageTerms: string;
   statType: "RAW" | "INDEX" | "MASTER" | "PATCH";
+  priority?: "필수" | "권장" | "보완";
   isActive: boolean;
   lastCollectedAt?: string;
 }
+
+/** 8대 공식 공공데이터 카탈로그 (Image 1 기준 Single Source of Truth) */
+export const OFFICIAL_DATA_SOURCES: DataSourceEntity[] = [
+  {
+    id: "apt-trade",
+    category: "아파트 매매 실거래가",
+    sourceName: "국토교통부 실거래가 API",
+    provider: "국토교통부",
+    portalUrl: "https://data.go.kr",
+    apiEndpoint: "https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade",
+    updateCycle: "실시간 / 거래신고 익일",
+    usageTerms: "거래일, 가격, 면적, 층, 단지명, 지역코드 원시 자료. 임의 합성 금지",
+    statType: "RAW",
+    priority: "필수",
+    isActive: true,
+  },
+  {
+    id: "apt-rent",
+    category: "전월세 거래",
+    sourceName: "국토교통부 전월세 API",
+    provider: "국토교통부",
+    portalUrl: "https://data.go.kr",
+    apiEndpoint: "https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent",
+    updateCycle: "실시간 / 거래신고 익일",
+    usageTerms: "보증금, 월세, 계약월, 면적, 단지명 원시 자료. 전세가율 계산 및 갱신여부 파악용",
+    statType: "RAW",
+    priority: "필수",
+    isActive: true,
+  },
+  {
+    id: "kapt-info",
+    category: "아파트 기본정보",
+    sourceName: "공동주택 기본정보 API (K-apt)",
+    provider: "한국부동산원",
+    portalUrl: "https://data.go.kr",
+    apiEndpoint: "https://apis.data.go.kr/1613000/AptBasisInfoServiceV5",
+    updateCycle: "실시간",
+    usageTerms: "주소, 세대수, 동수, 난방방식 등 기본 스펙. 단지 마스터의 기준 출처",
+    statType: "MASTER",
+    priority: "필수",
+    isActive: true,
+  },
+  {
+    id: "rone-stats",
+    category: "부동산 시장 통계",
+    sourceName: "한국부동산원 R-ONE Open API",
+    provider: "한국부동산원",
+    portalUrl: "https://reb.or.kr/r-one",
+    apiEndpoint: "https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do",
+    updateCycle: "월간 / 주간",
+    usageTerms: "가격지수, 거래량 등 실제 제공 통계 항목. 표본 지표와 개별 실거래가 분리 운영",
+    statType: "INDEX",
+    priority: "권장",
+    isActive: true,
+  },
+  {
+    id: "molit-redev",
+    category: "전국 정비사업",
+    sourceName: "국토교통부 전국 도시정비사업 통합 데이터",
+    provider: "국토교통부",
+    portalUrl: "https://data.go.kr",
+    apiEndpoint: "https://apis.data.go.kr/1613000/UrbRehabPrjInfoSvc",
+    updateCycle: "연간 / 분기",
+    usageTerms: "구역명, 사업 유형, 추진 단계, 예정 세대수, 위치 식별 가능 여부",
+    statType: "MASTER",
+    priority: "필수",
+    isActive: true,
+  },
+  {
+    id: "seoul-clean",
+    category: "서울 정비사업",
+    sourceName: "정비사업 정보몽땅 및 서울 열린데이터광장",
+    provider: "서울특별시",
+    portalUrl: "https://clean.seoul.go.kr",
+    apiEndpoint: "http://openapi.seoul.go.kr:8088",
+    updateCycle: "수시 / 고시 시점",
+    usageTerms: "구역 위치, 사업 단계, 고시·공고, 변경 이력 보완",
+    statType: "PATCH",
+    priority: "보완",
+    isActive: true,
+  },
+  {
+    id: "sbiz-store",
+    category: "전국 상가·상권",
+    sourceName: "소상공인시장진흥공단 상가(상권)정보 API",
+    provider: "소상공인시장진흥공단",
+    portalUrl: "https://data.go.kr",
+    apiEndpoint: "https://apis.data.go.kr/B553077/api/open/sdsc2",
+    updateCycle: "반기별 갱신",
+    usageTerms: "점포 식별자, 업종, 주소, 위·경도, 갱신 기준",
+    statType: "RAW",
+    priority: "필수",
+    isActive: true,
+  },
+  {
+    id: "geo-spatial",
+    category: "지도·주소",
+    sourceName: "공공데이터포털 및 지도 사업자 공식 개발자 문서",
+    provider: "국토교통부 / 카카오",
+    portalUrl: "https://developers.kakao.com",
+    apiEndpoint: "https://dapi.kakao.com/v2/local",
+    updateCycle: "실시간",
+    usageTerms: "주소 정규화, 좌표 변환, 지도 표시 권한, 호출 제한",
+    statType: "MASTER",
+    priority: "필수",
+    isActive: true,
+  },
+];
 
 /** [7] 데이터 변경 이력 및 정합성 감사 로그 */
 export interface DataChangeLogEntity {

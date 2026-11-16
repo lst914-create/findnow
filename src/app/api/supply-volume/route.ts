@@ -126,8 +126,8 @@ export async function GET(req: NextRequest) {
   if (aptId) {
     const apt = APARTMENTS_DATA.find((a) => a.id === aptId);
     if (!apt) return NextResponse.json({ error: "apt not found" }, { status: 404 });
-    baseLat = apt.lat;
-    baseLng = apt.lng;
+    baseLat = apt.lat ?? 0;
+    baseLng = apt.lng ?? 0;
     targetRegion = apt.region;
   } else {
     baseLat = Number(searchParams.get("lat"));
@@ -158,7 +158,7 @@ export async function GET(req: NextRequest) {
       if (!coord) {
         // 주소 매칭이 안 된 경우 마스터 단지 중 동일 이름/주소 아파트 좌표 확인
         const matchApt = APARTMENTS_DATA.find((a) => notice.address.includes(a.district) && notice.name.includes(a.name));
-        if (matchApt) coord = { lat: matchApt.lat, lng: matchApt.lng };
+        if (matchApt && matchApt.lat && matchApt.lng) coord = { lat: matchApt.lat, lng: matchApt.lng };
       }
 
       if (coord) {
@@ -205,7 +205,7 @@ export async function GET(req: NextRequest) {
   for (const apt of APARTMENTS_DATA) {
     if (aptId && apt.id === aptId) continue;
     // 과거 구축 아파트 (준공승인 완료 단지이거나 built_year가 과거인 경우) 제외
-    if (apt.built_year < currentYear && !apt.name.includes("예정")) continue;
+    if ((apt.built_year ?? 0) < currentYear && !apt.name.includes("예정")) continue;
 
     // 만약 사용승인일이 과거이고 이름에 예정이 없으면 기입주 단지이므로 제외
     if (apt.approval_date && !apt.name.includes("예정")) {
@@ -213,12 +213,13 @@ export async function GET(req: NextRequest) {
       if (appYear < currentYear) continue;
     }
 
+    if (!apt.lat || !apt.lng) continue;
     const distM = haversineM(baseLat, baseLng, apt.lat, apt.lng);
     if (distM > maxRadiusM) continue;
 
     // 단지명에 2028년08월예정과 같은 표기가 있으면 해당 년월 추출, 없으면 6월 기본값
     const dateMatch = apt.name.match(/(\d{4})년\s*(\d{1,2})월/);
-    let expectedMoveIn = `${apt.built_year}-06`;
+    let expectedMoveIn = `${apt.built_year ?? 2026}-06`;
     if (dateMatch) {
       expectedMoveIn = `${dateMatch[1]}-${dateMatch[2].padStart(2, "0")}`;
     }
@@ -253,8 +254,8 @@ export async function GET(req: NextRequest) {
         saleUnits,
         expectedMoveIn,
         address: `${apt.region} ${apt.district}`,
-        lat: apt.lat,
-        lng: apt.lng,
+        lat: apt.lat ?? 0,
+        lng: apt.lng ?? 0,
         distanceM: Math.round(distM),
         radiusBucket: getRadiusBucket(distM),
         developer: apt.construction,

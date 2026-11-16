@@ -496,7 +496,7 @@ export default function Home() {
         // 통합 검색 결과 적용
         filtered = unifiedRes.apartments;
         const firstWithCoords = filtered.find((a) => a.lat && a.lng);
-        if (firstWithCoords) {
+        if (firstWithCoords && firstWithCoords.lat && firstWithCoords.lng) {
           targetCenter = { lat: firstWithCoords.lat, lng: firstWithCoords.lng };
         }
       } else if (keywords.length > 0 || queryInfo.targetPriceManwon !== undefined) {
@@ -540,7 +540,7 @@ export default function Home() {
           (apt) => apt.tags?.includes("역세권") || (apt.walk_minutes && apt.walk_minutes <= 7) || apt.station
         );
       } else if (tag === "신축") {
-        filtered = filtered.filter((apt) => apt.built_year >= 2019 || apt.tags?.includes("신축"));
+        filtered = filtered.filter((apt) => (apt.built_year ?? 0) >= 2019 || apt.tags?.includes("신축"));
       } else if (tag === "대단지") {
         filtered = filtered.filter((apt) => apt.household_count >= 1000 || apt.tags?.includes("대단지"));
       } else if (tag === "초품아") {
@@ -557,8 +557,8 @@ export default function Home() {
       const validApts = filtered.filter((a) => a.lat && a.lng);
       if (validApts.length > 0) {
         const sample = validApts.slice(0, Math.min(6, validApts.length));
-        const avgLat = sample.reduce((sum, a) => sum + a.lat, 0) / sample.length;
-        const avgLng = sample.reduce((sum, a) => sum + a.lng, 0) / sample.length;
+        const avgLat = sample.reduce((sum, a) => sum + (a.lat ?? 0), 0) / sample.length;
+        const avgLng = sample.reduce((sum, a) => sum + (a.lng ?? 0), 0) / sample.length;
         targetCenter = { lat: avgLat, lng: avgLng };
       }
     }
@@ -1194,7 +1194,7 @@ export default function Home() {
                           {/* 세대수 / 연식 / 평형 */}
                           <div className="flex items-center gap-3 mt-1.5 text-[11px] text-white/70 font-semibold">
                             <span>🏢 {apt.household_count.toLocaleString()}세대</span>
-                            <span>📅 {apt.built_year}년 ({2026 - apt.built_year}년차)</span>
+                            {apt.built_year ? <span>📅 {apt.built_year}년 ({2026 - apt.built_year}년차)</span> : null}
                             <span>📐 {apt.area_pyeong}평</span>
                           </div>
                         </div>

@@ -99,10 +99,10 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
   return {
     id: apt.id,
     name: apt.name,
-    lat: apt.lat,
-    lng: apt.lng,
-    pyeong: apt.area_pyeong,
-    areaSqm: apt.area_sqm ? Math.round(apt.area_sqm * 10) / 10 : getStandardExclusiveAreaSqm(apt.area_pyeong),
+    lat: apt.lat ?? 0,
+    lng: apt.lng ?? 0,
+    pyeong: apt.area_pyeong ?? 33,
+    areaSqm: apt.area_sqm ? Math.round(apt.area_sqm * 10) / 10 : getStandardExclusiveAreaSqm(apt.area_pyeong ?? 33),
     priceNum: priceNum,
     rentNum: rentNum,
     avgPrice: avgPriceStr,
@@ -112,20 +112,20 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
     isRealPrice: isReal,
     isRentalOnly: isRentalOnly,
     rentalType: (apt as any).rentalType,
-    builtYear: apt.built_year,
+    builtYear: apt.built_year ?? undefined,
     householdCount: apt.household_count,
     schoolScore: apt.school_score,
     trafficScore: apt.traffic_score,
-    liveViewers: 35 + ((idx * 23) % 200),
-    far: apt.far ?? 240,
-    bcr: apt.bcr ?? 18,
-    jeonseRatio: jeonseRatio,
+    liveViewers: undefined,
+    far: apt.far,
+    bcr: apt.bcr,
+    jeonseRatio: apt.jeonseRatio,
     gapPrice: gapPrice,
-    rentalBizRatio: apt.rentalBizRatio ?? 6,
-    monthlyYield: apt.monthlyYield ?? 4.0,
-    parkingRatio: apt.parkingRatio ?? 1.3,
-    hallType: apt.hallType ?? "계단식",
-    heatingType: apt.heatingType ?? "지역난방",
+    rentalBizRatio: apt.rentalBizRatio,
+    monthlyYield: apt.monthlyYield,
+    parkingRatio: apt.parkingRatio,
+    hallType: apt.hallType,
+    heatingType: apt.heatingType,
   };
 });
 
@@ -211,6 +211,8 @@ export default function AptMap({
     dealCount: number;
     jeonsePriceStr: string;
     gapPriceStr: string;
+    monthlyRentStr?: string;
+    monthlyDepositStr?: string;
     isLoading: boolean;
     isRealConnected: boolean;
   } | null>(null);
@@ -1726,16 +1728,22 @@ export default function AptMap({
             livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
             livePriceDetailCacheRef.current.get(normName);
 
-          // realtimeTx는 useEffect에서 live 캐시를 이미 반영한 값이므로 최우선 사용
-          // 임대전용(청년주택 등) 단지는 가격 표시 완전 차단
+          // 마커와 100% 동일한 실거래가 및 평형 일치 보장
           const isRentalOnly = selectedApt.isRentalOnly === true;
           const resolvedPriceNum = isRentalOnly ? 0 : (live?.latestPrice || selectedApt.priceNum || 0);
-          const displayPrice = isRentalOnly ? "-" : (realtimeTx?.avgPriceStr || live?.formatted || selectedApt.avgPrice);
+          const displayPrice = isRentalOnly ? "-" : (live?.formatted || realtimeTx?.avgPriceStr || (selectedApt.priceNum > 0 ? selectedApt.avgPrice : "-"));
           const displayPyeong = live?.pyeong || selectedApt.pyeong;
-          const hasPrice = resolvedPriceNum > 0;
+          const hasPrice = resolvedPriceNum > 0 && displayPrice !== "-";
 
-          const currentHousehold = selectedApt.householdCount || kaptInfo?.householdCount;
-          const currentBuiltYear = selectedApt.builtYear || kaptInfo?.builtYear;
+          // [단지 상세 분석보기와 100% 일치] 상세 페이지에서 사용하는 마스터 데이터(APARTMENTS_DATA) 우선 매칭
+          const masterDetail = APARTMENTS_DATA.find((a) => a.id === selectedApt.id) ||
+            APARTMENTS_DATA.find((a) => normalizeAptName(a.name) === normName);
+
+          const currentHousehold = (masterDetail?.household_count && masterDetail.household_count > 0)
+            ? masterDetail.household_count
+            : (selectedApt.householdCount || kaptInfo?.householdCount);
+
+          const currentBuiltYear = masterDetail?.built_year || selectedApt.builtYear || kaptInfo?.builtYear;
 
           // 전세/갭: realtimeTx가 live 기반으로 이미 계산된 값 → 그대로 사용
           const jeonseStr = isRentalOnly ? undefined : realtimeTx?.jeonsePriceStr;
@@ -1751,11 +1759,9 @@ export default function AptMap({
               >
                 ×
               </button>
-              {/* 지역 및 관심수: 줄바꿈 없이 한 줄로 깔끔하게 표시 */}
+              {/* 단지 소재지: 줄바꿈 없이 깔끔하게 한 줄 표출 */}
               <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 mb-1.5 pr-8 whitespace-nowrap overflow-hidden">
                 <span className="truncate">📍 {selectedApt.region}</span>
-                <span className="text-slate-300 shrink-0">•</span>
-                <span className="text-rose-500 font-bold shrink-0">🔥 {selectedApt.liveViewers}명 관심</span>
               </div>
               <div className="flex items-center gap-2 mb-2.5 pr-6">
                 <div className="text-lg font-extrabold text-slate-900 leading-tight truncate">{selectedApt.name}</div>
@@ -1799,12 +1805,12 @@ export default function AptMap({
                   </div>
                 </div>
                 <div className="bg-emerald-50/80 rounded-2xl p-2.5 border border-emerald-100/90 text-center">
-                  <div className="text-[10px] text-emerald-600 font-bold mb-0.5">월세 추정</div>
+                  <div className="text-[10px] text-emerald-600 font-bold mb-0.5">월세 (국토부 신고)</div>
                   <div className="text-xs font-black text-emerald-800 leading-tight mt-1">
-                    {hasPrice ? `보 ${Math.max(1, Math.round((resolvedPriceNum * 0.1) / 10000))}억` : "-"}
+                    {realtimeTx?.monthlyRentStr || "-"}
                   </div>
                   <div className="text-[9px] text-emerald-600 mt-0.5 font-bold">
-                    {hasPrice ? `월 ${Math.round(displayPyeong * 4.5 + 40)}만` : "가격없음"}
+                    {realtimeTx?.monthlyDepositStr ? `보 ${realtimeTx.monthlyDepositStr}` : "거래내역 확인"}
                   </div>
                 </div>
               </div>
@@ -1815,13 +1821,13 @@ export default function AptMap({
                 <span>
                   {isRentalOnly ? "임대전용" : "갭투자"}{" "}
                   <b className="text-indigo-600 font-bold">
-                    {isRentalOnly ? "매매불가" : (gapStr && gapStr !== "가격없음" ? gapStr : (hasPrice ? `${Math.round(resolvedPriceNum * 0.44 / 10000)}억` : "-"))}
+                    {isRentalOnly ? "매매불가" : (gapStr && gapStr !== "가격없음" ? gapStr : "-")}
                   </b>
                 </span>
                 <span className="text-slate-300">|</span>
-                <span>{currentHousehold ? `${currentHousehold.toLocaleString()}세대` : "대단지"}</span>
+                <span>{currentHousehold ? `${currentHousehold.toLocaleString()}세대` : "-"}</span>
                 <span className="text-slate-300">|</span>
-                <span>{currentBuiltYear ? `${currentBuiltYear}년식` : ""}</span>
+                <span>{currentBuiltYear ? `${currentBuiltYear}년식` : "-"}</span>
               </div>
 
               <Link

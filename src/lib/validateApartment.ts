@@ -83,7 +83,7 @@ export function validateApartment(apt: Apartment): ApartmentValidationResult {
   if (!apt.price_min || apt.price_min <= 0) {
     issues.push({ field: "price_min", severity: "INFO", message: "최소 시세가 없습니다." });
   }
-  if (apt.price_min > 0 && apt.price_max > 0 && apt.price_min > apt.price_max) {
+  if (apt.price_min !== undefined && apt.price_max !== undefined && apt.price_min > 0 && apt.price_max > 0 && apt.price_min > apt.price_max) {
     issues.push({ field: "price_min/max", severity: "ERROR", message: "최소 시세가 최대 시세보다 큽니다.", value: { min: apt.price_min, max: apt.price_max } });
   }
 

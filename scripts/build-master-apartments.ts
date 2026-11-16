@@ -211,8 +211,8 @@ async function main() {
       // 기존 정밀 데이터에 최신 스캔 시세 반영하여 유지
       masterList.push({
         ...existing,
-        price_min: Math.min(existing.price_min, minPrice),
-        price_max: Math.max(existing.price_max, maxPrice),
+        price_min: Math.min(existing.price_min ?? 0, minPrice),
+        price_max: Math.max(existing.price_max ?? 0, maxPrice),
       });
       existingMap.delete(`${first.region}__${first.aptName}`);
     } else {

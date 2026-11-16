@@ -278,13 +278,13 @@ function ApartmentSearchContent() {
       // 2. 입주년도 필터 (2026년 기준)
       if (builtYearOption !== "전체") {
         if (builtYearOption === "5년 이내") {
-          filtered = filtered.filter((apt) => apt.built_year >= 2021);
+          filtered = filtered.filter((apt) => (apt.built_year ?? 0) >= 2021);
         } else if (builtYearOption === "10년 이내") {
-          filtered = filtered.filter((apt) => apt.built_year >= 2016);
+          filtered = filtered.filter((apt) => (apt.built_year ?? 0) >= 2016);
         } else if (builtYearOption === "15년 이내") {
-          filtered = filtered.filter((apt) => apt.built_year >= 2011);
+          filtered = filtered.filter((apt) => (apt.built_year ?? 0) >= 2011);
         } else if (builtYearOption === "20년 이상") {
-          filtered = filtered.filter((apt) => apt.built_year < 2006);
+          filtered = filtered.filter((apt) => apt.built_year !== null && apt.built_year !== undefined && apt.built_year < 2006);
         }
       }
 
@@ -353,8 +353,8 @@ function ApartmentSearchContent() {
         const validApts = filtered.filter((a) => a.lat && a.lng);
         if (validApts.length > 0) {
           const sample = validApts.slice(0, Math.min(8, validApts.length));
-          const avgLat = sample.reduce((sum, a) => sum + a.lat, 0) / sample.length;
-          const avgLng = sample.reduce((sum, a) => sum + a.lng, 0) / sample.length;
+          const avgLat = sample.reduce((sum, a) => sum + (a.lat ?? 0), 0) / sample.length;
+          const avgLng = sample.reduce((sum, a) => sum + (a.lng ?? 0), 0) / sample.length;
           newCenter = { lat: avgLat, lng: avgLng };
         }
       }

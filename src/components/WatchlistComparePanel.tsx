@@ -198,7 +198,7 @@ export default function WatchlistComparePanel() {
                         {/* 세대수 */}
                         <CompareRow
                           label="세대수"
-                          values={compareApts.map((a) => `${a.household_count.toLocaleString()}세대`)}
+                          values={compareApts.map((a) => `${a.household_count?.toLocaleString() ?? "-"}세대`)}
                         />
                         {/* 면적 */}
                         <CompareRow
@@ -210,7 +210,7 @@ export default function WatchlistComparePanel() {
                           label="매매 시세"
                           values={compareApts.map((a) =>
                             a.price_min
-                              ? `${(a.price_min / 10000).toFixed(0)}~${(a.price_max / 10000).toFixed(0)}억`
+                              ? `${((a.price_min ?? 0) / 10000).toFixed(0)}~${((a.price_max ?? 0) / 10000).toFixed(0)}억`
                               : "-"
                           )}
                           highlight

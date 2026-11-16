@@ -458,7 +458,7 @@ export default function UnifiedSearchResultsView({
                     <div>
                       <span className="text-slate-400">세대수:</span>
                       <span className="font-bold text-slate-800 ml-1">
-                        {apt.household_count.toLocaleString()}세대
+                        {(apt.household_count ?? 0).toLocaleString()}세대
                       </span>
                     </div>
                     <div>
@@ -478,7 +478,7 @@ export default function UnifiedSearchResultsView({
                     )}
                   </span>
                   <span className="text-sm sm:text-base font-black text-indigo-700 text-right ml-auto shrink-0 whitespace-nowrap tracking-tight">
-                    {formatPriceRange(apt.price_min, apt.price_max)}
+                    {formatPriceRange(apt.price_min ?? 0, apt.price_max ?? 0)}
                   </span>
                 </div>
               </Link>

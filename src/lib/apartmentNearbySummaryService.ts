@@ -74,8 +74,8 @@ export async function getOrComputeNearbySummary(
 
   for (const item of APARTMENTS_DATA) {
     if (item.id === apartmentId) continue;
-    const dist = calculateDistanceMeters(center, { lat: item.lat, lng: item.lng });
-    if (dist <= radiusM && item.built_year >= 2024) {
+    const dist = calculateDistanceMeters(center, { lat: item.lat ?? 0, lng: item.lng ?? 0 });
+    if (dist <= radiusM && (item.built_year ?? 0) >= 2024) {
       supplyUnits += item.household_count || 0;
     }
   }

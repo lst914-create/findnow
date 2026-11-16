@@ -192,8 +192,8 @@ export async function executeUnifiedSearch(rawQuery: string): Promise<UnifiedSea
       if (dist > maxAllowedMeters) continue;
 
       // 가격 상한
-      if (priceMaxManwon && apt.price_min > priceMaxManwon) continue;
-      if (priceMinManwon && apt.price_max < priceMinManwon) continue;
+      if (priceMaxManwon && (apt.price_min ?? 0) > priceMaxManwon) continue;
+      if (priceMinManwon && (apt.price_max ?? 0) < priceMinManwon) continue;
 
       const walkMin = Math.round(dist / 80);
       matchedApts.push({
@@ -213,8 +213,8 @@ export async function executeUnifiedSearch(rawQuery: string): Promise<UnifiedSea
         const dist = getDistanceMeters(placeLoc.lat, placeLoc.lng, apt.lat, apt.lng);
         if (dist > maxAllowedMeters) continue;
 
-        if (priceMaxManwon && apt.price_min > priceMaxManwon) continue;
-        if (priceMinManwon && apt.price_max < priceMinManwon) continue;
+        if (priceMaxManwon && (apt.price_min ?? 0) > priceMaxManwon) continue;
+        if (priceMinManwon && (apt.price_max ?? 0) < priceMinManwon) continue;
 
         const walkMin = Math.round(dist / 80);
         matchedApts.push({
@@ -238,8 +238,8 @@ export async function executeUnifiedSearch(rawQuery: string): Promise<UnifiedSea
         if (!regMatch) return false;
       }
       // 가격 조건
-      if (priceMaxManwon && apt.price_min > priceMaxManwon) return false;
-      if (priceMinManwon && apt.price_max < priceMinManwon) return false;
+      if (priceMaxManwon && (apt.price_min ?? 0) > priceMaxManwon) return false;
+      if (priceMinManwon && (apt.price_max ?? 0) < priceMinManwon) return false;
       // 도보 거리 조건
       if (maxWalkMinutes && (apt.walk_minutes || 99) > maxWalkMinutes) return false;
 
@@ -252,7 +252,7 @@ export async function executeUnifiedSearch(rawQuery: string): Promise<UnifiedSea
     });
 
     // 정렬: 역세권/학군/시세 우수순
-    matchedApts.sort((a, b) => (b.traffic_score + b.school_score) - (a.traffic_score + a.school_score));
+    matchedApts.sort((a, b) => ((b.traffic_score ?? 0) + (b.school_score ?? 0)) - ((a.traffic_score ?? 0) + (a.school_score ?? 0)));
   }
 
   // 2. 🔨 재개발·정비사업 검색

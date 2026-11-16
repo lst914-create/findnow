@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
     if (!apt) {
       return NextResponse.json({ error: "apt not found" }, { status: 404 });
     }
-    baseLat = apt.lat;
-    baseLng = apt.lng;
+    baseLat = apt.lat ?? 0;
+    baseLng = apt.lng ?? 0;
     aptName = apt.name;
   } else {
     baseLat = Number(searchParams.get("lat"));

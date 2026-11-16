@@ -230,19 +230,19 @@ export function scoreApartment(apt: Apartment, queryInfo: ParsedSearchQuery): nu
   // 1. 가격 상한/하한 엄격 필터링
   if (isPriceUpperBound && priceMaxManwon) {
     if (tradeType === "rent") {
-      const rentMin = apt.rent_min || Math.round(apt.price_min * 0.55);
+      const rentMin = apt.rent_min || Math.round((apt.price_min ?? 0) * 0.55);
       if (rentMin > priceMaxManwon) return 0;
     } else {
-      if (apt.price_min > priceMaxManwon) return 0;
+      if ((apt.price_min ?? 0) > priceMaxManwon) return 0;
     }
   }
 
   if (isPriceLowerBound && priceMinManwon) {
     if (tradeType === "rent") {
-      const rentMax = apt.rent_max || Math.round(apt.price_max * 0.6);
+      const rentMax = apt.rent_max || Math.round((apt.price_max ?? 0) * 0.6);
       if (rentMax < priceMinManwon) return 0;
     } else {
-      if (apt.price_max < priceMinManwon) return 0;
+      if ((apt.price_max ?? 0) < priceMinManwon) return 0;
     }
   }
 
@@ -299,7 +299,7 @@ export function scoreApartment(apt: Apartment, queryInfo: ParsedSearchQuery): nu
 
   // 가격 근접도 가산점 (targetPriceManwon이 있을 때)
   if (queryInfo.targetPriceManwon) {
-    const aptPrice = (apt.price_min + apt.price_max) / 2;
+    const aptPrice = ((apt.price_min ?? 0) + (apt.price_max ?? 0)) / 2;
     const diff = Math.abs(aptPrice - queryInfo.targetPriceManwon);
     const priceScore = Math.max(0, 30 - Math.round((diff / queryInfo.targetPriceManwon) * 30));
     score += priceScore;
@@ -348,20 +348,20 @@ export async function searchApartmentsWithNlp(
         // 가격 상한
         if (queryInfo.isPriceUpperBound && queryInfo.priceMaxManwon) {
           if (queryInfo.tradeType === "rent") {
-            const rentMin = apt.rent_min || Math.round(apt.price_min * 0.55);
+            const rentMin = apt.rent_min || Math.round((apt.price_min ?? 0) * 0.55);
             if (rentMin > queryInfo.priceMaxManwon) continue;
           } else {
-            if (apt.price_min > queryInfo.priceMaxManwon) continue;
+            if ((apt.price_min ?? 0) > queryInfo.priceMaxManwon) continue;
           }
         }
 
         // 가격 하한
         if (queryInfo.isPriceLowerBound && queryInfo.priceMinManwon) {
           if (queryInfo.tradeType === "rent") {
-            const rentMax = apt.rent_max || Math.round(apt.price_max * 0.6);
+            const rentMax = apt.rent_max || Math.round((apt.price_max ?? 0) * 0.6);
             if (rentMax < queryInfo.priceMinManwon) continue;
           } else {
-            if (apt.price_max < queryInfo.priceMinManwon) continue;
+            if ((apt.price_max ?? 0) < queryInfo.priceMinManwon) continue;
           }
         }
 
@@ -417,8 +417,8 @@ export async function searchApartmentsWithNlp(
     const validApts = filtered.filter((a) => a.lat && a.lng);
     if (validApts.length > 0) {
       const sample = validApts.slice(0, Math.min(8, validApts.length));
-      const avgLat = sample.reduce((sum, a) => sum + a.lat, 0) / sample.length;
-      const avgLng = sample.reduce((sum, a) => sum + a.lng, 0) / sample.length;
+      const avgLat = sample.reduce((sum, a) => sum + (a.lat ?? 0), 0) / sample.length;
+      const avgLng = sample.reduce((sum, a) => sum + (a.lng ?? 0), 0) / sample.length;
       targetCenter = { lat: avgLat, lng: avgLng };
     }
   }

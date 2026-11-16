@@ -1,122 +1,334 @@
--- 1. 아파트 단지 정보 테이블 생성 (국토교통부 공공데이터 스키마 확장)
+-- ==============================================================================
+-- 공공데이터 표준 7대 핵심 테이블 스키마 (Official Public Data Architecture)
+-- ==============================================================================
+-- 1. data_sources: 8대 공식 공공데이터 카탈로그 및 수집 관리
+-- 2. apartments: 국토부 공동주택(K-apt) 및 지자체 주소/좌표 단지 마스터
+-- 3. transactions: 국토교통부 매매/전월세 실거래 신고 원시 데이터
+-- 4. redevelopment_projects: 국토부 전국 도시정비사업 및 서울 정보몽땅 구역 마스터
+-- 5. housing_supply: 한국부동산원 청약홈 및 지자체 주택공급/입주예정 데이터
+-- 6. commercial_stores: 소상공인시장진흥공단 전국 상가(상권) 점포 정보
+-- 7. data_change_logs: 데이터 정합성 검증 및 변경 감사 이력
+-- ==============================================================================
+
+-- 1. [data_sources] 데이터 출처 및 수집 주기 메타데이터
+CREATE TABLE IF NOT EXISTS public.data_sources (
+    id VARCHAR(50) PRIMARY KEY,              -- 식별자 (예: 'apt-trade', 'kapt-info')
+    category VARCHAR(100) NOT NULL,          -- 데이터 영역 (예: '아파트 매매 실거래가')
+    source_name VARCHAR(200) NOT NULL,        -- 공식 출처명 (예: '국토교통부 실거래가 공개시스템')
+    provider VARCHAR(100) NOT NULL,           -- 제공기관 (예: '국토교통부', '한국부동산원')
+    portal_url TEXT NOT NULL,                 -- 출처 URL
+    api_endpoint TEXT,                        -- API 엔드포인트 URL
+    update_cycle VARCHAR(100) NOT NULL,       -- 갱신 주기 (예: '실시간', '월간')
+    usage_terms TEXT NOT NULL,                -- 이용 조건 및 통계 혼용 주의사항
+    stat_type VARCHAR(20) NOT NULL,           -- 'RAW' | 'INDEX' | 'MASTER' | 'PATCH'
+    priority VARCHAR(20) DEFAULT '필수',      -- '필수' | '권장' | '보완'
+    is_active BOOLEAN DEFAULT TRUE,           -- 수집 활성화 여부
+    last_collected_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. [apartments] 아파트 단지 기본정보 (K-apt 공식 기본정보 기반)
 CREATE TABLE IF NOT EXISTS public.apartments (
-    id VARCHAR(100) PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    region VARCHAR(100) NOT NULL, -- 예: 서울 강남구, 경기 남양주시
-    district VARCHAR(100) NOT NULL, -- 예: 대치동, 다산동
-    lawd_code VARCHAR(20), -- 법정동 코드 (예: 41360)
-    price_min INT NOT NULL, -- 매매가 최소 (단위: 만원)
-    price_max INT NOT NULL, -- 매매가 최대
-    rent_min INT, -- 전세가 최소 (단위: 만원)
-    rent_max INT, -- 전세가 최대
-    area_sqm INT NOT NULL, -- 전용면적 m2
-    area_pyeong INT NOT NULL, -- 평형 (예: 34)
-    built_year INT NOT NULL, -- 준공년도
-    household_count INT NOT NULL, -- 세대수
-    construction VARCHAR(100), -- 시공사
-    parking VARCHAR(50), -- 주차
-    heating VARCHAR(50), -- 난방
-    school_score INT DEFAULT 85, -- 학군 점수
-    traffic_score INT DEFAULT 90, -- 교통 점수
-    nature_score INT DEFAULT 80, -- 공원 점수
-    station VARCHAR(100), -- 인근 지하철역
-    station_dist VARCHAR(100), -- 지하철역 거리
-    walk_minutes INT DEFAULT 5, -- 도보 분
-    lat DOUBLE PRECISION, -- 위도
-    lng DOUBLE PRECISION, -- 경도
-    tags TEXT[], -- ['역세권', '신축', '초품아', '5억대전세']
-    image_url TEXT,
-    description TEXT,
+    id VARCHAR(100) PRIMARY KEY,              -- 단지 식별자 (예: 'kapt-A10025828')
+    name VARCHAR(255) NOT NULL,               -- 공식 단지명
+    bjd_code VARCHAR(10) NOT NULL,            -- 법정동 코드 10자리 (예: '4136011000')
+    sido VARCHAR(50) NOT NULL,                -- 시도 (예: '경기도')
+    sigungu VARCHAR(50) NOT NULL,             -- 시군구 (예: '남양주시')
+    eupmyeondong VARCHAR(50) NOT NULL,        -- 읍면동 (예: '다산동')
+    road_address TEXT,                        -- 도로명 주소
+    jibun_address TEXT,                       -- 지번 주소
+    lat DOUBLE PRECISION,                     -- 위도 (정규화된 정밀 좌표)
+    lng DOUBLE PRECISION,                     -- 경도
+    household_count INT NOT NULL DEFAULT 0,   -- 세대수 (공식 관리 세대수)
+    building_count INT,                       -- 총 동수
+    built_year INT,                           -- 준공년도
+    use_approval_date DATE,                   -- 사용승인일
+    builder VARCHAR(100),                     -- 시공사
+    developer VARCHAR(100),                   -- 시행사
+    heat_type VARCHAR(50),                    -- 난방방식 (지역난방/개별난방/중앙난방)
+    hall_type VARCHAR(50),                    -- 현관구조 (계단식/복도식/혼합식)
+    parking_count INT,                        -- 총 주차대수
+    parking_ratio DOUBLE PRECISION,           -- 세대당 주차대수
+    kapt_code VARCHAR(20),                    -- K-apt 단지 식별코드
+    base_date DATE DEFAULT CURRENT_DATE,      -- 데이터 기준일
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3. [transactions] 국토교통부 실거래 이력 (매매 / 전세 / 월세)
+CREATE TABLE IF NOT EXISTS public.transactions (
+    id VARCHAR(120) PRIMARY KEY,              -- 거래 고유 식별자 (지역-연월일-접수순번 해시)
+    apartment_id VARCHAR(100) REFERENCES public.apartments(id) ON DELETE SET NULL,
+    bjd_code VARCHAR(10) NOT NULL,            -- 법정동 코드
+    trade_type VARCHAR(20) NOT NULL,          -- '매매' | '전세' | '월세'
+    deal_date DATE NOT NULL,                  -- 계약일자 (YYYY-MM-DD)
+    deal_year INT NOT NULL,                   -- 계약년도
+    deal_month INT NOT NULL,                  -- 계약월
+    deal_day INT,                             -- 계약일
+    price INT NOT NULL DEFAULT 0,             -- 거래금액 or 보증금 (단위: 만원)
+    monthly_rent INT NOT NULL DEFAULT 0,      -- 월세 (단위: 만원, 순수 전세는 0)
+    area_sqm DOUBLE PRECISION NOT NULL,       -- 전용면적 (㎡)
+    pyeong INT,                               -- 공급 평형 (환산)
+    floor INT,                                -- 해당 층수
+    apt_name_raw VARCHAR(255) NOT NULL,       -- 실거래 신고 원시 단지명
+    jibun_raw VARCHAR(100),                   -- 원시 지번
+    is_canceled BOOLEAN DEFAULT FALSE,        -- 거래 취소/해제 여부
+    cancel_date DATE,                         -- 취소일자
+    contract_term VARCHAR(50),                -- 계약구분 (신규/갱신)
+    data_source_id VARCHAR(50) DEFAULT 'apt-trade', -- 'apt-trade' | 'apt-rent'
+    base_date DATE DEFAULT CURRENT_DATE,      -- 수집 기준일
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. 아파트 실거래 이력 테이블 생성 (국토교통부 매매/전세 실거래)
-CREATE TABLE IF NOT EXISTS public.real_transactions (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    apartment_id VARCHAR(100) REFERENCES public.apartments(id) ON DELETE CASCADE,
-    trade_type VARCHAR(20) NOT NULL, -- '매매' | '전세' | '월세'
-    deal_price INT NOT NULL, -- 금액 (만원)
-    monthly_price INT DEFAULT 0, -- 월세 (만원)
-    area_sqm DOUBLE PRECISION NOT NULL,
-    floor INT,
-    deal_date DATE NOT NULL,
+-- 4. [redevelopment_projects] 전국 도시정비사업 구역 정보
+CREATE TABLE IF NOT EXISTS public.redevelopment_projects (
+    id VARCHAR(100) PRIMARY KEY,              -- 정비사업 구역 식별자
+    name VARCHAR(255) NOT NULL,               -- 구역명 / 사업명
+    bjd_code VARCHAR(10),                     -- 법정동 코드
+    sido VARCHAR(50) NOT NULL,                -- 시도
+    sigungu VARCHAR(50) NOT NULL,             -- 시군구
+    dong VARCHAR(50),                         -- 동
+    project_type VARCHAR(50) NOT NULL,        -- 재개발, 재건축, 가로주택, 소규모재건축 등
+    stage VARCHAR(50) NOT NULL,               -- 기본계획, 정비구역지정, 조합설립, 사업시행인가, 관리처분인가, 착공, 준공
+    stage_date DATE,                          -- 현재 단계 인가/고시일
+    road_address TEXT,
+    jibun_address TEXT,
+    lat DOUBLE PRECISION,                     -- 구역 대표 위도
+    lng DOUBLE PRECISION,                     -- 구역 대표 경도
+    boundary_geojson JSONB,                   -- 구역 경계 폴리곤 (GeoJSON)
+    planned_units INT,                        -- 건립 예정 세대수
+    area_sqm DOUBLE PRECISION,                -- 구역 면적 (㎡)
+    builder VARCHAR(100),                     -- 시공사
+    union_name VARCHAR(150),                  -- 조합/추진위 명칭
+    has_location BOOLEAN DEFAULT FALSE,       -- 정밀 좌표/경계 확보 여부
+    update_source VARCHAR(100) NOT NULL,      -- '국토부 도시정비사업' | '정비사업 정보몽땅'
+    base_date DATE DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 5. [housing_supply] 주택 공급 및 분양·입주 예정 정보
+CREATE TABLE IF NOT EXISTS public.housing_supply (
+    id VARCHAR(100) PRIMARY KEY,              -- 공급 단지 식별자
+    redevelopment_id VARCHAR(100) REFERENCES public.redevelopment_projects(id) ON DELETE SET NULL,
+    apartment_id VARCHAR(100) REFERENCES public.apartments(id) ON DELETE SET NULL,
+    complex_name VARCHAR(255) NOT NULL,       -- 공급 단지명
+    bjd_code VARCHAR(10),                     -- 법정동 코드
+    sido VARCHAR(50) NOT NULL,                -- 시도
+    sigungu VARCHAR(50) NOT NULL,             -- 시군구
+    lat DOUBLE PRECISION,
+    lng DOUBLE PRECISION,
+    supply_type VARCHAR(50),                  -- '분양' | '임대' | '청약' | '입주예정'
+    total_supply_units INT NOT NULL,          -- 총 공급 세대수
+    general_supply_units INT,                 -- 일반 분양 세대수
+    expected_move_in VARCHAR(20),             -- 입주 예정일 (YYYY.MM)
+    construction_company VARCHAR(100),        -- 건설사
+    confirmation_source VARCHAR(100) NOT NULL,-- '한국부동산원 청약홈' | '지자체 준공예정'
+    source_url TEXT,
+    base_date DATE DEFAULT CURRENT_DATE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- RLS (Row Level Security) 설정 및 읽기 권한 개방
+-- 6. [commercial_stores] 상가·상권 점포 정보
+CREATE TABLE IF NOT EXISTS public.commercial_stores (
+    id VARCHAR(50) PRIMARY KEY,               -- 상가업소번호 (bizesId)
+    name VARCHAR(255) NOT NULL,               -- 상호명
+    branch_name VARCHAR(100),                 -- 지점명
+    category_main_code VARCHAR(10) NOT NULL,  -- 대분류 코드
+    category_main_name VARCHAR(50) NOT NULL,  -- 대분류명 (음식, 소매, 학문 등)
+    category_mid_code VARCHAR(10),            -- 중분류 코드
+    category_mid_name VARCHAR(50),            -- 중분류명
+    category_sub_code VARCHAR(10),            -- 소분류 코드
+    category_sub_name VARCHAR(50),            -- 소분류명
+    bjd_code VARCHAR(10),                     -- 법정동 코드
+    sido VARCHAR(50) NOT NULL,
+    sigungu VARCHAR(50) NOT NULL,
+    dong VARCHAR(50),
+    road_address TEXT,
+    jibun_address TEXT,
+    lat DOUBLE PRECISION,
+    lng DOUBLE PRECISION,
+    collected_base_date VARCHAR(20),          -- 수집 기준일시 (lastModTs)
+    data_source_id VARCHAR(50) DEFAULT 'sbiz-store',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 7. [data_change_logs] 데이터 변경 이력 및 감사 로그
+CREATE TABLE IF NOT EXISTS public.data_change_logs (
+    id BIGSERIAL PRIMARY KEY,
+    table_name VARCHAR(50) NOT NULL,          -- 변경된 테이블명
+    record_id VARCHAR(100) NOT NULL,          -- 대상 레코드 식별자
+    field_name VARCHAR(100) NOT NULL,         -- 변경된 필드명
+    old_value TEXT,                           -- 변경 전 값
+    new_value TEXT,                           -- 변경 후 값
+    verified_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(), -- 확인 시점
+    change_reason TEXT NOT NULL,              -- 변경 근거 및 사유
+    source_name VARCHAR(100) NOT NULL         -- 근거 출처명
+);
+
+-- ==============================================================================
+-- 검색 성능 및 공간 분석 최적화 인덱스
+-- ==============================================================================
+CREATE INDEX IF NOT EXISTS idx_apartments_bjd ON public.apartments(bjd_code);
+CREATE INDEX IF NOT EXISTS idx_apartments_coords ON public.apartments(lat, lng);
+CREATE INDEX IF NOT EXISTS idx_apartments_sigungu ON public.apartments(sido, sigungu);
+CREATE INDEX IF NOT EXISTS idx_apartments_kapt ON public.apartments(kapt_code);
+
+CREATE INDEX IF NOT EXISTS idx_transactions_apt ON public.transactions(apartment_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_bjd ON public.transactions(bjd_code);
+CREATE INDEX IF NOT EXISTS idx_transactions_deal_date ON public.transactions(deal_date DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_type ON public.transactions(trade_type);
+
+CREATE INDEX IF NOT EXISTS idx_redevelopment_coords ON public.redevelopment_projects(lat, lng);
+CREATE INDEX IF NOT EXISTS idx_redevelopment_stage ON public.redevelopment_projects(stage);
+CREATE INDEX IF NOT EXISTS idx_redevelopment_sigungu ON public.redevelopment_projects(sido, sigungu);
+
+CREATE INDEX IF NOT EXISTS idx_commercial_coords ON public.commercial_stores(lat, lng);
+CREATE INDEX IF NOT EXISTS idx_commercial_category ON public.commercial_stores(category_main_name);
+
+CREATE INDEX IF NOT EXISTS idx_housing_supply_sigungu ON public.housing_supply(sido, sigungu);
+
+-- ==============================================================================
+-- Row Level Security (RLS) 읽기 권한 개방
+-- ==============================================================================
+ALTER TABLE public.data_sources ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read on data_sources" ON public.data_sources FOR SELECT USING (true);
+
 ALTER TABLE public.apartments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access on apartments" ON public.apartments FOR SELECT USING (true);
+CREATE POLICY "Allow public read on apartments" ON public.apartments FOR SELECT USING (true);
 
-ALTER TABLE public.real_transactions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read access on transactions" ON public.real_transactions FOR SELECT USING (true);
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read on transactions" ON public.transactions FOR SELECT USING (true);
 
--- 검색 성능 최적화 인덱스
-CREATE INDEX IF NOT EXISTS idx_apartments_region ON public.apartments(region);
-CREATE INDEX IF NOT EXISTS idx_apartments_district ON public.apartments(district);
-CREATE INDEX IF NOT EXISTS idx_apartments_lawd ON public.apartments(lawd_code);
+ALTER TABLE public.redevelopment_projects ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read on redevelopment_projects" ON public.redevelopment_projects FOR SELECT USING (true);
 
--- 2. 서울 25개 자치구 + 경기 31개 시·군 + 인천 송도 전역 대표 아파트 데이터 삽입 (총 57개 단지)
-INSERT INTO public.apartments (name, region, district, price_min, price_max, area_sqm, area_pyeong, built_year, household_count, school_score, traffic_score, nature_score, tags, image_url)
+ALTER TABLE public.housing_supply ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read on housing_supply" ON public.housing_supply FOR SELECT USING (true);
+
+ALTER TABLE public.commercial_stores ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read on commercial_stores" ON public.commercial_stores FOR SELECT USING (true);
+
+ALTER TABLE public.data_change_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read on data_change_logs" ON public.data_change_logs FOR SELECT USING (true);
+
+-- ==============================================================================
+-- 공식 데이터 출처 8종 시딩 (Image 1 기준 정규 메타데이터)
+-- ==============================================================================
+INSERT INTO public.data_sources (id, category, source_name, provider, portal_url, api_endpoint, update_cycle, usage_terms, stat_type, priority, is_active)
 VALUES
--- 서울 25개 구
-('래미안 대치팰리스 1단지', '서울 강남구', '대치동', 270000, 340000, 84, 34, 2015, 1278, 99, 92, 78, ARRAY['초품아', '학군대표', '역세권', '대단지'], 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'),
-('반포 자이', '서울 서초구', '반포동', 280000, 360000, 84, 34, 2009, 3410, 96, 98, 85, ARRAY['역세권', '대단지', '한강조망', '커뮤니티'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'),
-('마포 프레스티지 자이', '서울 마포구', '염리동', 165000, 195000, 84, 34, 2021, 1694, 88, 95, 82, ARRAY['신축', '역세권', '직주근접', '대단지'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-('헬리오시티', '서울 송파구', '가락동', 180000, 220000, 84, 33, 2018, 9510, 91, 93, 80, ARRAY['대단지', '초품아', '역세권', '신축'], 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'),
-('DMC 롯데캐슬 더 퍼스트', '서울 은평구', '수색동', 115000, 138000, 84, 34, 2020, 1192, 84, 91, 85, ARRAY['DMC직주근접', '신축', '역세권'], 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'),
-('올림픽파크 포레온', '서울 강동구', '둔촌동', 170000, 210000, 84, 34, 2025, 12032, 95, 94, 92, ARRAY['초대단지', '신축입주', '올림픽공원'], 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'),
-('SK 북한산시티', '서울 강북구', '미아동', 68000, 82000, 84, 33, 2004, 3830, 80, 83, 95, ARRAY['숲세권', '북한산뷰', '대단지'], 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'),
-('마곡 엠밸리 7단지', '서울 강서구', '마곡동', 145000, 175000, 84, 34, 2014, 1004, 89, 97, 90, ARRAY['마곡지구', '역세권', '직주근접'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'),
-('e편한세상 서울대입구 1단지', '서울 관악구', '봉천동', 105000, 128000, 84, 34, 2019, 1531, 83, 90, 86, ARRAY['신축', '강남접근성', '대단지'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-('자양 더샵스타시티', '서울 광진구', '자양동', 175000, 220000, 101, 39, 2007, 1177, 91, 98, 88, ARRAY['주상복합', '건대입구역', '한강생활권'], 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'),
-('신도림 디큐브시티', '서울 구로구', '신도림동', 130000, 160000, 84, 34, 2011, 524, 86, 99, 82, ARRAY['초역세권', '백화점연결', '교통요충지'], 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'),
-('독산 롯데캐슬 골드파크 1차', '서울 금천구', '독산동', 88000, 108000, 84, 34, 2016, 1743, 81, 88, 84, ARRAY['대단지', '금천구대장', '신안산선호재'], 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'),
-('중계 주공5단지', '서울 노원구', '중계동', 72000, 95000, 84, 31, 1992, 2328, 97, 85, 89, ARRAY['노원학군', '은행사거리', '재건축기대'], 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'),
-('창동 주공19단지', '서울 도봉구', '창동', 65000, 85000, 84, 32, 1988, 1764, 82, 93, 86, ARRAY['창동아레나', 'GTX-C', '재건축추진'], 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'),
-('답십리 래미안 위브', '서울 동대문구', '답십리동', 108000, 132000, 84, 33, 2014, 2652, 85, 91, 84, ARRAY['광화문직주근접', '대단지', '역세권'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-('흑석 아크로리버하임', '서울 동작구', '흑석동', 190000, 240000, 84, 34, 2019, 1073, 90, 96, 97, ARRAY['한강뷰', '9호선역세권', '프리미엄'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'),
-('신촌 e편한세상', '서울 서대문구', '북아현동', 140000, 175000, 84, 34, 2017, 1910, 87, 97, 83, ARRAY['광화문역세권', '신축대단지', '이대역'], 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'),
-('성수 아크로서울포레스트', '서울 성동구', '성수동1가', 550000, 750000, 159, 62, 2020, 280, 94, 97, 100, ARRAY['서울숲조망', '하이엔드', '초고층'], 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'),
-('길음 래미안 센터피스', '서울 성북구', '길음동', 110000, 135000, 84, 34, 2019, 2352, 86, 94, 84, ARRAY['미아사거리역', '신축대단지', '초품아'], 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'),
-('목동 신시가지 7단지', '서울 양천구', '목동', 195000, 240000, 84, 35, 1986, 2550, 99, 95, 91, ARRAY['목동학군', '목동역', '대지지분최대'], 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'),
-('여의도 시범아파트', '서울 영등포구', '여의도동', 210000, 270000, 84, 36, 1971, 1790, 92, 96, 98, ARRAY['여의도재건축', '한강변', '신통기획'], 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'),
-('한남 더 힐', '서울 용산구', '한남동', 750000, 1100000, 208, 85, 2011, 600, 93, 92, 99, ARRAY['대한민국최고가', '배산임수', '단독단지형'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-('경희궁 자이 2단지', '서울 종로구', '홍파동', 170000, 205000, 84, 34, 2017, 1148, 89, 98, 90, ARRAY['도심직주근접', '서대문역', '종로대장'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'),
-('남산타운', '서울 중구', '신당동', 115000, 142000, 84, 32, 2002, 5150, 84, 94, 96, ARRAY['남산조망', '버티고개역', '초대단지'], 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'),
-('면목 라온프라이빗', '서울 중랑구', '면목동', 82000, 98000, 84, 33, 2020, 453, 80, 87, 89, ARRAY['중랑천공원', '신축', '동부간선지하화'], 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'),
-
--- 경기 31개 시·군
-('판교 푸르지오 그랑블', '경기 성남시', '백현동', 220000, 260000, 98, 38, 2011, 948, 94, 99, 90, ARRAY['판교역세권', '직주근접', '공원인접'], 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'),
-('킨텍스 꿈에그린', '경기 고양시', '대화동', 95000, 125000, 84, 35, 2019, 1880, 82, 89, 88, ARRAY['GTX호재', '신축', '대공원', '대단지'], 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'),
-('광교 중흥S-클래스', '경기 수원시', '이의동', 135000, 175000, 84, 35, 2019, 2231, 90, 92, 98, ARRAY['호수공원뷰', '신축', '광교중앙역'], 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'),
-('평촌 더샵 아이파크', '경기 안양시', '호계동', 88000, 110000, 84, 34, 2019, 1174, 92, 88, 84, ARRAY['평촌학원가', '신축', '대단지'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-('수지 래미안 이스트팰리스 3단지', '경기 용인시', '동천동', 92000, 115000, 101, 39, 2010, 885, 93, 87, 94, ARRAY['수지학군', '리조트형', '신분당선'], 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'),
-('부천 힐스테이트 중동', '경기 부천시', '중동', 89000, 115000, 84, 35, 2022, 999, 85, 97, 88, ARRAY['7호선역세권', '부천시청역', '신축주상복합'], 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'),
-('안산 그랑시티자이 1차', '경기 안산시', '사동', 68000, 85000, 84, 35, 2020, 3728, 84, 86, 95, ARRAY['신안산선호재', '초대단지', '시화호뷰'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'),
-('다산 e편한세상 자이', '경기 남양주시', '다산동', 78000, 95000, 84, 34, 2018, 1685, 86, 92, 90, ARRAY['8호선연장', '다산신도시', '초품아'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-('동탄역 롯데캐슬', '경기 화성시', '오산동', 145000, 185000, 84, 34, 2021, 940, 89, 100, 87, ARRAY['SRT/GTX동탄역', '롯데백화점연결', '동탄대장'], 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'),
-('힐스테이트 지제역', '경기 평택시', '세교동', 58000, 72000, 84, 33, 2020, 1519, 80, 93, 82, ARRAY['평택지제역', '삼성캠퍼스', 'SRT역세권'], 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'),
-('의정부역 센트럴자이앤위브캐슬', '경기 의정부시', '의정부동', 65000, 82000, 84, 34, 2022, 2473, 81, 94, 83, ARRAY['GTX-C호재', '의정부역', '초대단지'], 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'),
-('운정신도시 아이파크', '경기 파주시', '동패동', 67000, 83000, 84, 34, 2020, 3042, 84, 91, 92, ARRAY['GTX-A운정역', '운정신도시', '초대단지'], 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'),
-('시흥 은계 자이', '경기 시흥시', '은행동', 59000, 73000, 84, 33, 2020, 1719, 82, 85, 88, ARRAY['은계지구', '서해선', '신축대단지'], 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'),
-('걸포 북변 파크자이', '경기 김포시', '걸포동', 68000, 86000, 84, 34, 2020, 4229, 83, 88, 91, ARRAY['김포골드라인', '걸포북변역', '초대단지'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'),
-('철산 자이 더 헤리티지', '경기 광명시', '철산동', 105000, 130000, 84, 34, 2025, 3804, 90, 95, 85, ARRAY['7호선철산역', '광명재개발', '신축입주'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-('경기광주역 e편한세상', '경기 광주시', '역동', 62000, 76000, 84, 33, 2016, 2122, 81, 92, 87, ARRAY['경강선역세권', '판교15분', '대단지'], 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'),
-('산본 래미안 하이퍼스', '경기 군포시', '산본동', 76000, 92000, 84, 34, 2010, 2644, 88, 91, 89, ARRAY['4호선산본역', '산본대장', '초품아'], 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'),
-('이천 자이 더 리체', '경기 이천시', '증포동', 48000, 59000, 84, 33, 2026, 558, 79, 82, 88, ARRAY['하이닉스직주근접', '이천신축', '브랜드자이'], 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'),
-('오산 세교 자이', '경기 오산시', '세교동', 45000, 56000, 84, 33, 2018, 1110, 80, 86, 89, ARRAY['오산대역', '세교신도시', '가성비'], 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'),
-('미사강변 더샵 센트럴포레', '경기 하남시', '풍산동', 93000, 115000, 84, 34, 2017, 487, 88, 93, 94, ARRAY['5호선하남풍산역', '미사강변', '한강공원'], 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'),
-('양주 옥정 대방노블랜드 1차', '경기 양주시', '옥정동', 46000, 58000, 84, 34, 2021, 1483, 81, 87, 90, ARRAY['7호선연장호재', '옥정신도시', '수영장보유'], 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'),
-('갈매역 아이파크', '경기 구리시', '갈매동', 75000, 90000, 84, 34, 2018, 1196, 84, 93, 87, ARRAY['갈매역초역세권', '구리갈매지구', '상권연결'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'),
-('안성 아양 시티프라디움', '경기 안성시', '옥산동', 38000, 47000, 84, 33, 2018, 688, 78, 79, 86, ARRAY['아양지구', '안성대장', '초품아'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-('포천 KCC스위첸', '경기 포천시', '어룡동', 34000, 42000, 84, 33, 2017, 461, 76, 80, 89, ARRAY['7호선포천연장', '포천시청생활권', '브랜드아파트'], 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'),
-('의왕 포일 엘센트로', '경기 의왕시', '포일동', 110000, 138000, 84, 34, 2019, 1774, 89, 96, 91, ARRAY['인덕원역GTX', '의왕대장', '신축대단지'], 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80'),
-('여주역 휴먼빌', '경기 여주시', '교동', 39000, 48000, 84, 33, 2023, 640, 77, 89, 88, ARRAY['경강선여주역', '판교출퇴근', '신축단지'], 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'),
-('양평 한라비발디 1단지', '경기 양평군', '양평읍', 42000, 51000, 84, 34, 2023, 750, 78, 88, 96, ARRAY['KTX양평역', '남한강조망', '친환경'], 'https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80'),
-('동두천 송내 주공 5단지', '경기 동두천시', '송내동', 22000, 29000, 84, 32, 2003, 1104, 75, 83, 86, ARRAY['1호선지행역', '가성비최고', '송내지구'], 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'),
-('과천 푸르지오 써밋', '경기 과천시', '중앙동', 185000, 235000, 84, 34, 2020, 1571, 97, 96, 98, ARRAY['과천대장', '4호선초역세권', '관악산뷰'], 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'),
-('가평 자이', '경기 가평군', '가평읍', 36000, 45000, 84, 34, 2023, 505, 76, 87, 99, ARRAY['ITX가평역', '북한강수변공원', '자이프리미엄'], 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'),
-('연천 전곡 e편한세상', '경기 연천군', '전곡읍', 28000, 35000, 84, 33, 2019, 461, 74, 84, 92, ARRAY['1호선연천연장', '전곡역', '브랜드아파트'], 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'),
-
--- 인천 송도
-('송도 더샵 센트럴파크 2차', '인천 연수구', '송도동', 75000, 98000, 98, 39, 2011, 632, 89, 86, 97, ARRAY['센트럴파크뷰', '국제학교', '공원인접'], 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80');
+(
+    'apt-trade',
+    '아파트 매매 실거래가',
+    '국토교통부 실거래가 API',
+    '국토교통부',
+    'https://data.go.kr',
+    'https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade',
+    '실시간 / 계약 신고 즉시',
+    '개별 실거래 신고 건별 원시 데이터. 거래일, 가격, 면적, 층, 단지명, 지역코드 필수 확보. 임의 가격 합성 금지',
+    'RAW',
+    '필수',
+    TRUE
+),
+(
+    'apt-rent',
+    '전월세 거래',
+    '국토교통부 전월세 API',
+    '국토교통부',
+    'https://data.go.kr',
+    'https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent',
+    '실시간 / 계약 신고 즉시',
+    '개별 임대차 계약 원시 데이터. 보증금, 월세, 계약월, 면적, 단지명 필수 확보. 전세가율 계산 및 갱신여부 파악',
+    'RAW',
+    '필수',
+    TRUE
+),
+(
+    'kapt-info',
+    '아파트 기본정보',
+    '공동주택 기본정보 API (K-apt)',
+    '한국부동산원',
+    'https://data.go.kr',
+    'https://apis.data.go.kr/1613000/AptBasisInfoServiceV5',
+    '실시간',
+    '의무관리대상 아파트 단지 공식 기본정보. 주소, 세대수, 동수, 난방방식, 승인일 필수 확보. 단지 마스터의 Single Source of Truth',
+    'MASTER',
+    '필수',
+    TRUE
+),
+(
+    'rone-stats',
+    '부동산 시장 통계',
+    '한국부동산원 R-ONE Open API',
+    '한국부동산원',
+    'https://www.reb.or.kr/r-one',
+    'https://www.reb.or.kr/r-one/openapi/SttsApiTblData.do',
+    '월간 / 주간',
+    '표본 기반 시장 가격지수 및 거래량 통계. 개별 실거래가와 혼동되지 않도록 거시 지표 분석용으로만 권장 활용',
+    'INDEX',
+    '권장',
+    TRUE
+),
+(
+    'molit-redev',
+    '전국 정비사업',
+    '국토교통부 전국 도시정비사업 통합 데이터',
+    '국토교통부',
+    'https://data.go.kr',
+    'https://apis.data.go.kr/1613000/UrbRehabPrjInfoSvc',
+    '연간 / 분기',
+    '전국 정비구역 공식 마스터. 구역명, 사업 유형, 추진 단계, 예정 세대수, 위치 식별 정보 필수 확보',
+    'MASTER',
+    '필수',
+    TRUE
+),
+(
+    'seoul-clean',
+    '서울 정비사업',
+    '정비사업 정보몽땅 및 서울 열린데이터광장',
+    '서울특별시',
+    'https://clean.seoul.go.kr',
+    'http://openapi.seoul.go.kr:8088',
+    '수시 / 단계 변경 시',
+    '서울시 정비구역 위치, 최신 사업 단계, 고시·공고 이력, 변경 이력 보완용',
+    'PATCH',
+    '보완',
+    TRUE
+),
+(
+    'sbiz-store',
+    '전국 상가·상권',
+    '소상공인시장진흥공단 상가(상권)정보 API',
+    '소상공인시장진흥공단',
+    'https://data.go.kr',
+    'https://apis.data.go.kr/B553077/api/open/sdsc2',
+    '반기별 갱신',
+    '점포 식별자(bizesId), 업종 분류, 주소, 위·경도 필수 확보. 반경 내 상권 인프라 분석용',
+    'RAW',
+    '필수',
+    TRUE
+),
+(
+    'geo-spatial',
+    '지도·주소',
+    '공공데이터포털 및 지도 사업자 공식 개발자 문서',
+    '국토교통부 / 카카오',
+    'https://developers.kakao.com',
+    'https://dapi.kakao.com/v2/local',
+    '실시간',
+    '주소 정규화, 좌표 변환, 지도 표시 권한, 호출 제한 준수. 모든 공간 좌표계의 단일 기준점',
+    'MASTER',
+    '필수',
+    TRUE
+)
+ON CONFLICT (id) DO UPDATE SET
+    category = EXCLUDED.category,
+    source_name = EXCLUDED.source_name,
+    provider = EXCLUDED.provider,
+    portal_url = EXCLUDED.portal_url,
+    api_endpoint = EXCLUDED.api_endpoint,
+    update_cycle = EXCLUDED.update_cycle,
+    usage_terms = EXCLUDED.usage_terms,
+    stat_type = EXCLUDED.stat_type,
+    priority = EXCLUDED.priority,
+    is_active = EXCLUDED.is_active;

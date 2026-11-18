@@ -82,24 +82,7 @@ export function ProReportPreviewSection({
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
-              <button
-                type="button"
-                disabled={downloading}
-                onClick={() => handleOpenReport("free")}
-                className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors border border-white/15 cursor-pointer"
-              >
-                기본 요약본
-              </button>
-              <button
-                type="button"
-                disabled={downloading}
-                onClick={() => handleOpenReport("pro")}
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 font-extrabold text-xs text-white shadow-lg shadow-blue-500/25 transition-all transform active:scale-95 cursor-pointer"
-              >
-                무료 열람하기
-              </button>
-            </div>
+
           </div>
 
           {/* Section Cards */}

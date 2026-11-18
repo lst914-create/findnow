@@ -28,6 +28,8 @@ export interface AptMarker {
   region: string;
   rawRegion?: string;    // 원본 시·군·구 (법정동 코드 매핑용)
   district?: string;     // 읍면동
+  jibun?: string;        // 지번 (예: "6235", "1008")
+  addressName?: string;  // 전체 지번 주소 (예: "경기 남양주시 다산동 6235")
   isRealPrice?: boolean; // 국토부 실거래 검증 여부
   isRentalOnly?: boolean; // 임대전용 단지 여부 (청년주택, 공공임대 등) - 매매가 불가
   rentalType?: string;   // 임대 유형 (youth_public, public 등)
@@ -109,6 +111,8 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
     region: `${apt.region} ${apt.district}`,
     rawRegion: apt.region,
     district: apt.district,
+    jibun: (apt as any).jibun,
+    addressName: (apt as any).jibun ? `${apt.region} ${apt.district} ${(apt as any).jibun}` : undefined,
     isRealPrice: isReal,
     isRentalOnly: isRentalOnly,
     rentalType: (apt as any).rentalType,
@@ -248,9 +252,29 @@ export default function AptMap({
     // 동적 발견 단지(카카오 Places)는 마커 생성 시 priceNum=0으로 고정되지만,
     // 이후 viewport API 응답으로 캐시에 실거래가가 채워진 상태일 수 있으므로 캐시를 반드시 재확인
     const normName = normalizeAptName(selectedApt.name);
-    const liveDetail =
-      livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
-      livePriceDetailCacheRef.current.get(normName);
+
+    // 호갱노노 스타일 1순위: 지번 주소 매칭, 2순위: 단지명 정규화 매칭
+    let liveDetail = undefined;
+    if (selectedApt.addressName) {
+      const parts = selectedApt.addressName.split(" ");
+      if (parts.length >= 3) {
+        const umdJibun = `${parts[2]} ${parts[3] || ""}`.trim();
+        liveDetail =
+          livePriceDetailCacheRef.current.get(`${umdJibun}__${selectedApt.pyeong}`) ||
+          livePriceDetailCacheRef.current.get(umdJibun);
+      }
+    }
+    if (!liveDetail && selectedApt.district && selectedApt.jibun) {
+      const umdJibun = `${selectedApt.district} ${selectedApt.jibun}`.trim();
+      liveDetail =
+        livePriceDetailCacheRef.current.get(`${umdJibun}__${selectedApt.pyeong}`) ||
+        livePriceDetailCacheRef.current.get(umdJibun);
+    }
+    if (!liveDetail) {
+      liveDetail =
+        livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
+        livePriceDetailCacheRef.current.get(normName);
+    }
 
     // 가격: 실거래 캐시 → 마커 내장값 순으로 폴백
     const resolvedPriceNum = liveDetail?.latestPrice || selectedApt.priceNum || 0;
@@ -295,9 +319,27 @@ export default function AptMap({
               livePriceDetailCacheRef.current.set(k, v as any);
             });
           }
-          const freshDetail =
-            livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
-            livePriceDetailCacheRef.current.get(normName);
+          let freshDetail = undefined;
+          if (selectedApt.addressName) {
+            const parts = selectedApt.addressName.split(" ");
+            if (parts.length >= 3) {
+              const umdJibun = `${parts[2]} ${parts[3] || ""}`.trim();
+              freshDetail =
+                livePriceDetailCacheRef.current.get(`${umdJibun}__${selectedApt.pyeong}`) ||
+                livePriceDetailCacheRef.current.get(umdJibun);
+            }
+          }
+          if (!freshDetail && selectedApt.district && selectedApt.jibun) {
+            const umdJibun = `${selectedApt.district} ${selectedApt.jibun}`.trim();
+            freshDetail =
+              livePriceDetailCacheRef.current.get(`${umdJibun}__${selectedApt.pyeong}`) ||
+              livePriceDetailCacheRef.current.get(umdJibun);
+          }
+          if (!freshDetail) {
+            freshDetail =
+              livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
+              livePriceDetailCacheRef.current.get(normName);
+          }
           if (freshDetail && freshDetail.latestPrice > 0) {
             const freshPriceNum = freshDetail.latestPrice;
             const freshJeonse = Math.round(freshPriceNum * (ratio / 100));
@@ -480,11 +522,29 @@ export default function AptMap({
   const markerHtml = (apt: AptMarker, isHighlight: boolean) => {
     const isMain = isHighlight;
 
-    // 실거래가 캐시 조회: 1순위 (단지명 + 공급평형 일치), 2순위 (단지명 대표 평형)
-    const normName = normalizeAptName(apt.name);
-    const liveDetail =
-      livePriceDetailCacheRef.current.get(`${normName}__${apt.pyeong}`) ||
-      livePriceDetailCacheRef.current.get(normName);
+    // 호갱노노 스타일 실거래가 캐시 조회: 1순위 (지번 일치), 2순위 (단지명 일치)
+    let liveDetail = undefined;
+    if (apt.addressName) {
+      const parts = apt.addressName.split(" ");
+      if (parts.length >= 3) {
+        const umdJibun = `${parts[2]} ${parts[3] || ""}`.trim();
+        liveDetail =
+          livePriceDetailCacheRef.current.get(`${umdJibun}__${apt.pyeong}`) ||
+          livePriceDetailCacheRef.current.get(umdJibun);
+      }
+    }
+    if (!liveDetail && apt.district && apt.jibun) {
+      const umdJibun = `${apt.district} ${apt.jibun}`.trim();
+      liveDetail =
+        livePriceDetailCacheRef.current.get(`${umdJibun}__${apt.pyeong}`) ||
+        livePriceDetailCacheRef.current.get(umdJibun);
+    }
+    if (!liveDetail) {
+      const normName = normalizeAptName(apt.name);
+      liveDetail =
+        livePriceDetailCacheRef.current.get(`${normName}__${apt.pyeong}`) ||
+        livePriceDetailCacheRef.current.get(normName);
+    }
     const hasLive = !!liveDetail;
 
     // 가격 표시: 실거래가 우선 (최근 1개월 평균 또는 마지막 실거래가), 없으면 마스터 데이터 (미확인 시 "가격없음")
@@ -902,8 +962,13 @@ export default function AptMap({
                   const addrParts = (place.address_name || "").split(" ");
                   const region = `${addrParts[0] || "서울"} ${addrParts[1] || ""}`.trim();
                   const district = addrParts[2] || "";
+                  const jibun = addrParts[3] || "";
+                  const umdJibun = `${district} ${jibun}`.trim();
 
-                  const liveDetail = livePriceDetailCacheRef.current.get(normPlace);
+                  // 호갱노노 스타일: 1순위 지번 캐시 조회, 2순위 단지명 캐시 조회
+                  const liveDetail =
+                    (umdJibun ? livePriceDetailCacheRef.current.get(umdJibun) : undefined) ||
+                    livePriceDetailCacheRef.current.get(normPlace);
                   const pyeongVal = liveDetail ? liveDetail.pyeong : 34;
 
                   const newMarker: AptMarker = {
@@ -919,6 +984,8 @@ export default function AptMap({
                     region: `${region} ${district}`,
                     rawRegion: region,
                     district: district,
+                    jibun: jibun,
+                    addressName: place.address_name,
                     isRealPrice: !!liveDetail,
                     builtYear: 2005,
                     householdCount: 50,
@@ -1723,10 +1790,28 @@ export default function AptMap({
         {/* 선택 단지 팝업 카드 */}
         {selectedApt && (() => {
           const normName = normalizeAptName(selectedApt.name);
-          // ★ 마커 HTML과 동일하게 pyeong 키 우선, 없으면 대표 키로 조회 → 가격 완전 일치 보장
-          const live =
-            livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
-            livePriceDetailCacheRef.current.get(normName);
+          // 호갱노노 스타일: 1순위 지번 캐시, 2순위 단지명 캐시 조회
+          let live = undefined;
+          if (selectedApt.addressName) {
+            const parts = selectedApt.addressName.split(" ");
+            if (parts.length >= 3) {
+              const umdJibun = `${parts[2]} ${parts[3] || ""}`.trim();
+              live =
+                livePriceDetailCacheRef.current.get(`${umdJibun}__${selectedApt.pyeong}`) ||
+                livePriceDetailCacheRef.current.get(umdJibun);
+            }
+          }
+          if (!live && selectedApt.district && selectedApt.jibun) {
+            const umdJibun = `${selectedApt.district} ${selectedApt.jibun}`.trim();
+            live =
+              livePriceDetailCacheRef.current.get(`${umdJibun}__${selectedApt.pyeong}`) ||
+              livePriceDetailCacheRef.current.get(umdJibun);
+          }
+          if (!live) {
+            live =
+              livePriceDetailCacheRef.current.get(`${normName}__${selectedApt.pyeong}`) ||
+              livePriceDetailCacheRef.current.get(normName);
+          }
 
           // 마커와 100% 동일한 실거래가 및 평형 일치 보장
           const isRentalOnly = selectedApt.isRentalOnly === true;

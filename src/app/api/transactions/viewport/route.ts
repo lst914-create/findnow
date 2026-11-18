@@ -7,6 +7,8 @@ interface TradeInfo {
   aptName: string;
   normName: string;
   umdNm?: string;
+  jibun?: string;
+  sggCd?: string;
   amount: number;
   dealDate: string; // YYYY.MM.DD
   dealTime: number; // Unix timestamp
@@ -205,11 +207,15 @@ export async function POST(request: NextRequest) {
             const dealTime = new Date(`${year}-${month}-${day}`).getTime();
 
             const umdNm = getVal(item, "umdNm");
+            const jibun = getVal(item, "jibun").replace(/\s+/g, "");
+            const sggCd = getVal(item, "sggCd") || lawdCode;
 
             localTrades.push({
               aptName: aptNm,
               normName,
               umdNm,
+              jibun,
+              sggCd,
               amount,
               dealDate,
               dealTime,
@@ -363,6 +369,48 @@ export async function POST(request: NextRequest) {
             detailsMap[aliasWithUmd] = detailsMap[normName];
           }
         }
+      }
+
+      // 호갱노노 스타일 1단계: 지번(jibun) 기반 키 등록 (예: "다산동 6235", "토평동 1008")
+      const jibunTrade = trades.find((t) => t.jibun && t.umdNm);
+      if (jibunTrade && jibunTrade.jibun && jibunTrade.umdNm) {
+        const cleanJibun = jibunTrade.jibun.trim();
+        const cleanUmd = jibunTrade.umdNm.trim();
+        const jibunKey = `${cleanUmd} ${cleanJibun}`;
+        const sggJibunKey = `${jibunTrade.sggCd || ""}|${cleanUmd}|${cleanJibun}`;
+
+        // 지번 대표 키
+        if (!priceMap[jibunKey]) {
+          priceMap[jibunKey] = selectedCalc.price;
+          detailsMap[jibunKey] = detailsMap[normName];
+        }
+        if (!priceMap[sggJibunKey]) {
+          priceMap[sggJibunKey] = selectedCalc.price;
+          detailsMap[sggJibunKey] = detailsMap[normName];
+        }
+
+        // 지번 평형별 키
+        tradesByAptPyeong.forEach((pTrades, pKey) => {
+          if (pKey.startsWith(`${normName}__`)) {
+            const pyeong = pKey.split("__")[1];
+            const pCalc = computeAccurateTradePrice(pTrades);
+            if (pCalc) {
+              const pJibunKey = `${jibunKey}__${pyeong}`;
+              priceMap[pJibunKey] = pCalc.price;
+              detailsMap[pJibunKey] = {
+                avgPrice: pCalc.price,
+                latestPrice: pCalc.latestPrice,
+                formatted: pCalc.formatted,
+                dealDate: pCalc.dealDate,
+                floor: pCalc.floor,
+                areaSqm: pCalc.areaSqm,
+                pyeong: pCalc.pyeong,
+                tradeCount: pCalc.totalTradeCount,
+                isAverage: pCalc.isAverageOf1Month,
+              };
+            }
+          }
+        });
       }
     });
 

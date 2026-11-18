@@ -292234,8 +292234,8 @@
     "region": "경기 구리시",
     "district": "토평동",
     "api_region": "경기 구리시",
-    "lat": 37.585794,
-    "lng": 127.154242,
+    "lat": 37.590218,
+    "lng": 127.148783,
     "price_min": 123200,
     "price_max": 123200,
     "rent_min": 73920,
@@ -292283,10 +292283,11 @@
     "image_url": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
     "description": "경기 구리시 토평동에 위치한 토평신명스카이뷰2차아파트 아파트입니다. 국토교통부 실거래 데이터가 실시간 연동되어 있습니다.",
     "is_real_price": true,
-    "sgg_cd": "41150",
-    "umd_nm": "신곡동",
-    "jibun": "108-15",
-    "bjd_code": "41150"
+    "sgg_cd": "41310",
+    "umd_nm": "토평동",
+    "jibun": "262-1",
+    "bjd_code": "4131010300",
+    "jibun_address": "경기 구리시 토평동 262-1"
   },
   {
     "id": "kapt-A10023068",
@@ -1070795,8 +1070796,8 @@
     "region": "경기 구리시",
     "district": "토평동",
     "api_region": "경기 구리시",
-    "lat": 37.580594,
-    "lng": 127.149742,
+    "lat": 37.592684,
+    "lng": 127.153508,
     "price_min": 67000,
     "price_max": 67000,
     "rent_min": 46900,
@@ -1070841,8 +1070842,11 @@
     "description": "경기 구리시 토평동에 위치한 토평검배마을SK신일 아파트입니다. 국토교통부 실거래 데이터가 실시간 연동되어 있습니다.",
     "is_real_price": true,
     "umd_nm": "토평동",
-    "jibun": "465-216",
-    "jibun_address": "경기 구리시 토평동 465-216"
+    "jibun": "1008",
+    "jibun_address": "경기 구리시 토평동 1008",
+    "road_address": "경기 구리시 검배로 142",
+    "sgg_cd": "41310",
+    "bjd_code": "4131010300"
   },
   {
     "id": "kapt-A47176601",

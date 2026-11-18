@@ -225,11 +225,6 @@ export default function AptMap({
   const kaptInfoCacheRef = useRef<Map<string, { householdCount?: number; builtYear?: number }>>(new Map());
   const [kaptInfo, setKaptInfo] = useState<{ householdCount?: number; builtYear?: number } | null>(null);
 
-  // 호갱노노/아실 방식: 화면 내 실존 소규모·나홀로 아파트 동적 보강 캐시
-  const dynamicDiscoveredMarkersRef = useRef<Map<string, AptMarker>>(new Map());
-  const [, setDynamicTrigger] = useState(0);
-  const discoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const [isMapReady, setIsMapReady] = useState(false);
   const [activeTab, setActiveTab] = useState<"지도" | "주변" | "거리" | "분석">("지도");
   const [currentRegion, setCurrentRegion] = useState<string>("수도권 주요 단지");
@@ -737,9 +732,8 @@ export default function AptMap({
       const pMinLng = minLng - lngSpan * 0.15;
       const pMaxLng = maxLng + lngSpan * 0.15;
 
-      // 1. 현재 화면 바운드 내 아파트 추출 (마스터 DB + 카카오 실시간 감지 단지 결합)
-      const dynamicList = Array.from(dynamicDiscoveredMarkersRef.current.values());
-      const allApts = dynamicList.length > 0 ? [...APT_MARKERS, ...dynamicList] : APT_MARKERS;
+      // 1. 현재 화면 바운드 내 아파트 추출 (호갱노노 방식: 100% 검증된 마스터 DB 단지만 표출)
+      const allApts = APT_MARKERS;
 
       const inBounds = allApts.filter(
         (apt) => apt.lat >= pMinLat && apt.lat <= pMaxLat && apt.lng >= pMinLng && apt.lng <= pMaxLng
@@ -905,118 +899,6 @@ export default function AptMap({
         overlay.setMap(map);
         overlaysRef.current.push(overlay);
       });
-
-      // 4. 호갱노노/아실 방식: 상세 줌 레벨(5 이하)에서 화면 내 소규모/나홀로 아파트 실시간 자동 감지
-      if (level <= 5 && kakaoMaps.services?.Places) {
-        if (discoverTimerRef.current) clearTimeout(discoverTimerRef.current);
-        discoverTimerRef.current = setTimeout(() => {
-          try {
-            const ps = new kakaoMaps.services.Places();
-            ps.keywordSearch(
-              "아파트",
-              (data: any[], status: any) => {
-                if (status !== kakaoMaps.services.Status.OK || !data || data.length === 0) return;
-                let hasNew = false;
-                data.forEach((place: any) => {
-                  if (!place.category_name || !place.category_name.includes("아파트")) return;
-
-                  // 1) 비주거 부속시설(어린이집, 유치원, 상가, 복합청사, 관리사무소, 경로당 등) 원천 차단
-                  if (/(어린이집|유치원|상가|관리소|관리사무소|경로당|노인정|주민센터|복합청사|청사|주차장|놀이터|치안센터|파출소|동호회|상가동)/.test(place.place_name)) {
-                    return;
-                  }
-
-                  const lat = parseFloat(place.y);
-                  const lng = parseFloat(place.x);
-                  const cleanName = place.place_name.replace(/(아파트|단지)$/, "").trim();
-                  const normPlace = normalizeAptName(place.place_name);
-                  if (!normPlace || normPlace.length < 2) return;
-
-                  // 2) 기존 화면 마커 목록과 중복 검사 (단지 반경 250m 및 정규화 명칭 대조)
-                  const isExisting = allApts.some((m) => {
-                    const normM = normalizeAptName(m.name);
-                    const dist = Math.hypot(m.lat - lat, m.lng - lng) * 111000;
-                    const isNameMatch = normM === normPlace || normM.includes(normPlace) || normPlace.includes(normM);
-
-                    // 단지 반경 250m 이내에 이름이 일치/유사하면 100% 동일 단지
-                    if (dist < 250 && isNameMatch) return true;
-                    // 정규화 명칭이 완전 동일하면 거리 불문 동일 단지
-                    if (normM === normPlace) return true;
-                    // 60m 이내 초근접 좌표는 부속 장소이므로 스킵
-                    if (dist < 60) return true;
-
-                    return false;
-                  });
-                  if (isExisting) return;
-
-                  // 3) 전국 K-apt 마스터 단지 DB와 정밀 대조 (300m 이내에 이미 마스터 단지가 있으면 마커 중복 생성 차단)
-                  const isMasterExisting = APT_MARKERS.some((m) => {
-                    const normM = normalizeAptName(m.name);
-                    const dist = Math.hypot(m.lat - lat, m.lng - lng) * 111000;
-                    return dist < 300 && (normM === normPlace || normM.includes(normPlace) || normPlace.includes(normM));
-                  });
-                  if (isMasterExisting) return;
-
-                  const key = `${place.id}_${normPlace}`;
-                  if (dynamicDiscoveredMarkersRef.current.has(key)) return;
-
-                  const addrParts = (place.address_name || "").split(" ");
-                  const region = `${addrParts[0] || "서울"} ${addrParts[1] || ""}`.trim();
-                  const district = addrParts[2] || "";
-                  const jibun = addrParts[3] || "";
-                  const umdJibun = `${district} ${jibun}`.trim();
-
-                  // 호갱노노 스타일: 1순위 지번 캐시 조회, 2순위 단지명 캐시 조회
-                  const liveDetail =
-                    (umdJibun ? livePriceDetailCacheRef.current.get(umdJibun) : undefined) ||
-                    livePriceDetailCacheRef.current.get(normPlace);
-                  const pyeongVal = liveDetail ? liveDetail.pyeong : 34;
-
-                  const newMarker: AptMarker = {
-                    id: `kakao-${place.id}`,
-                    name: cleanName,
-                    lat,
-                    lng,
-                    pyeong: pyeongVal,
-                    areaSqm: getStandardExclusiveAreaSqm(pyeongVal),
-                    priceNum: liveDetail ? liveDetail.latestPrice : 0,
-                    rentNum: 0,
-                    avgPrice: liveDetail ? liveDetail.formatted : "가격없음",
-                    region: `${region} ${district}`,
-                    rawRegion: region,
-                    district: district,
-                    jibun: jibun,
-                    addressName: place.address_name,
-                    isRealPrice: !!liveDetail,
-                    builtYear: 2005,
-                    householdCount: 50,
-                    schoolScore: 85,
-                    trafficScore: 85,
-                    liveViewers: 25,
-                    far: 200,
-                    bcr: 18,
-                    jeonseRatio: 55,
-                    gapPrice: 0,
-                    rentalBizRatio: 5,
-                    monthlyYield: 4.0,
-                    parkingRatio: 1.1,
-                    hallType: "계단식",
-                  };
-
-                  dynamicDiscoveredMarkersRef.current.set(key, newMarker);
-                  hasNew = true;
-                });
-
-                if (hasNew) {
-                  setDynamicTrigger((prev) => prev + 1);
-                }
-              },
-              { bounds }
-            );
-          } catch (e) {
-            // silent catch
-          }
-        }, 350);
-      }
     };
 
     // 초기 실행 및 200ms 후 안정화 재실행
@@ -1031,7 +913,6 @@ export default function AptMap({
 
     return () => {
       clearTimeout(initTimer);
-      if (discoverTimerRef.current) clearTimeout(discoverTimerRef.current);
       kakaoMaps.event.removeListener(map, "dragend", renderMarkersForViewport);
       kakaoMaps.event.removeListener(map, "zoom_changed", renderMarkersForViewport);
       kakaoMaps.event.removeListener(map, "idle", renderMarkersForViewport);

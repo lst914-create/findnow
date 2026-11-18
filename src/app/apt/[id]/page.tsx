@@ -46,7 +46,7 @@ export default async function ApartmentDetailPage({ params }: PageProps) {
   }
 
   if (!apt) {
-    apt = APARTMENTS_DATA[0];
+    notFound();
   }
   if (!apt) return notFound();
 

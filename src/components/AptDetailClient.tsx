@@ -401,7 +401,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
       setIsLoadingApi(false);
     } else {
-      setIsLoadingApi(false); // 미캐시 단지라도 가짜 스피너로 블로킹하지 않고 즉시 화면 표시
+      setIsLoadingApi(true); // 미캐시 단지는 실제 API 수신 완료될 때까지 로딩 스켈레톤 유지 (조기 빈 화면 방지)
     }
   }, [apt.id, preloaded, initialTrades, initialRents]);
 
@@ -553,6 +553,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   const [selectedArea, setSelectedArea] = useState<string>("전체");
   // 조회 기간 상태: 기본 '최근 3년'(36개월) 로딩, 사용자가 '전체' 클릭 시 120개월(10년)로 확장
   const [fetchedMonths, setFetchedMonths] = useState<number>(36);
+  const [isFetchingFullHistory, setIsFetchingFullHistory] = useState<boolean>(false);
 
   useEffect(() => {
     setSelectedArea("전체");
@@ -567,6 +568,9 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         const cached = apiTransactionsCache.get(cacheKey)!;
         if (cached.trades?.length > 0) setApiTrades(cached.trades);
         if (cached.rents?.length > 0) setApiRents(cached.rents);
+      }
+      if (fetchedMonths > 36) {
+        setIsFetchingFullHistory(true);
       }
       try {
         const apiRegion = apt.apiRegion || apt.region;
@@ -614,6 +618,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       } finally {
         if (isMounted) {
           setIsLoadingApi(false);
+          setIsFetchingFullHistory(false);
         }
       }
     }
@@ -933,7 +938,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     ? activeTrend.slice(-12)
     : chartRange === "최근 3년"
       ? activeTrend.slice(-36)
-      : activeTrend;
+      : (isFetchingFullHistory && activeTrend.length > 36 ? activeTrend.slice(-36) : activeTrend);
 
   // 호갱노노 스타일 최고가 / 최저가 / 최신 거래 핀포인트 계산
   const chartHighlights = useMemo(() => {
@@ -1448,25 +1453,33 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                   )}
                 </div>
                 {/* 2행: 기간 선택 버튼 */}
-                <div className="flex gap-1">
-                  {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => {
-                        setChartRange(r);
-                        // 선택 범위에 맞게 API 조회 기간 동적 확장
-                        if (r === "최근 1년") setFetchedMonths(12);
-                        else if (r === "최근 3년") setFetchedMonths(36);
-                        else setFetchedMonths(120); // 전체 = 최대 10년
-                      }}
-                      className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${chartRange === r
-                        ? "bg-blue-600 text-white shadow-sm"
-                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
-                        }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex gap-1">
+                    {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => {
+                          setChartRange(r);
+                          // 선택 범위에 맞게 API 조회 기간 동적 확장
+                          if (r === "최근 1년") setFetchedMonths(12);
+                          else if (r === "최근 3년") setFetchedMonths(36);
+                          else setFetchedMonths(120); // 전체 = 최대 10년
+                        }}
+                        className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${chartRange === r
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                          }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                  {isFetchingFullHistory && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-md animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
+                      10년 전체 실거래 연동 중...
+                    </span>
+                  )}
                 </div>
               </div>
 

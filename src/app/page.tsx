@@ -34,7 +34,6 @@ const QUICK_TAGS = [
 const NAV_ITEMS = [
   { label: "아파트 찾기", href: "/search", icon: "🏢" },
   { label: "재개발", href: "/redevelopment", icon: "🔨" },
-  { label: "구역 추천", href: "/redevelopment/recommend", icon: "🎯" },
   { label: "분양·청약", href: "/subscriptions", icon: "📅" },
   { label: "지역정보", href: "/regional", icon: "📍" },
   { label: "커뮤니티", href: "/community", icon: "💬" },
@@ -703,15 +702,14 @@ export default function Home() {
               <span className="text-lg sm:text-xl font-bold gradient-text">찾아줘</span>
             </a>
 
-            {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-1">
+            {/* Desktop nav: 이모티콘 제거 및 whitespace-nowrap 적용으로 줄바꿈 완전 방지 */}
+            <nav className="hidden md:flex items-center gap-0.5 lg:gap-1.5">
               {NAV_ITEMS.map((item) => (
                 <a
                   key={item.label}
                   href={item.href}
-                  className="px-3 py-2 rounded-xl text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-brand-50 transition-all duration-200"
+                  className="px-2.5 py-1.5 rounded-xl text-sm font-medium text-gray-700 hover:text-brand-600 hover:bg-brand-50 transition-all duration-200 whitespace-nowrap shrink-0"
                 >
-                  <span className="mr-1">{item.icon}</span>
                   {item.label}
                 </a>
               ))}

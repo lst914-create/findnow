@@ -290,50 +290,91 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
       dealYmdList.push(ymd);
     }
 
-    const getVal = (xml: string, tag: string) => {
-      const m = xml.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));
-      return m ? m[1].trim() : "";
+    const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    // 초당 호출제한(429) 방지 및 안전한 지수 백오프 재시도 헬퍼
+    const fetchWithRetry = async (url: string, maxRetries = 4): Promise<string> => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const res = await fetch(url, { next: { revalidate: 3600 } });
+          if (res.status === 429) {
+            await sleep(250 * attempt);
+            continue;
+          }
+          if (!res.ok) return "";
+          const text = await res.text();
+          if (text.includes("LIMITED_NUMBER_OF_SERVICE_REQUESTS_PER_SECOND_EXCEEDS_ERROR")) {
+            await sleep(300 * attempt);
+            continue;
+          }
+          return text;
+        } catch {
+          if (attempt === maxRetries) return "";
+          await sleep(150);
+        }
+      }
+      return "";
     };
-    const parseItems = (xmlText: string) => xmlText.match(/<item>[\s\S]*?<\/item>/g) || [];
 
     const trades: any[] = [];
     const rents: any[] = [];
 
-    // Vercel 10초 타임아웃 방지를 위해 청크 8개씩 병렬 조회
-    const CHUNK_SIZE = 8;
-    for (let c = 0; c < dealYmdList.length; c += CHUNK_SIZE) {
-      const chunk = dealYmdList.slice(c, c + CHUNK_SIZE);
-      const chunkPromises = chunk.map(async (dealYmd) => {
+    // 공공데이터포털 초당 쿼터를 완벽하게 준수하는 병렬 풀 (배치당 4개 + 70ms 인터벌)
+    const CONCURRENCY = 4;
+    const isNewApt = !apt.built_year || apt.built_year >= 2020;
+
+    for (let c = 0; c < dealYmdList.length; c += CONCURRENCY) {
+      const batch = dealYmdList.slice(c, c + CONCURRENCY);
+      const batchPromises = batch.map(async (dealYmd, idx) => {
+        const monthIndex = c + idx;
+        const isRecent = monthIndex < 36; // 최근 3년 이내
+
         const tradeUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
-        const silvUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcSilvTrade/getRTMSDataSvcSilvTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
-        const rentUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+        const fetchList: Promise<{ text: string; type: "trade" | "silv" | "rent" }>[] = [
+          fetchWithRetry(tradeUrl).then((text) => ({ text, type: "trade" as const })),
+        ];
 
-        const [tradeRes, silvRes, rentRes] = await Promise.all([
-          fetch(tradeUrl, { next: { revalidate: 3600 } }).catch(() => null),
-          fetch(silvUrl, { next: { revalidate: 3600 } }).catch(() => null),
-          fetch(rentUrl, { next: { revalidate: 3600 } }).catch(() => null),
-        ]);
+        // 분양권/입주권은 신축(2020년 이후)이면서 최근 36개월일 때만 조회 (과거 10년 트래픽 낭비 원천 차단)
+        if (isRecent && isNewApt) {
+          const silvUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcSilvTrade/getRTMSDataSvcSilvTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+          fetchList.push(fetchWithRetry(silvUrl).then((text) => ({ text, type: "silv" as const })));
+        }
 
+        // 전월세는 최근 36개월치만 동기화
+        if (isRecent) {
+          const rentUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+          fetchList.push(fetchWithRetry(rentUrl).then((text) => ({ text, type: "rent" as const })));
+        }
+
+        const responses = await Promise.all(fetchList);
         const monthlyTrades: any[] = [];
         const monthlyRents: any[] = [];
 
-        const parseTradeXml = async (res: Response | null, isSilv = false) => {
-          if (!res || !res.ok) return;
-          const xml = await res.text();
-          for (const item of parseItems(xml)) {
-            const itemAptName = getVal(item, "aptNm");
-            const itemUmdNm = getVal(item, "umdNm");
+        for (const resp of responses) {
+          if (!resp.text) continue;
+          const xml = resp.text;
+          const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+          let match;
 
-            if (isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
-              const amountStr = getVal(item, "dealAmount").replace(/,/g, "");
+          while ((match = itemRegex.exec(xml)) !== null) {
+            const item = match[1];
+            const itemAptName = item.match(/<aptNm>([^<]*)<\/aptNm>/)?.[1]?.trim() || "";
+            const itemUmdNm = item.match(/<umdNm>([^<]*)<\/umdNm>/)?.[1]?.trim() || "";
+
+            if (!itemAptName || !isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
+              continue;
+            }
+
+            const excluUseAr = parseFloat(item.match(/<excluUseAr>([^<]*)<\/excluUseAr>/)?.[1] || "0");
+            const floor = parseInt(item.match(/<floor>([^<]*)<\/floor>/)?.[1] || "1", 10);
+            const dealYear = parseInt(item.match(/<dealYear>([^<]*)<\/dealYear>/)?.[1] || "0", 10);
+            const dealMonth = parseInt(item.match(/<dealMonth>([^<]*)<\/dealMonth>/)?.[1] || "0", 10);
+            const dealDay = parseInt(item.match(/<dealDay>([^<]*)<\/dealDay>/)?.[1] || "1", 10);
+            const buildYear = parseInt(item.match(/<buildYear>([^<]*)<\/buildYear>/)?.[1] || "0", 10);
+
+            if (resp.type === "trade" || resp.type === "silv") {
+              const amountStr = item.match(/<dealAmount>([^<]*)<\/dealAmount>/)?.[1]?.replace(/,/g, "").trim() || "";
               const dealAmount = parseInt(amountStr, 10);
-              const excluUseAr = parseFloat(getVal(item, "excluUseAr"));
-              const floor = parseInt(getVal(item, "floor") || "1", 10);
-              const dealYear = parseInt(getVal(item, "dealYear"), 10);
-              const dealMonth = parseInt(getVal(item, "dealMonth"), 10);
-              const dealDay = parseInt(getVal(item, "dealDay"), 10);
-              const buildYear = parseInt(getVal(item, "buildYear") || "0", 10);
-
               if (dealAmount > 0 && excluUseAr > 0) {
                 monthlyTrades.push({
                   dealAmount,
@@ -345,36 +386,14 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
                   buildYear,
                   aptName: itemAptName,
                   umdNm: itemUmdNm,
-                  isRight: isSilv, // 분양권/입주권 플래그
+                  isRight: resp.type === "silv",
                 });
               }
-            }
-          }
-        };
-
-        // 1. 일반 매매 실거래가 파싱
-        await parseTradeXml(tradeRes, false);
-        // 2. 분양권/입주권 실거래가 파싱 (신축 단지 등 포괄)
-        await parseTradeXml(silvRes, true);
-
-        if (rentRes && rentRes.ok) {
-          const xml = await rentRes.text();
-          for (const item of parseItems(xml)) {
-            const itemAptName = getVal(item, "aptNm");
-            const itemUmdNm = getVal(item, "umdNm");
-
-            if (isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
-              const depositStr = getVal(item, "deposit").replace(/,/g, "");
-              const rentStr = getVal(item, "monthlyRent").replace(/,/g, "");
+            } else if (resp.type === "rent") {
+              const depositStr = item.match(/<deposit>([^<]*)<\/deposit>/)?.[1]?.replace(/,/g, "").trim() || "";
+              const rentStr = item.match(/<monthlyRent>([^<]*)<\/monthlyRent>/)?.[1]?.replace(/,/g, "").trim() || "";
               const depositAmount = parseInt(depositStr, 10);
               const monthlyRent = parseInt(rentStr, 10) || 0;
-              const excluUseAr = parseFloat(getVal(item, "excluUseAr"));
-              const floor = parseInt(getVal(item, "floor") || "1", 10);
-              const dealYear = parseInt(getVal(item, "dealYear"), 10);
-              const dealMonth = parseInt(getVal(item, "dealMonth"), 10);
-              const dealDay = parseInt(getVal(item, "dealDay"), 10);
-              const buildYear = parseInt(getVal(item, "buildYear") || "0", 10);
-
               if (depositAmount > 0 && excluUseAr > 0) {
                 monthlyRents.push({
                   depositAmount,
@@ -396,13 +415,12 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
         return { monthlyTrades, monthlyRents };
       });
 
-      const chunkResults = await Promise.all(chunkPromises);
-      for (const res of chunkResults) {
+      const batchResults = await Promise.all(batchPromises);
+      for (const res of batchResults) {
         trades.push(...res.monthlyTrades);
-      }
-      for (const res of chunkResults) {
         rents.push(...res.monthlyRents);
       }
+      await sleep(50); // 공공데이터포털 초당 쿼터 보호 슬립
     }
 
     trades.sort((a, b) => b.dealYear - a.dealYear || b.dealMonth - a.dealMonth || b.dealDay - a.dealDay);

@@ -551,8 +551,8 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
   // 평형별 필터 상태: 단지 전체 실거래 및 회전율이 0초 즉시 온전히 표출되도록 기본값 '전체'로 설정
   const [selectedArea, setSelectedArea] = useState<string>("전체");
-  // 조회 기간 상태: 첫 진입 시에는 12개월(1년) 초경량 즉시 로딩, 사용자가 '3년'/'전체' 클릭 시 확장
-  const [fetchedMonths, setFetchedMonths] = useState<number>(12);
+  // 조회 기간 상태: 기본 '최근 3년'(36개월) 로딩, 사용자가 '전체' 클릭 시 120개월(10년)로 확장
+  const [fetchedMonths, setFetchedMonths] = useState<number>(36);
 
   useEffect(() => {
     setSelectedArea("전체");

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { fetchTransactionsDirectly } from "@/lib/fetchTransactionsServer";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 /**
  * GET /api/transactions?region=서울 강남구&district=대치동&aptName=대치삼성&months=120

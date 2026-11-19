@@ -188,9 +188,13 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
   // 1. 프리셋 사전 캐시 데이터 확인 (0ms 즉시 반환)
-  const preloaded = getPreloadedTransactions(apt);
-  if (preloaded.trades.length > 0) {
-    return { trades: preloaded.trades, rents: preloaded.rents };
+  // 단, 사용자가 '전체'(months > 36)를 명시적으로 요청한 경우에는 2~3년치 프리셋으로 가로채지 않고
+  // 실제 국토부 10년치(최대 120개월) 데이터를 온전히 조회한다.
+  if (months <= 36) {
+    const preloaded = getPreloadedTransactions(apt);
+    if (preloaded.trades.length > 0) {
+      return { trades: preloaded.trades, rents: preloaded.rents };
+    }
   }
 
   const region = apt.apiRegion || apt.region || "";
@@ -219,9 +223,13 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
   // 1. 프리셋 사전 캐시 데이터 확인 (0ms 즉시 반환)
-  const preloaded = getPreloadedTransactions(apt);
-  if (preloaded.trades.length > 0) {
-    return { trades: preloaded.trades, rents: preloaded.rents };
+  // 단, 사용자가 '전체'(months > 36)를 명시적으로 요청한 경우에는 2~3년치 프리셋으로 가로채지 않고
+  // 실제 국토부 10년치(최대 120개월) 데이터를 온전히 조회한다.
+  if (months <= 36) {
+    const preloaded = getPreloadedTransactions(apt);
+    if (preloaded.trades.length > 0) {
+      return { trades: preloaded.trades, rents: preloaded.rents };
+    }
   }
 
   const region = apt.apiRegion || apt.region || "";

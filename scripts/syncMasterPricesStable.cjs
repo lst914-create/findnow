@@ -182,25 +182,35 @@ async function main() {
   const masterData = JSON.parse(fs.readFileSync(MASTER_PATH, 'utf8'));
   log(`마스터 DB 로드: 총 ${masterData.length}개 단지`);
 
-  // 지번 및 정규화 인덱스 빌드
-  const jibunIndex = new Map();     // 정확한 지번 매칭 (동+지번 완전일치)
-  const jibunBaseIndex = new Map(); // 퍼지 지번 매칭 (동+지번 기본번호 일치: 910-3 ≒ 910-5)
-  const normIndex = new Map();
+  // 지번 및 정규화 인덱스 빌드 (호갱노노 방식 2계층 + 퍼지 지번)
+  const jibunIndex = new Map();     // 1순위: sggCd|umdNm|jibun (완전 일치)
+  const jibunBaseIndex = new Map(); // 2순위: sggCd|umdNm|baseJibun (퍼지 기본번호)
+  const normIndex = new Map();      // 3순위: sggCd|normName (시군구 단위 단지명)
 
   masterData.forEach((apt, idx) => {
+    const sgg = apt.sgg_cd || apt.bjd_code || '';
     if (apt.district && apt.jibun) {
-      const jKey = `${apt.district.trim()} ${apt.jibun.trim()}`;
-      jibunIndex.set(jKey, idx);
-      if (apt.sgg_cd) {
-        jibunIndex.set(`${apt.sgg_cd}|${apt.district.trim()}|${apt.jibun.trim()}`, idx);
+      const d = apt.district.trim();
+      const j = apt.jibun.trim();
+      const baseJ = j.split('-')[0];
+
+      if (sgg) jibunIndex.set(`${sgg}|${d}|${j}`, idx);
+      jibunIndex.set(`${d} ${j}`, idx);
+
+      if (sgg && !jibunBaseIndex.has(`${sgg}|${d}|${baseJ}`)) {
+        jibunBaseIndex.set(`${sgg}|${d}|${baseJ}`, idx);
       }
-      // 퍼지: 지번 기본번호(앞자리) 기준 — "910-3", "910-5" 모두 "910"으로 처리
-      const baseJibun = apt.jibun.trim().split('-')[0];
-      const baseKey = `${apt.district.trim()} ${baseJibun}`;
-      if (!jibunBaseIndex.has(baseKey)) jibunBaseIndex.set(baseKey, idx);
+      if (!jibunBaseIndex.has(`${d} ${baseJ}`)) {
+        jibunBaseIndex.set(`${d} ${baseJ}`, idx);
+      }
     }
     const nKey = normalizeAptName(apt.name);
     if (nKey) {
+      if (sgg) {
+        const sKey = `${sgg}|${nKey}`;
+        if (!normIndex.has(sKey)) normIndex.set(sKey, []);
+        normIndex.get(sKey).push(idx);
+      }
       if (!normIndex.has(nKey)) normIndex.set(nKey, []);
       normIndex.get(nKey).push(idx);
     }
@@ -261,21 +271,22 @@ async function main() {
         const amount = parseInt(dealAmtStr, 10);
         if (!aptNm || isNaN(amount) || amount <= 0) continue;
 
-        // 1순위: 지번 완전 매칭
+        // 1순위: 시군구코드 + 법정동명 + 지번 완전 매칭
         let masterIdx = jibunIndex.get(`${sggCd}|${umdNm}|${jibun}`) ?? jibunIndex.get(`${umdNm} ${jibun}`);
-        // 2순위: 단지명 정규화 매칭
+
+        // 2순위: 지번 기본번호 퍼지 매칭 (동별 910-3 ≒ 910-5 허용)
+        if (masterIdx === undefined && jibun) {
+          const baseJibun = jibun.split('-')[0];
+          masterIdx = jibunBaseIndex.get(`${sggCd}|${umdNm}|${baseJibun}`) ?? jibunBaseIndex.get(`${umdNm} ${baseJibun}`);
+        }
+
+        // 3순위: 시군구코드 + 단지명 정규화 매칭
         if (masterIdx === undefined) {
           const nKey = normalizeAptName(aptNm);
-          const candidates = normIndex.get(nKey);
+          const candidates = normIndex.get(`${sggCd}|${nKey}`) || normIndex.get(nKey);
           if (candidates && candidates.length > 0) {
             masterIdx = candidates[0];
           }
-        }
-        // 3순위: 지번 기본번호 퍼지 매칭 (910-3 ≒ 910-5, 같은 단지 내 동별 지번 차이 허용)
-        if (masterIdx === undefined && jibun) {
-          const baseJibun = jibun.split('-')[0];
-          const baseKey = `${umdNm} ${baseJibun}`;
-          masterIdx = jibunBaseIndex.get(baseKey);
         }
 
         if (masterIdx !== undefined) {

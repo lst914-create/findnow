@@ -221,10 +221,10 @@ export default function UnifiedAuthModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 pt-6 pb-28 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
       {/* 1. 요금제 안내 풀 뷰 모드 */}
       {mode === "pricing" ? (
-        <div className="w-full max-w-7xl my-auto animate-in zoom-in-95 duration-200">
+        <div className="w-full max-w-7xl my-auto pb-24 sm:pb-8 animate-in zoom-in-95 duration-200">
           <PricingSection
             selectedRole={selectedRole}
             showCloseButton={true}
@@ -238,7 +238,7 @@ export default function UnifiedAuthModal({
         </div>
       ) : (
         /* 2. 로그인 및 회원가입 모달 모드 */
-        <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 dark:border-slate-800 my-auto animate-in zoom-in-95 duration-200 font-sans">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 pb-10 sm:p-8 shadow-2xl relative border border-slate-200 dark:border-slate-800 my-auto animate-in zoom-in-95 duration-200 font-sans">
           {/* 닫기 버튼 */}
           <button
             onClick={onClose}
@@ -734,10 +734,11 @@ export default function UnifiedAuthModal({
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full mt-2 py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-lg shadow-indigo-500/25 transition-all cursor-pointer disabled:opacity-50"
+                  className="w-full mt-3 mb-2 py-3.5 rounded-2xl font-black text-sm bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-lg shadow-indigo-500/25 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {loading ? "가입 처리 중..." : `${getRoleBadgeName(selectedRole)} 가입 완료하기`}
                 </button>
+                <div className="h-4 sm:h-0" />
               </form>
             </div>
           )}

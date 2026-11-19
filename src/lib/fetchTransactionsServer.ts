@@ -297,18 +297,21 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
       const chunk = dealYmdList.slice(c, c + CHUNK_SIZE);
       const chunkPromises = chunk.map(async (dealYmd) => {
         const tradeUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+        const silvUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcSilvTrade/getRTMSDataSvcSilvTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
         const rentUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptRent/getRTMSDataSvcAptRent?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
 
-        const [tradeRes, rentRes] = await Promise.all([
+        const [tradeRes, silvRes, rentRes] = await Promise.all([
           fetch(tradeUrl, { next: { revalidate: 3600 } }).catch(() => null),
+          fetch(silvUrl, { next: { revalidate: 3600 } }).catch(() => null),
           fetch(rentUrl, { next: { revalidate: 3600 } }).catch(() => null),
         ]);
 
         const monthlyTrades: any[] = [];
         const monthlyRents: any[] = [];
 
-        if (tradeRes && tradeRes.ok) {
-          const xml = await tradeRes.text();
+        const parseTradeXml = async (res: Response | null, isSilv = false) => {
+          if (!res || !res.ok) return;
+          const xml = await res.text();
           for (const item of parseItems(xml)) {
             const itemAptName = getVal(item, "aptNm");
             const itemUmdNm = getVal(item, "umdNm");
@@ -334,11 +337,17 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
                   buildYear,
                   aptName: itemAptName,
                   umdNm: itemUmdNm,
+                  isRight: isSilv, // 분양권/입주권 플래그
                 });
               }
             }
           }
-        }
+        };
+
+        // 1. 일반 매매 실거래가 파싱
+        await parseTradeXml(tradeRes, false);
+        // 2. 분양권/입주권 실거래가 파싱 (신축 단지 등 포괄)
+        await parseTradeXml(silvRes, true);
 
         if (rentRes && rentRes.ok) {
           const xml = await rentRes.text();

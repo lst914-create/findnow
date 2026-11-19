@@ -271,10 +271,10 @@ export default function AptMap({
         livePriceDetailCacheRef.current.get(normName);
     }
 
-    // 가격: 실거래 캐시 → 마커 내장값 순으로 폴백
-    const resolvedPriceNum = liveDetail?.latestPrice || selectedApt.priceNum || 0;
-    const resolvedPriceStr = liveDetail?.formatted || selectedApt.avgPrice;
-    const resolvedPyeong = liveDetail?.pyeong || selectedApt.pyeong;
+    // [단일 출처 원칙] 카드 가격은 마스터 DB avgPrice 사용. liveDetail 덮어쓰기 금지.
+    const resolvedPriceNum = selectedApt.priceNum || 0;
+    const resolvedPriceStr = selectedApt.avgPrice;
+    const resolvedPyeong = selectedApt.pyeong;
 
     const ratio = selectedApt.jeonseRatio ?? 56;
     const jeonseNum = selectedApt.rentNum || Math.round(resolvedPriceNum * (ratio / 100));
@@ -517,39 +517,13 @@ export default function AptMap({
   const markerHtml = (apt: AptMarker, isHighlight: boolean) => {
     const isMain = isHighlight;
 
-    // 호갱노노 스타일 실거래가 캐시 조회: 1순위 (지번 일치), 2순위 (단지명 일치)
-    let liveDetail = undefined;
-    if (apt.addressName) {
-      const parts = apt.addressName.split(" ");
-      if (parts.length >= 3) {
-        const umdJibun = `${parts[2]} ${parts[3] || ""}`.trim();
-        liveDetail =
-          livePriceDetailCacheRef.current.get(`${umdJibun}__${apt.pyeong}`) ||
-          livePriceDetailCacheRef.current.get(umdJibun);
-      }
-    }
-    if (!liveDetail && apt.district && apt.jibun) {
-      const umdJibun = `${apt.district} ${apt.jibun}`.trim();
-      liveDetail =
-        livePriceDetailCacheRef.current.get(`${umdJibun}__${apt.pyeong}`) ||
-        livePriceDetailCacheRef.current.get(umdJibun);
-    }
-    if (!liveDetail) {
-      const normName = normalizeAptName(apt.name);
-      liveDetail =
-        livePriceDetailCacheRef.current.get(`${normName}__${apt.pyeong}`) ||
-        livePriceDetailCacheRef.current.get(normName);
-    }
-    const hasLive = !!liveDetail;
-
-    // 가격 표시: 실거래가 우선 (최근 1개월 평균 또는 마지막 실거래가), 없으면 마스터 데이터 (미확인 시 "가격없음")
+    // [단일 출처 원칙] 마커 가격은 100% 마스터 DB avgPrice 사용. viewport API 덮어쓰기 금지.
+    // 마스터 DB에 avgPrice가 있으면 무조건 그것을 쓴다. viewport liveDetail은 사용하지 않는다.
     let priceLabel: string;
     let pyeongLabel: string;
     if (filters.tradeType === "매매") {
-      priceLabel = hasLive
-        ? liveDetail!.formatted
-        : (apt.priceNum > 0 ? apt.avgPrice : "가격없음");
-      pyeongLabel = hasLive ? `${liveDetail!.pyeong}평` : `${apt.pyeong}평`;
+      priceLabel = apt.priceNum > 0 ? apt.avgPrice : "가격없음";
+      pyeongLabel = `${apt.pyeong}평`;
     } else {
       const rent = Math.round((apt.rentNum || 0) / 10000);
       priceLabel = rent > 0 ? `${rent}억` : "가격없음";
@@ -1694,11 +1668,11 @@ export default function AptMap({
               livePriceDetailCacheRef.current.get(normName);
           }
 
-          // 마커와 100% 동일한 실거래가 및 평형 일치 보장
+          // [단일 출처 원칙] 카드 가격도 마커와 동일하게 마스터 DB avgPrice 사용. live/realtimeTx 덮어쓰기 금지.
           const isRentalOnly = selectedApt.isRentalOnly === true;
-          const resolvedPriceNum = isRentalOnly ? 0 : (live?.latestPrice || selectedApt.priceNum || 0);
-          const displayPrice = isRentalOnly ? "-" : (live?.formatted || realtimeTx?.avgPriceStr || (selectedApt.priceNum > 0 ? selectedApt.avgPrice : "-"));
-          const displayPyeong = live?.pyeong || selectedApt.pyeong;
+          const resolvedPriceNum = isRentalOnly ? 0 : (selectedApt.priceNum || 0);
+          const displayPrice = isRentalOnly ? "-" : (selectedApt.priceNum > 0 ? selectedApt.avgPrice : "-");
+          const displayPyeong = selectedApt.pyeong;
           const hasPrice = resolvedPriceNum > 0 && displayPrice !== "-";
 
           // [단지 상세 분석보기와 100% 일치] 상세 페이지에서 사용하는 마스터 데이터(APARTMENTS_DATA) 우선 매칭

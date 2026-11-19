@@ -521,6 +521,7 @@ export default function AptMap({
     // 마스터 DB에 avgPrice가 있으면 무조건 그것을 쓴다. viewport liveDetail은 사용하지 않는다.
     let priceLabel: string;
     let pyeongLabel: string;
+    const isRentalMarker = apt.isRentalOnly === true;
     if (filters.tradeType === "매매") {
       priceLabel = apt.priceNum > 0 ? apt.avgPrice : "가격없음";
       pyeongLabel = `${apt.pyeong}평`;
@@ -531,17 +532,44 @@ export default function AptMap({
     }
     const viewers = apt.liveViewers || Math.floor(Math.random() * 80 + 20);
 
-    // 마커 스타일: 하이라이트(빨강) 외 모든 마커를 신뢰도 높은 '실거래가 초록색(티얼)'으로 통일
-    const bgGradient = isMain
-      ? "linear-gradient(135deg, #e11d48 0%, #be123c 100%)"
-      : "linear-gradient(135deg, #0f766e 0%, #0d5f57 100%)";
-    const borderColor = isMain ? "#fecdd3" : "#5eead4";
-    const glowStyle = isMain
-      ? "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);"
-      : "box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.35);";
-    const arrowColor = isMain ? "#be123c" : "#0d5f57";
-
     const isNoPrice = priceLabel === "가격없음";
+
+    // ── 호갱노노 스타일 마커 색상 분기 ──────────────────────────────
+    // 하이라이트(선택됨): 빨강
+    // 임대전용: 보라
+    // 실거래 있음: 초록(티얼)
+    // 가격없음(실거래 없음): 회색 반투명
+    let bgGradient: string;
+    let borderColor: string;
+    let glowStyle: string;
+    let arrowColor: string;
+    let opacityStyle: string = "";
+
+    if (isMain) {
+      bgGradient = "linear-gradient(135deg, #e11d48 0%, #be123c 100%)";
+      borderColor = "#fecdd3";
+      glowStyle = "box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.4);";
+      arrowColor = "#be123c";
+    } else if (isRentalMarker) {
+      // 임대전용: 보라색
+      bgGradient = "linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)";
+      borderColor = "#c4b5fd";
+      glowStyle = "box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);";
+      arrowColor = "#5b21b6";
+    } else if (isNoPrice) {
+      // 실거래 없음: 회색 반투명 (호갱노노 스타일)
+      bgGradient = "linear-gradient(135deg, #64748b 0%, #475569 100%)";
+      borderColor = "#94a3b8";
+      glowStyle = "box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.25);";
+      arrowColor = "#475569";
+      opacityStyle = "opacity: 0.72;";
+    } else {
+      // 실거래 있음: 초록(티얼)
+      bgGradient = "linear-gradient(135deg, #0f766e 0%, #0d5f57 100%)";
+      borderColor = "#5eead4";
+      glowStyle = "box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.35);";
+      arrowColor = "#0d5f57";
+    }
 
     return `
       <div style="
@@ -551,6 +579,7 @@ export default function AptMap({
         align-items: center;
         cursor: pointer;
         filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3));
+        ${opacityStyle}
         ${isMain ? "transform: scale(1.12); transform-origin: bottom center; z-index: 999;" : ""}
       ">
         <div style="
@@ -569,12 +598,19 @@ export default function AptMap({
           <div style="font-size: 10px; font-weight: 600; opacity: 0.9; margin-bottom: ${isNoPrice ? "-1px" : "0"};">
             ${pyeongLabel}
           </div>
-          ${isNoPrice ? `
-            <div style="font-size: ${isMain ? "16px" : "14.5px"}; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.2); line-height: 1.05;">
-              -
+          ${isRentalMarker ? `
+            <div style="font-size: ${isMain ? "12px" : "11px"}; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.2); line-height: 1.1;">
+              임대
             </div>
-            <div style="font-size: 9px; font-weight: 700; opacity: 0.95; margin-top: 1px; letter-spacing: -0.3px;">
-              가격없음
+            <div style="font-size: 9px; font-weight: 700; opacity: 0.9; margin-top: 1px; letter-spacing: -0.3px;">
+              전용
+            </div>
+          ` : isNoPrice ? `
+            <div style="font-size: ${isMain ? "12px" : "11px"}; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.15); line-height: 1.1; opacity: 0.85;">
+              거래
+            </div>
+            <div style="font-size: 9px; font-weight: 600; opacity: 0.8; margin-top: 1px; letter-spacing: -0.3px;">
+              없음
             </div>
           ` : `
             <div style="font-size: ${isMain ? "15px" : "13.5px"}; font-weight: 800; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">
@@ -1721,6 +1757,15 @@ export default function AptMap({
                     임대보증금 및 거주 조건은 임대 관리 주체를 통해 확인하세요.
                   </div>
                 </div>
+              ) : !hasPrice ? (
+              /* 실거래 없는 단지: 호갱노노 스타일 안내 배너 */
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 mb-2.5 text-xs text-slate-600">
+                <div className="font-extrabold mb-1 text-slate-700">📊 최근 매매 거래 내역 없음</div>
+                <div className="text-slate-500 leading-relaxed">
+                  국토교통부 실거래 신고 기준, 최근 거래 내역이 없는 단지입니다.<br />
+                  단지 상세 분석에서 과거 거래 이력을 확인하세요.
+                </div>
+              </div>
               ) : (
               /* 시세 3종: realtimeTx(live 캐시 반영값) 최우선 사용 → 마커와 100% 동일 */
               <div className="grid grid-cols-3 gap-1.5 mb-2.5">

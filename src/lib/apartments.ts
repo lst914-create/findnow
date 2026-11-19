@@ -9,8 +9,12 @@ export interface Apartment {
   jibun_address?: string | null;
   price_min: number;    // 만원 (없으면 0)
   price_max: number;    // 만원 (없으면 0)
+  avgPrice?: number;     // 만원 (최신 실거래 기준 대표 가격)
   rent_min?: number;    // 만원 (전세 최소)
   rent_max?: number;    // 만원 (전세 최대)
+  is_real_price?: boolean;
+  isRealPrice?: boolean;
+  jibun?: string;
   area_sqm?: number;
   area_pyeong: number;  // 없으면 33 (기본 33평)
   built_year?: number | null;
@@ -84,8 +88,12 @@ function normalizeApartment(raw: Record<string, unknown>): Apartment {
     // ── 가격 (실거래가 없으면 0, 절대 임의 생성 금지) ──
     price_min: (raw.price_min as number) || 0,
     price_max: (raw.price_max as number) || 0,
+    avgPrice: (raw.avgPrice as number) || (raw.price_max as number) || (raw.price_min as number) || 0,
     rent_min: (raw.rent_min as number) || 0,
     rent_max: (raw.rent_max as number) || 0,
+    is_real_price: (raw.is_real_price as boolean) ?? false,
+    isRealPrice: (raw.isRealPrice as boolean) ?? (raw.is_real_price as boolean) ?? false,
+    jibun: (raw.jibun as string) || undefined,
     // ── 면적/평형 ──
     area_sqm: (raw.area_sqm as number) || undefined,
     area_pyeong: (raw.area_pyeong as number) || 33,

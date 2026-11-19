@@ -1002,7 +1002,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   // [사용자 요구사항] 실거래가 원본 기준 최고가 / 최저가 / 최근 거래가 (가상 거래 배제, 마지막 실거래 우선, 없으면 단지 확정 시세 0초 즉시 제공)
   const priceStatsSummary = useMemo(() => {
     if (validPeriodTxs.length === 0) {
-      const basePrice = apt.price_max || apt.price_min || 0;
+      const basePrice = (apt as any).avgPrice || apt.price_max || apt.price_min || 0;
       const minPrice = apt.price_min || basePrice;
       const maxPrice = apt.price_max || basePrice;
       return {
@@ -1079,12 +1079,12 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       const manwon = Math.round(priceStatsSummary.latest * 10000);
       return formatPrice(manwon);
     }
-    const fallback = apt.price_max || apt.price_min || 0;
+    const fallback = (apt as any).avgPrice || apt.price_max || apt.price_min || 0;
     if (fallback > 0) {
       return formatPrice(fallback);
     }
     return "가격없음";
-  }, [priceStatsSummary, apt.price_max, apt.price_min]);
+  }, [priceStatsSummary, (apt as any).avgPrice, apt.price_max, apt.price_min]);
 
   // 실거래 매매 대표가 (만원 단위, 지도 마커용) - priceStatsSummary와 완전 동기화
   const realSaleAvgManwon = useMemo(() => {

@@ -549,8 +549,10 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     return "전체";
   }, [apt]);
 
-  // 평형별 필터 상태: 단지 전체 3년치 실거래 및 회전율(두번째 이미지)이 0초 즉시 온전히 표출되도록 기본값 '전체'로 설정
+  // 평형별 필터 상태: 단지 전체 실거래 및 회전율이 0초 즉시 온전히 표출되도록 기본값 '전체'로 설정
   const [selectedArea, setSelectedArea] = useState<string>("전체");
+  // 조회 기간 상태: chartRange 변경 시 필요한 개월수를 동적으로 요청
+  const [fetchedMonths, setFetchedMonths] = useState<number>(60);
 
   useEffect(() => {
     setSelectedArea("전체");
@@ -560,7 +562,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     let isMounted = true;
     async function fetchRealData() {
       // 0초 초기 로딩에는 캐시를 즉시 보여주되, 국토부 최신 API를 호출하여 새 거래가 있으면 실시간 자동 갱신
-      const cacheKey = `${apt.id}_${apt.name}`;
+      const cacheKey = `${apt.id}_${apt.name}_${fetchedMonths}`;
       if (apiTransactionsCache.has(cacheKey)) {
         const cached = apiTransactionsCache.get(cacheKey)!;
         if (cached.trades?.length > 0) setApiTrades(cached.trades);
@@ -569,7 +571,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       try {
         const apiRegion = apt.apiRegion || apt.region;
         const res = await fetch(
-          `/api/transactions?region=${encodeURIComponent(apiRegion)}&district=${encodeURIComponent(apt.district || "")}&aptName=${encodeURIComponent(apt.name)}&months=36`
+          `/api/transactions?region=${encodeURIComponent(apiRegion)}&district=${encodeURIComponent(apt.district || "")}&aptName=${encodeURIComponent(apt.name)}&months=${fetchedMonths}`
         );
         if (res.ok) {
           const data = await res.json();
@@ -643,7 +645,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     return () => {
       isMounted = false;
     };
-  }, [apt.id, apt.apiRegion, apt.region, apt.district, apt.name]);
+  }, [apt.id, apt.apiRegion, apt.region, apt.district, apt.name, fetchedMonths]);
 
   // 단지의 공식 등록 평형 전용면적 목록 (apt.area_distributions 기준)
   const officialAreaDistributions = useMemo(() => {
@@ -1450,7 +1452,13 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                   {(["최근 1년", "최근 3년", "전체"] as const).map((r) => (
                     <button
                       key={r}
-                      onClick={() => setChartRange(r)}
+                      onClick={() => {
+                        setChartRange(r);
+                        // 선택 범위에 맞게 API 조회 기간 동적 확장
+                        if (r === "최근 1년") setFetchedMonths(12);
+                        else if (r === "최근 3년") setFetchedMonths(36);
+                        else setFetchedMonths(120); // 전체 = 최대 10년
+                      }}
                       className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${chartRange === r
                         ? "bg-blue-600 text-white shadow-sm"
                         : "bg-slate-100 text-slate-500 hover:bg-slate-200"

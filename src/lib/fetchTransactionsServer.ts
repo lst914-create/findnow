@@ -205,8 +205,8 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
     return { trades: cached.trades, rents: cached.rents };
   }
 
-  // 3. 직접 국토교통부 API 병렬 조회 (36개월 3년치 풀 조회)
-  const queryMonths = Math.min(months, 36);
+  // 3. 직접 국토교통부 API 병렬 조회 (최대 120개월=10년치 풀 조회)
+  const queryMonths = Math.min(months, 120);
   const result = await executeFetch(apt, queryMonths, cacheKey);
   return result;
 }

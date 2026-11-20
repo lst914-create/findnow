@@ -37,6 +37,7 @@ const AptDetailMap = dynamic(() => import("@/components/AptDetailMap"), {
 });
 
 import { getPreloadedTransactions } from "@/lib/transactionsCache";
+import { calculateRepresentativePrice, formatPriceToKorean } from "@/lib/representativePrice";
 
 interface DetailProps {
   params: Promise<{ id: string }>;
@@ -570,6 +571,12 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         if (cached.rents?.length > 0) setApiRents(cached.rents);
       }
       if (fetchedMonths > 36) {
+        // 이미 3년 이전 과거 데이터(2023년 이전 체결 건)가 충분히 있거나 프리셋 캐시가 있다면 수십초 네트워크 재호출 원천 스킵 (0ms 즉시 반환)
+        const hasPastData = apiTrades.some((t: any) => t.dealYear && t.dealYear <= 2023);
+        if (hasPastData || apiTrades.length >= 25 || preloaded.isPreset) {
+          setIsFetchingFullHistory(false);
+          return;
+        }
         setIsFetchingFullHistory(true);
       }
       try {
@@ -954,7 +961,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     ? activeTrend.slice(-12)
     : chartRange === "최근 3년"
       ? activeTrend.slice(-36)
-      : (isFetchingFullHistory && activeTrend.length > 36 ? activeTrend.slice(-36) : activeTrend);
+      : activeTrend;
 
   // 호갱노노 스타일 최고가 / 최저가 / 최신 거래 핀포인트 계산
   const chartHighlights = useMemo(() => {
@@ -1022,97 +1029,46 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     });
   }, [activeTxs, tradeType]);
 
-  // [사용자 요구사항] 실거래가 원본 기준 최고가 / 최저가 / 최근 거래가 (가상 거래 배제, 마지막 실거래 우선, 없으면 단지 확정 시세 0초 즉시 제공)
+  // [단일 출처 원칙 100% 동기화] 마커, 팝업카드, 상세페이지 상단 시세가 완전 동일한 대표 가격 산출 함수 사용
   const priceStatsSummary = useMemo(() => {
-    if (validPeriodTxs.length === 0) {
-      const basePrice = (apt as any).avgPrice || apt.price_max || apt.price_min || 0;
-      const minPrice = apt.price_min || basePrice;
-      const maxPrice = apt.price_max || basePrice;
-      return {
-        min: +(minPrice / 10000).toFixed(1),
-        max: +(maxPrice / 10000).toFixed(1),
-        latest: +(basePrice / 10000).toFixed(1),
-        isFromRealTxs: false,
-        hasBaselinePrice: basePrice > 0,
-        recent1MonthCount: 0,
-        latestTx: null as any,
-      };
-    }
-
-    // 실제 체결된 거래 중 최고가/최저가 (조회 기간 전체 기준 정직 반영!)
-    const allPrices = validPeriodTxs.map((t: any) => t.rawPrice);
-    const periodMin = Math.min(...allPrices);
-    const periodMax = Math.max(...allPrices);
-    const latestTx = validPeriodTxs[0]; // 가장 마지막 체결 거래
-
-    // 최근 1개월(31일) 내 실거래 필터
-    const latestDateStr = latestTx.date;
-    let latestTime = 0;
-    if (latestDateStr) {
-      const parts = latestDateStr.split(".");
-      const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
-      const m = parseInt(parts[1] || "1", 10);
-      const d = parseInt(parts[2] || "1", 10);
-      latestTime = new Date(y, m - 1, d).getTime();
-    }
-
-    const ONE_MONTH_MS = 31 * 24 * 60 * 60 * 1000;
-    const recent1MonthTxs = validPeriodTxs.filter((t: any) => {
-      if (!latestTime || !t.date) return false;
-      const parts = t.date.split(".");
-      const y = parts[0]?.length === 2 ? 2000 + parseInt(parts[0], 10) : parseInt(parts[0], 10);
-      const m = parseInt(parts[1] || "1", 10);
-      const d = parseInt(parts[2] || "1", 10);
-      const tTime = new Date(y, m - 1, d).getTime();
-      return latestTime - tTime <= ONE_MONTH_MS;
-    });
-
-    let displayLatest = latestTx.rawPrice;
-    if (recent1MonthTxs.length >= 2) {
-      const rPrices = recent1MonthTxs.map((t: any) => t.rawPrice);
-      displayLatest = Math.round(rPrices.reduce((a: number, b: number) => a + b, 0) / rPrices.length);
-    }
-
+    const rep = calculateRepresentativePrice(apt, validPeriodTxs);
     return {
-      min: +(periodMin / 10000).toFixed(1),
-      max: +(periodMax / 10000).toFixed(1),
-      latest: +(displayLatest / 10000).toFixed(1),
-      isFromRealTxs: true,
-      hasBaselinePrice: true,
-      recent1MonthCount: recent1MonthTxs.length,
-      latestTx,
+      min: +(rep.periodMin / 10000).toFixed(1),
+      max: +(rep.periodMax / 10000).toFixed(1),
+      latest: rep.priceUk,
+      isFromRealTxs: rep.isReal,
+      hasBaselinePrice: rep.priceNum > 0,
+      recent1MonthCount: rep.recent1MonthCount,
+      latestTx: rep.latestTx,
+      priceNum: rep.priceNum,
+      detailStr: rep.detailStr,
     };
-  }, [validPeriodTxs, apt.price_max, apt.price_min]);
+  }, [validPeriodTxs, apt]);
 
   const displayMinPrice = priceStatsSummary.min;
   const displayMaxPrice = priceStatsSummary.max;
   const displayLatestPrice = priceStatsSummary.latest;
 
   const formatPrice = (price: number) => {
-    const uk = Math.floor(price / 10000);
-    const cheon = price % 10000;
-    if (uk > 0 && cheon > 0) return `${uk}억 ${cheon.toLocaleString()}만`;
-    if (uk > 0) return `${uk}억원`;
-    return `${price.toLocaleString()}만원`;
+    return formatPriceToKorean(price);
   };
 
-  // 실거래 가격 계산: [0ms 즉시 표출] 실거래가 있으면 마지막 거래 반영, 실거래 수신 전에는 단지 확정 기준 시세(36억 등) 즉시 표출
+  // 실거래 가격 계산: [0ms 즉시 표출] 단일 출처 대표 실거래가 100% 동기화
   const currentAverageDisplay = useMemo(() => {
-    if (priceStatsSummary.latest > 0) {
-      const manwon = Math.round(priceStatsSummary.latest * 10000);
-      return formatPrice(manwon);
+    if (priceStatsSummary.detailStr && priceStatsSummary.detailStr !== "가격없음") {
+      return priceStatsSummary.detailStr;
     }
     const fallback = (apt as any).avgPrice || apt.price_max || apt.price_min || 0;
     if (fallback > 0) {
-      return formatPrice(fallback);
+      return formatPriceToKorean(fallback);
     }
     return "가격없음";
   }, [priceStatsSummary, (apt as any).avgPrice, apt.price_max, apt.price_min]);
 
   // 실거래 매매 대표가 (만원 단위, 지도 마커용) - priceStatsSummary와 완전 동기화
   const realSaleAvgManwon = useMemo(() => {
-    if (tradeType === "매매" && priceStatsSummary.isFromRealTxs && priceStatsSummary.latest > 0) {
-      return Math.round(priceStatsSummary.latest * 10000);
+    if (tradeType === "매매" && priceStatsSummary.priceNum > 0) {
+      return priceStatsSummary.priceNum;
     }
     return apt.price_max || apt.price_min || 0;
   }, [priceStatsSummary, tradeType, apt.price_min, apt.price_max]);

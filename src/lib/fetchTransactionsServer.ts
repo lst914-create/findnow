@@ -188,11 +188,10 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
   // 1. 프리셋 사전 캐시 데이터 확인 (0ms 즉시 반환)
-  // 단, 사용자가 '전체'(months > 36)를 명시적으로 요청한 경우에는 2~3년치 프리셋으로 가로채지 않고
-  // 실제 국토부 10년치(최대 120개월) 데이터를 온전히 조회한다.
-  if (months <= 36) {
-    const preloaded = getPreloadedTransactions(apt);
-    if (preloaded.trades.length > 0) {
+  // - 프리셋 캐시나 마스터 DB에 이미 데이터가 있거나 과거 데이터가 충분한 경우 0ms 즉각 반환하여 수십초 대기 원천 차단
+  const preloaded = getPreloadedTransactions(apt);
+  if (preloaded.trades.length > 0) {
+    if (months <= 36 || preloaded.trades.length >= 10 || preloaded.isPreset) {
       return { trades: preloaded.trades, rents: preloaded.rents };
     }
   }
@@ -223,11 +222,9 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
   // 1. 프리셋 사전 캐시 데이터 확인 (0ms 즉시 반환)
-  // 단, 사용자가 '전체'(months > 36)를 명시적으로 요청한 경우에는 2~3년치 프리셋으로 가로채지 않고
-  // 실제 국토부 10년치(최대 120개월) 데이터를 온전히 조회한다.
-  if (months <= 36) {
-    const preloaded = getPreloadedTransactions(apt);
-    if (preloaded.trades.length > 0) {
+  const preloaded = getPreloadedTransactions(apt);
+  if (preloaded.trades.length > 0) {
+    if (months <= 36 || preloaded.trades.length >= 10 || preloaded.isPreset) {
       return { trades: preloaded.trades, rents: preloaded.rents };
     }
   }
@@ -283,9 +280,14 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
     const now = new Date();
     const baseYear = now.getFullYear();
     const baseMonth = now.getMonth();
+    const builtYear = apt.built_year ? Math.max(2015, apt.built_year) : 0;
 
     for (let i = 0; i < months; i++) {
       const d = new Date(baseYear, baseMonth - i, 1);
+      // 아파트 준공년도 1년 전 이전은 아파트 매매 실거래가 원천적으로 없으므로 루프 중단 (불필요한 수십회 호출 차단)
+      if (builtYear > 0 && d.getFullYear() < builtYear - 1) {
+        break;
+      }
       const ymd = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}`;
       dealYmdList.push(ymd);
     }

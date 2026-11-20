@@ -6,6 +6,7 @@ import { APARTMENTS_DATA, Apartment } from "@/lib/apartments";
 import { loadKakaoMap } from "@/lib/kakaoMapLoader";
 import { normalizeAptName } from "@/lib/normalizeAptName";
 import { getPreloadedTransactions } from "@/lib/transactionsCache";
+import { calculateRepresentativePrice } from "@/lib/representativePrice";
 
 function formatPrice(manwon: number): string {
   if (manwon >= 10000) {
@@ -77,22 +78,18 @@ export function getStandardExclusiveAreaSqm(pyeong: number, existingSqm?: number
 export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
   const isRentalOnly = (apt as any).isRentalOnly === true;
 
-  // [호갱노노 방식 100% 동기화] 국토부 실거래가(최근 3개월 평균 또는 실거래가) 최우선 적용
+  // [단일 출처 원칙 100% 동기화] 마커, 팝업카드, 상세페이지가 완전 동일한 대표 가격 산출 함수 사용
   const preloaded = getPreloadedTransactions(apt);
-  let resolvedPrice = (apt as any).avgPrice || apt.price_max || apt.price_min || 0;
-  let resolvedRent = apt.rent_max || apt.rent_min || 0;
-  let isReal = (apt as any).isRealPrice ?? false;
+  const rep = calculateRepresentativePrice(apt, preloaded.trades);
 
-  if (preloaded.trades.length > 0 && preloaded.trades[0].dealAmount > 0) {
-    resolvedPrice = preloaded.trades[0].dealAmount;
-    isReal = true;
-  }
+  let resolvedRent = apt.rent_max || apt.rent_min || 0;
   if (preloaded.rents.length > 0 && preloaded.rents[0].depositAmount > 0) {
     resolvedRent = preloaded.rents[0].depositAmount;
   }
 
-  const priceNum = isRentalOnly ? 0 : resolvedPrice;
-  const avgPriceStr = priceNum > 0 ? formatPrice(priceNum) : "가격없음";
+  const priceNum = rep.priceNum;
+  const avgPriceStr = rep.markerStr;
+  const isReal = rep.isReal;
 
   const jeonseRatio = apt.jeonseRatio ?? 56;
   const rentNum = resolvedRent > 0 ? resolvedRent : Math.round(priceNum * (jeonseRatio / 100));

@@ -869,6 +869,22 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     }
 
     if (monthlySaleAvg.size === 0 && monthlyJeonseAvg.size === 0) {
+      // [0초 즉시 렌더링 2차 안전망] 국토부 API 수신 전이라도 마스터 DB 시세(avgPrice, price_max) 기반 기준선 차트 즉시 표출
+      const fallbackPrice = (apt.avgPrice || apt.price_max || apt.price_min || 0);
+      const fallbackJeonse = (apt.rent_max || apt.rent_min || (fallbackPrice > 0 ? Math.round(fallbackPrice * 0.55) : 0));
+      if (fallbackPrice > 0 || fallbackJeonse > 0) {
+        const saleDisplay = fallbackPrice > 0 ? +(fallbackPrice / 10000).toFixed(1) : null;
+        const jeonseDisplay = fallbackJeonse > 0 ? +(fallbackJeonse / 10000).toFixed(1) : null;
+        return timeline.map((item, idx) => ({
+          date: item.ymKey,
+          price: tradeType === "전월세" ? null : saleDisplay,
+          jeonsePrice: tradeType === "매매" ? null : jeonseDisplay,
+          volume: idx === timeline.length - 1 ? 1 : 0,
+          rentVolume: 0,
+          isReal: idx === timeline.length - 1,
+          isRealJeonse: idx === timeline.length - 1,
+        }));
+      }
       return [];
     }
 
@@ -932,7 +948,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     }
 
     return result;
-  }, [tradeType, filteredApiTrades, filteredApiRents]);
+  }, [tradeType, filteredApiTrades, filteredApiRents, apt]);
 
   const chartData = chartRange === "최근 1년"
     ? activeTrend.slice(-12)
@@ -1480,6 +1496,12 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                       10년 전체 실거래 연동 중...
                     </span>
                   )}
+                  {isLoadingApi && !isFetchingFullHistory && (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-md animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
+                      국토교통부 실시간 동기화 중...
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -1683,13 +1705,36 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">📋 실거래 신고 내역</h3>
+                {isLoadingApi && (
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-md animate-pulse">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
+                    국토교통부 실시간 동기화 중...
+                  </span>
+                )}
               </div>
 
               {isLoadingApi && activeTxs.length === 0 ? (
-                <div className="rounded-2xl border border-slate-100 p-8 text-center bg-slate-50 animate-pulse">
-                  <div className="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                  <p className="text-xs font-bold text-slate-700">국토교통부 실거래 계약 내역을 확인하는 중입니다...</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">최근 3개년 체결 건을 조회하고 있습니다.</p>
+                <div className="rounded-2xl border border-slate-100 overflow-hidden bg-white shadow-xs">
+                  <div className="bg-slate-50 px-4 py-2.5 text-xs text-slate-400 font-medium flex justify-between">
+                    <span>계약일</span>
+                    <span>전용면적</span>
+                    <span>층</span>
+                    <span>거래금액</span>
+                  </div>
+                  <div className="divide-y divide-slate-100 animate-pulse">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="px-4 py-3 flex items-center justify-between">
+                        <div className="h-4 bg-slate-200 rounded w-16" />
+                        <div className="h-4 bg-slate-200 rounded w-12" />
+                        <div className="h-4 bg-slate-200 rounded w-8" />
+                        <div className="h-4 bg-slate-200 rounded w-20" />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="py-2.5 bg-slate-50/70 text-center text-[11px] text-slate-500 font-medium border-t border-slate-100 flex items-center justify-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
+                    국토교통부 실거래 원본 계약 내역을 확인하는 중입니다...
+                  </div>
                 </div>
               ) : activeTxs.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">

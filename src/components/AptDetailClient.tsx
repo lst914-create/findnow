@@ -45,6 +45,25 @@ interface DetailProps {
 
 import { APARTMENTS_DATA } from "@/lib/apartments";
 
+// 한국 아파트 전용면적(㎡) → 일반 공급평형(평) 직관적 표준 변환 함수
+export function getSupplyPyeongLabel(sqm: number | string): string {
+  const num = typeof sqm === "number" ? sqm : parseFloat(String(sqm).replace(/[^0-9.]/g, ""));
+  if (!num || isNaN(num) || num <= 0) return "";
+  
+  if (num < 35) return `${Math.max(10, Math.round(num * 0.45))}평`;
+  if (num < 48) return `${Math.round(num * 0.42)}평`;
+  if (num >= 48 && num < 65) return "25평"; // 전용 59㎡ 대
+  if (num >= 65 && num < 78) return "30평"; // 전용 74㎡ 대
+  if (num >= 78 && num < 92) return "34평"; // 전용 84㎡ 대
+  if (num >= 92 && num < 110) return "38평"; // 전용 101~106㎡ 대
+  if (num >= 110 && num < 125) return "41평"; // 전용 113~118㎡ 대 (래미안삼성1차 113.52, 114.12 등 통합)
+  if (num >= 125 && num < 140) return "48평"; // 전용 125~135㎡ 대
+  if (num >= 140 && num < 155) return "52평"; // 전용 141㎡ 대
+  if (num >= 155 && num < 175) return "58평"; // 전용 155~165㎡ 대
+  if (num >= 175) return `${Math.round(num * 0.364)}평`; // 전용 181㎡ 대 -> 66평
+  return `${Math.round(num * 0.4)}평`;
+}
+
 // 지역·태그 기반 버스 노선 정보 생성 (전국 17개 시도 및 지방 주요 단지 실존 노선 연동)
 interface BusRoute {
   number: string;
@@ -527,33 +546,35 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     // fallback: 83~85 → 84 (기존 로직)
     return (raw >= 83 && raw <= 85) ? 84 : raw;
   };
-  const normalizeAreaStr = (sqm: number) => `${normalizeAreaSqm(sqm)}㎡`;
+  const normalizeAreaStr = (sqm: number) => getSupplyPyeongLabel(sqm);
 
   const displayAreaSqm = normalizeAreaSqm(apt.area_sqm || 84);
 
-  // [사용자 핵심 요구사항] 상세분석 진입 시 해당 단지에서 가장 세대수가 많은 평형(주력 평형)을 자동 계산
-  // 예: 25평 190세대, 34평 350세대인 경우 → 34평(84㎡)이 기본 선택되어 모든 데이터가 주력 평형 기준으로 표현됨
+  // [사용자 핵심 요구사항] 상세분석 진입 시 주력 평형(예: 34평, 25평) 자동 계산
   const majorArea = useMemo(() => {
+    if (apt.area_pyeong) {
+      return `${apt.area_pyeong}평`;
+    }
     if (apt.area_distributions && apt.area_distributions.length > 0) {
       const sorted = [...apt.area_distributions].sort((a: any, b: any) => (b.units || 0) - (a.units || 0));
       const top = sorted[0];
       if (top) {
         const m = (top.label || "").match(/전용\s*([\d.]+)㎡/);
         if (m) {
-          return `${normalizeAreaSqm(parseFloat(m[1]))}㎡`;
+          return getSupplyPyeongLabel(parseFloat(m[1]));
         }
       }
     }
     if (apt.area_sqm) {
-      return `${normalizeAreaSqm(apt.area_sqm)}㎡`;
+      return getSupplyPyeongLabel(apt.area_sqm);
     }
     return "전체";
   }, [apt]);
 
-  // 평형별 필터 상태: 단지 전체 실거래 및 회전율이 0초 즉시 온전히 표출되도록 기본값 '전체'로 설정
+  // 평형별 필터 상태: 기본값 '전체'
   const [selectedArea, setSelectedArea] = useState<string>("전체");
-  // 조회 기간 상태: 기본 '최근 3년'(36개월) 로딩, 사용자가 '전체' 클릭 시 120개월(10년)로 확장
-  const [fetchedMonths, setFetchedMonths] = useState<number>(36);
+  // 조회 기간 상태: DB 상의 10년 전체 거래(120개월)를 기본 로딩하여 하단 실거래 목록에 과거 전체 내역 표출
+  const [fetchedMonths] = useState<number>(120);
   const [isFetchingFullHistory, setIsFetchingFullHistory] = useState<boolean>(false);
 
   useEffect(() => {
@@ -688,9 +709,11 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       const uk = Math.floor(t.dealAmount / 10000);
       const man = t.dealAmount % 10000;
       const normArea = normalizeAreaSqm(t.excluUseAr);
+      const pyeong = getSupplyPyeongLabel(t.excluUseAr);
       return {
         date: `${String(t.dealYear).slice(2)}.${String(t.dealMonth).padStart(2, "0")}.${String(t.dealDay).padStart(2, "0")}`,
-        area: `${normArea}㎡`,
+        area: pyeong || `${normArea}㎡`,
+        sqm: normArea,
         floor: `${t.floor}층`,
         floorNum: t.floor,
         price: `${uk > 0 ? `${uk}억 ` : ""}${man > 0 ? `${man.toLocaleString()}만` : uk > 0 ? "" : "0만"}`,
@@ -716,9 +739,11 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       const man = r.depositAmount % 10000;
       const depositText = `${uk > 0 ? `${uk}억 ` : ""}${man > 0 ? `${man.toLocaleString()}만` : ""}`;
       const normArea = normalizeAreaSqm(r.excluUseAr);
+      const pyeong = getSupplyPyeongLabel(r.excluUseAr);
       return {
         date: `${String(r.dealYear).slice(2)}.${String(r.dealMonth).padStart(2, "0")}.${String(r.dealDay).padStart(2, "0")}`,
-        area: `${normArea}㎡`,
+        area: pyeong || `${normArea}㎡`,
+        sqm: normArea,
         floor: `${r.floor}층`,
         floorNum: r.floor,
         price: r.monthlyRent > 0 ? `보증 ${depositText}/${r.monthlyRent}만` : depositText,
@@ -739,35 +764,28 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   }, [tradeType, realSaleTxs, realRentTxs]);
   const hasRealDataForCurrentTab = allActiveTxs.length > 0;
 
-  // 평형별 고유 면적 목록 추출 (단지 공식 평형 우선, 없으면 실거래 데이터 기반)
+  // 평형별 고유 면적 목록 추출 (공급 평형 기준: 25평, 30평, 34평, 38평, 41평...)
   const areaOptions = useMemo(() => {
     const areas = new Set<string>();
 
-    if (officialAreaDistributions && officialAreaDistributions.length > 0) {
-      // 1. 단지의 공식 평형(apt.area_distributions)이 있으면 그 평형들만 100% 정직하게 표출
-      officialAreaDistributions.forEach((dist) => {
-        areas.add(dist.label);
-      });
-    } else {
-      // 2. 공식 평형 데이터가 없는 경우 실거래 거래 내역 및 대표 면적 기반
-      allActiveTxs.forEach((tx: any) => {
-        if (tx.area) areas.add(tx.area);
-      });
-      if (majorArea && majorArea !== "전체") {
-        areas.add(majorArea);
-      }
-      if (areas.size === 0 && displayAreaSqm) {
-        areas.add(`${displayAreaSqm}㎡`);
-      }
+    allActiveTxs.forEach((tx: any) => {
+      if (tx.area) areas.add(tx.area);
+    });
+    if (majorArea && majorArea !== "전체") {
+      areas.add(majorArea);
+    }
+    if (areas.size === 0) {
+      if (apt.area_pyeong) areas.add(`${apt.area_pyeong}평`);
+      else if (apt.area_sqm) areas.add(getSupplyPyeongLabel(apt.area_sqm));
     }
 
     const sorted = Array.from(areas).sort((a, b) => {
-      const numA = parseFloat(a.replace("㎡", ""));
-      const numB = parseFloat(b.replace("㎡", ""));
+      const numA = parseInt(a.replace(/[^0-9]/g, ""), 10) || 0;
+      const numB = parseInt(b.replace(/[^0-9]/g, ""), 10) || 0;
       return numA - numB;
     });
     return ["전체", ...sorted];
-  }, [allActiveTxs, displayAreaSqm, majorArea, officialAreaDistributions]);
+  }, [allActiveTxs, majorArea, apt.area_pyeong, apt.area_sqm]);
 
   // 평형 필터 적용된 거래 목록
   const activeTxs = useMemo(() => {
@@ -1109,8 +1127,8 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
   const fallbackSaleRange = useMemo(() => {
     if (selectedArea !== "전체") {
-      const selectedNum = parseFloat(selectedArea.replace("㎡", ""));
-      const baseArea = displayAreaSqm || 84;
+      const selectedNum = parseFloat(selectedArea.replace(/[^0-9.]/g, ""));
+      const baseArea = apt.area_pyeong || (displayAreaSqm ? Math.round(displayAreaSqm * 0.4) : 34);
       if (selectedNum && baseArea) {
         const ratio = selectedNum / baseArea;
         return {
@@ -1123,7 +1141,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       min: apt.price_min,
       max: apt.price_max,
     };
-  }, [selectedArea, displayAreaSqm, apt.price_min, apt.price_max]);
+  }, [selectedArea, displayAreaSqm, apt.price_min, apt.price_max, apt.area_pyeong]);
 
   // ─── 전월세 실거래 분리 통계 (선택된 평형 반영) ─────────────────────────
   // 순수 전세 (monthlyRent < 5): 보증금만 있는 전세 계약
@@ -1203,14 +1221,14 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     const baseRent = Math.round(((apt.rent_min || 0) + (apt.rent_max || 0)) / 2);
     if (baseRent <= 0) return "가격없음";
     if (selectedArea !== "전체") {
-      const selectedNum = parseFloat(selectedArea.replace("㎡", ""));
-      const baseArea = displayAreaSqm || 84;
+      const selectedNum = parseFloat(selectedArea.replace(/[^0-9.]/g, ""));
+      const baseArea = apt.area_pyeong || (displayAreaSqm ? Math.round(displayAreaSqm * 0.4) : 34);
       if (selectedNum && baseArea) {
         return formatPrice(Math.round(baseRent * (selectedNum / baseArea)));
       }
     }
     return formatPrice(baseRent);
-  }, [realJeonseStats, realMonthlyStats, selectedArea, displayAreaSqm, apt.rent_min, apt.rent_max]);
+  }, [realJeonseStats, realMonthlyStats, selectedArea, displayAreaSqm, apt.rent_min, apt.rent_max, apt.area_pyeong]);
 
   // 전세 최근 가격 (억원 단위 숫자)
   const displayLatestRentPrice = useMemo(() => {
@@ -1401,14 +1419,14 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                 <p className="text-xs text-slate-400 mt-1">
                   {tradeType === "전월세"
                     ? (realJeonseStats
-                      ? `전세 기준 · ${selectedArea === "전체" ? "전체 평형" : `전용 ${selectedArea}`} · 최근 ${realJeonseStats.count}건 평균`
+                      ? `전세 기준 · ${selectedArea === "전체" ? "전체 평형" : `${selectedArea}형`} · 최근 ${realJeonseStats.count}건 평균`
                       : selectedArea === "전체"
-                        ? `전체 평형 (전용 ${displayAreaSqm}㎡ 기준)`
-                        : `전용 ${selectedArea} 기준`)
+                        ? `전체 평형 (${apt.area_pyeong || 34}평형 기준)`
+                        : `${selectedArea}형 기준`)
                     : (priceStatsSummary.isFromRealTxs && priceStatsSummary.latestTx
-                      ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 최종 실거래 (${priceStatsSummary.latestTx.date} 체결)`
+                      ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `${selectedArea}형`} · 최종 실거래 (${priceStatsSummary.latestTx.date} 체결)`
                       : (priceStatsSummary.hasBaselinePrice
-                        ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `전용 ${selectedArea}`} · 단지 기준 시세`
+                        ? `매매 기준 · ${selectedArea === "전체" ? `${apt.area_pyeong || 34}평형` : `${selectedArea}형`} · 단지 기준 시세`
                         : `국토교통부 실거래가 공개시스템 기준 · 최근 신고 내역 없음`))}
                 </p>
               )}
@@ -1442,10 +1460,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                         key={r}
                         onClick={() => {
                           setChartRange(r);
-                          // 선택 범위에 맞게 API 조회 기간 동적 확장
-                          if (r === "최근 1년") setFetchedMonths(12);
-                          else if (r === "최근 3년") setFetchedMonths(36);
-                          else setFetchedMonths(120); // 전체 = 최대 10년
                         }}
                         className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${chartRange === r
                           ? "bg-blue-600 text-white shadow-sm"
@@ -1683,7 +1697,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                 <div className="rounded-2xl border border-slate-100 overflow-hidden bg-white shadow-xs">
                   <div className="bg-slate-50 px-4 py-2.5 text-xs text-slate-400 font-medium flex justify-between">
                     <span>계약일</span>
-                    <span>전용면적</span>
+                    <span>평형</span>
                     <span>층</span>
                     <span>거래금액</span>
                   </div>
@@ -1726,7 +1740,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                       <thead className="bg-slate-50">
                         <tr className="text-xs text-slate-400">
                           <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-left font-medium">계약일</th>
-                          <th className="px-2 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-center font-medium">전용면적</th>
+                          <th className="px-2 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-center font-medium">평형</th>
                           <th className="px-2 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-center font-medium">층</th>
                           <th className="px-2.5 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap text-right font-medium">거래금액</th>
                         </tr>

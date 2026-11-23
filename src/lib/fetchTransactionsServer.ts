@@ -45,7 +45,7 @@ function extractKeywords(name: string): Set<string> {
 }
 
 function cleanAptNameForMatch(name: string): string {
-  let cleaned = name.replace(/\([0-9\-\s]+\)/g, ""); // 지번 (910-5) 먼저 제거
+  let cleaned = name.replace(/\([^)]*\)/g, ""); // 괄호 내 모든 내용 (지번 910-5, 201동, 상가동 등) 먼저 제거
   cleaned = cleaned.replace(/\d{1,4}동(?=$|[^가-힣])/g, ""); // 202동 등 건물 동 번호 제거
   cleaned = normalizeAptName(cleaned);
   return cleaned;

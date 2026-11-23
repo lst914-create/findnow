@@ -896,8 +896,18 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     }
 
     // 5. 연속 가격 궤적 및 거래량 생성 (거래 없는 월은 직전 실거래가 유지)
-    let currentHoldingSale: number | null = null;
-    let currentHoldingJeonse: number | null = null;
+    // [호갱노노·아실 동일 구현] 첫 거래 이전의 초기 월은 최초 실거래가(또는 단지 마스터 시세)로 기준선을 이어주어
+    // 3년 차트 선택 시 앞부분 1년여가 뚝 끊기거나 텅 비어 보이는 결함을 원천 방지
+    const sortedSaleYms = Array.from(monthlySaleAvg.keys()).sort();
+    const firstSaleYm = sortedSaleYms.length > 0 ? sortedSaleYms[0] : null;
+    const initialSalePrice = firstSaleYm ? monthlySaleAvg.get(firstSaleYm)! : (apt.avgPrice || apt.price_max || apt.price_min || null);
+
+    const sortedJeonseYms = Array.from(monthlyJeonseAvg.keys()).sort();
+    const firstJeonseYm = sortedJeonseYms.length > 0 ? sortedJeonseYms[0] : null;
+    const initialJeonsePrice = firstJeonseYm ? monthlyJeonseAvg.get(firstJeonseYm)! : (apt.rent_max || apt.rent_min || null);
+
+    let currentHoldingSale: number | null = initialSalePrice;
+    let currentHoldingJeonse: number | null = initialJeonsePrice;
 
     const result: {
       date: string;

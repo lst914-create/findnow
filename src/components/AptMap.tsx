@@ -900,7 +900,7 @@ export default function AptMap({
           position: new kakaoMaps.LatLng(apt.lat, apt.lng),
           content: el,
           yAnchor: 1.0,
-          zIndex: isHL ? 999 : 1,
+          zIndex: isHL ? 999 : (apt.priceNum > 0 ? 10 : 1),
         });
 
         overlay.setMap(map);

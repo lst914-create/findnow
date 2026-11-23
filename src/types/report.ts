@@ -119,21 +119,21 @@ export interface ReportSection {
 export const REPORT_SECTIONS: ReportSection[] = [
   {
     id: "location_score",
-    title: "입지 종합 점수표 (항목별 상세 산출 근거 포함)",
+    title: "입지 종합 점수표",
     type: "apt_location",
     isPreview: false,
     description: "교통·학군·상권·자연환경·정비사업 근접도를 항목별 가중치로 계산한 입지 점수와 산출 근거를 공개합니다.",
   },
   {
     id: "price_trend_20y",
-    title: "20년 실거래가 전체 이력 및 신저/신고가 분석",
+    title: "20년 실거래가 이력 및 신저/신고가 분석",
     type: "apt_location",
     isPreview: false,
     description: "국토교통부 실거래가 원본 데이터 기반 과거 20년 거래 전체 이력과 신저가·신고가 분석.",
   },
   {
     id: "supply_1km",
-    title: "반경 1km·3km·5km 입주 예정 물량 집계",
+    title: "반경 1km·3km·5km 입주 예정 물량",
     type: "supply_demand",
     isPreview: true,
     description: "청약홈 기반 향후 3년 입주 예정 단지와 물량을 거리별로 정리합니다.",
@@ -147,7 +147,7 @@ export const REPORT_SECTIONS: ReportSection[] = [
   },
   {
     id: "school_district_detail",
-    title: "학군 상세: 학교별 학업성취도·진학 실적",
+    title: "학교별 학업성취도·진학 실적",
     type: "school_district",
     isPreview: false,
     description: "나이스(NEIS) 기반 배정 초·중학교 학업성취도 및 고등학교 진학 실적.",

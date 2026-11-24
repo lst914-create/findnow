@@ -168,7 +168,7 @@ export const REPORT_SECTIONS: ReportSection[] = [
   },
   {
     id: "fair_value_model",
-    title: "적정 가치 평가 및 고평가/저평가 적정 매수가 판정",
+    title: "적정 가치 및 고평가/저평가 적정 매수가 판정",
     type: "apt_location",
     isPreview: false,
     description: "동일 생활권 랜드마크 대비 평당가 갭, 전세가 기반 내재가치, 금리 변동 시나리오별 적정 매수가 밴드를 제시합니다.",

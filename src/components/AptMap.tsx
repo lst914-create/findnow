@@ -1787,7 +1787,7 @@ export default function AptMap({
                   </div>
                 </div>
                 <div className="bg-emerald-50/80 rounded-2xl p-2.5 border border-emerald-100/90 text-center">
-                  <div className="text-[10px] text-emerald-600 font-bold mb-0.5">월세 (국토부 신고)</div>
+                  <div className="text-[10px] text-emerald-600 font-bold mb-0.5">월세<br/>(국토부 신고)</div>
                   <div className="text-xs font-black text-emerald-800 leading-tight mt-1">
                     {realtimeTx?.monthlyRentStr || "-"}
                   </div>

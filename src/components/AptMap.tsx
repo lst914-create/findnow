@@ -676,22 +676,25 @@ export default function AptMap({
     const initialTargetCenter = center || (geoResolvedRef.current ?? fallbackCenter);
     initMap(initialTargetCenter, !!geoResolvedRef.current);
 
-    // 백그라운드 비동기로 내 위치(GPS) 조회 → 지도가 이미 화면에 뜬 상태에서 부드럽게 내 위치로 이동(panTo)
+    // 백그라운드 비동기로 내 위치(GPS) 조회 → 지도가 이미 화면(대치동)에 뜬 상태에서 부드럽게 내 위치로 이동(panTo)
     if (!center && !highlightId && !geoResolvedRef.current && navigator.geolocation) {
+      setIsGeoLoading(true);
       navigator.geolocation.getCurrentPosition(
         (p) => {
           if (isCancelled) return;
           const pos = { lat: p.coords.latitude, lng: p.coords.longitude };
           geoResolvedRef.current = pos;
           setUserPos(pos);
+          setIsGeoLoading(false);
           if (mapRef.current && window.kakao?.maps) {
             mapRef.current.panTo(new window.kakao.maps.LatLng(pos.lat, pos.lng));
           }
         },
         () => {
-          // 실패 시에도 이미 초기 지도가 표출되어 있으므로 사용자 대기 0초 유지
+          setIsGeoLoading(false);
+          // 실패 시에도 이미 초기 지도(대치동)가 표출되어 있으므로 사용자 대기 0초 유지
         },
-        { timeout: 4000, maximumAge: 300000 }
+        { timeout: 5000, maximumAge: 300000 }
       );
     }
 
@@ -1658,19 +1661,12 @@ export default function AptMap({
         {/* 카카오 지도 컨테이너 */}
         <div ref={containerRef} style={{ height: computedHeight }} className="w-full bg-slate-100 transition-[height] duration-200" />
 
-        {/* geolocation 로딩 중 오버레이 */}
+        {/* geolocation 로딩 중 비차단형 플로팅 배지 (대치동 지도는 100% 즉시 노출 유지) */}
         {isGeoLoading && (
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[30] rounded-3xl">
-            <div className="bg-white rounded-3xl px-8 py-6 shadow-2xl flex flex-col items-center gap-4">
-              <div className="relative w-14 h-14">
-                <div className="absolute inset-0 rounded-full border-4 border-indigo-100" />
-                <div className="absolute inset-0 rounded-full border-4 border-t-indigo-600 animate-spin" />
-                <span className="absolute inset-0 flex items-center justify-center text-2xl">📍</span>
-              </div>
-              <div className="text-center">
-                <div className="font-extrabold text-slate-800 text-base">내 위치 찾는 중...</div>
-                <div className="text-slate-500 text-xs mt-1">위치 권한을 허용해주세요</div>
-              </div>
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-[30] pointer-events-none">
+            <div className="bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-lg border border-indigo-100 flex items-center gap-2 animate-fadeIn">
+              <span className="w-2 h-2 rounded-full bg-indigo-600 animate-ping" />
+              <span className="text-[11px] font-bold text-slate-800">현재 위치 확인 중...</span>
             </div>
           </div>
         )}
@@ -1896,44 +1892,6 @@ export default function AptMap({
               >
                 조건 적용하기 ({filterMarkers(APT_MARKERS).length}개 단지 탐색)
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 지도 로딩 중 인디케이터 (시·도 프리뷰 및 빠른 탐색 스켈레톤) */}
-      {!isMapReady && (
-        <div
-          className="absolute inset-0 bg-slate-50/95 backdrop-blur-sm flex flex-col items-center justify-center p-4 z-[50]"
-          style={{ height }}
-        >
-          {/* 상단 빠른 시·도 칩 및 지능형 로더 (사용자 이탈 방지) */}
-          <div className="w-full max-w-sm bg-white p-5 rounded-3xl shadow-lg border border-slate-200/80 text-center space-y-3.5 animate-fadeIn">
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-black text-slate-800">전국 실거래 지도 연결 중...</p>
-            </div>
-            
-            <p className="text-[11px] text-slate-500 font-medium">원하시는 주요 지역을 누르시면 해당 권역으로 바로 이동합니다</p>
-
-            <div className="flex flex-wrap justify-center gap-1.5 pt-1">
-              {[
-                { name: "서울", lat: 37.5665, lng: 126.9780 },
-                { name: "경기", lat: 37.2636, lng: 127.0286 },
-                { name: "인천", lat: 37.4563, lng: 126.7052 },
-                { name: "부산", lat: 35.1796, lng: 129.0756 },
-                { name: "대구", lat: 35.8714, lng: 128.6014 },
-                { name: "대전", lat: 36.3504, lng: 127.3845 },
-                { name: "세종", lat: 36.4800, lng: 127.2890 },
-                { name: "광주", lat: 35.1595, lng: 126.8526 },
-              ].map((city) => (
-                <span
-                  key={city.name}
-                  className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200 shadow-2xs"
-                >
-                  {city.name}
-                </span>
-              ))}
             </div>
           </div>
         </div>

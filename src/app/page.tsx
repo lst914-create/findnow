@@ -12,7 +12,18 @@ import AptCardActionButtons from "@/components/AptCardActionButtons";
 import { getStoredUser, saveStoredUser } from "@/lib/authStore";
 import { UserProfile, UserRole } from "@/types/auth";
 
-const AptMap = dynamic(() => import("@/components/AptMap"), { ssr: false });
+const AptMap = dynamic(() => import("@/components/AptMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[480px] sm:h-[600px] bg-slate-100 rounded-2xl sm:rounded-3xl relative overflow-hidden flex items-center justify-center">
+      <div className="absolute inset-0 opacity-40 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]" />
+      <div className="relative z-10 flex items-center gap-2 bg-white/90 backdrop-blur-xs px-4 py-2 rounded-full shadow-sm border border-slate-200">
+        <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-bold text-slate-700">대치동 실거래 지도 연결 중...</span>
+      </div>
+    </div>
+  ),
+});
 
 const INITIAL_MOCK_APARTMENTS: Apartment[] = APARTMENTS_DATA;
 
@@ -1063,7 +1074,7 @@ export default function Home() {
           호갱노노 지도 섹션 (실시간 지역 이동 연동)
           ======================================== */}
       <section id="map-section" className="py-2 sm:py-4 max-w-7xl mx-auto px-2 sm:px-6 lg:px-8">
-        <div className="rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-200 shadow-xl">
+        <div className="rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-200 shadow-xl min-h-[480px] sm:min-h-[600px] bg-slate-100">
           <AptMap
             center={mapCenter}
             onVisibleApartmentsChange={handleViewportApartmentsChange}

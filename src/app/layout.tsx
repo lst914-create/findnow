@@ -61,6 +61,7 @@ export const metadata: Metadata = {
 
 import MobileBottomNav from "@/components/MobileBottomNav";
 import WatchlistComparePanelWrapper from "@/components/WatchlistComparePanelWrapper";
+import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -69,6 +70,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko" className="h-full antialiased">
+      <head>
+        <Script
+          id="kakao-maps-sdk"
+          src={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.NEXT_PUBLIC_KAKAO_JS_KEY || process.env.NEXT_PUBLIC_KAKAO_MAP_KEY || "99678f56cdcf668879cad358db1939be"}&autoload=false&libraries=services,clusterer`}
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className="min-h-full flex flex-col font-sans pb-16 md:pb-0">
         <main className="flex-1 flex flex-col">{children}</main>
         <MobileBottomNav />

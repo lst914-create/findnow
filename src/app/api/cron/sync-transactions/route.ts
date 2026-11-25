@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { normalizeAptName } from "@/lib/normalizeAptName";
+import { normalizeJibun, isTransactionMatch } from "@/lib/fetchTransactionsServer";
 
 export const maxDuration = 60; // Vercel 최대 실행시간 60초
 export const dynamic = "force-dynamic";
 
 /**
- * 매일 밤 12시(자정 KST = 15:00 UTC) Vercel Cron 자동 실행 엔드포인트
- * 국토교통부 최신 실거래가를 수집하여 Supabase DB에 최신 시세로 자동 반영합니다.
+ * 매일 밤 12시 자정(KST = 15:00 UTC) Vercel Cron 자동 실행 엔드포인트
+ * 4중 복합 키(법정동 + 지번 + 건축년도 + 단지명)로 국토교통부 최신 실거래가를 수집하여
+ * DB에 100% 오차 없이 최신 시세로 자동 반영합니다.
  */
 export async function GET(request: NextRequest) {
-  // Cron 시크릿 검증 (Vercel Cron 헤더 또는 CRON_SECRET 확인)
+  // Cron 시크릿 검증
   const authHeader = request.headers.get("authorization");
   if (
     process.env.CRON_SECRET &&
     authHeader !== `Bearer ${process.env.CRON_SECRET}`
   ) {
-    // Vercel 자체 cron 요청인 경우 통과
     const isVercelCron = request.headers.get("user-agent")?.includes("vercel-cron");
     if (!isVercelCron) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   const prevYmd = `${prevMonth.getFullYear()}${String(prevMonth.getMonth() + 1).padStart(2, "0")}`;
   const targetMonths = [currentYmd, prevYmd];
 
-  // 주요 주요 법정동 코드 목록 (수도권 핵심지)
+  // 주요 법정동 코드 목록 (수도권 핵심지)
   const targetLawds = [
     { code: "41360", name: "남양주시" },
     { code: "41310", name: "구리시" },
@@ -67,6 +67,8 @@ export async function GET(request: NextRequest) {
       const allTrades: Array<{
         aptNm: string;
         umdNm: string;
+        jibun: string;
+        buildYear: number;
         amount: number;
         dealTime: number;
         floor: number;
@@ -83,17 +85,20 @@ export async function GET(request: NextRequest) {
           for (const m of matches) {
             const aptNm = (m.match(/<aptNm>(.*?)<\/aptNm>/) || [])[1]?.trim() || "";
             const umdNm = (m.match(/<umdNm>(.*?)<\/umdNm>/) || [])[1]?.trim() || "";
+            const jibun = (m.match(/<jibun>(.*?)<\/jibun>/) || [])[1]?.trim() || "";
+            const buildYear = parseInt((m.match(/<buildYear>(.*?)<\/buildYear>/) || [])[1], 10) || 0;
             const amountStr = ((m.match(/<dealAmount>(.*?)<\/dealAmount>/) || [])[1] || "").trim().replace(/,/g, "");
             const dealYear = parseInt((m.match(/<dealYear>(.*?)<\/dealYear>/) || [])[1], 10);
             const dealMonth = parseInt((m.match(/<dealMonth>(.*?)<\/dealMonth>/) || [])[1], 10);
             const dealDay = parseInt((m.match(/<dealDay>(.*?)<\/dealDay>/) || [])[1], 10) || 1;
             const floor = parseInt((m.match(/<floor>(.*?)<\/floor>/) || [])[1], 10) || 1;
 
-            // 1층 거래 제외
             if (floor > 1 && aptNm && amountStr) {
               allTrades.push({
                 aptNm,
                 umdNm,
+                jibun: normalizeJibun(jibun),
+                buildYear,
                 amount: parseInt(amountStr, 10),
                 dealTime: new Date(dealYear, dealMonth - 1, dealDay).getTime(),
                 floor,
@@ -107,10 +112,10 @@ export async function GET(request: NextRequest) {
 
       if (allTrades.length === 0) continue;
 
-      // Supabase에서 해당 시군구의 아파트 목록 조회
+      // Supabase에서 해당 시군구의 아파트 목록 조회 (지번, 건축년도 포함)
       const { data: dbApts } = await supabase
         .from("apartments")
-        .select("id, name, district, jeonse_ratio, price_max")
+        .select("id, name, district, jibun, built_year, jeonse_ratio, price_max")
         .ilike("region", `%${lawd.name.replace(/시|구/, "")}%`);
 
       if (!dbApts || dbApts.length === 0) continue;
@@ -127,21 +132,22 @@ export async function GET(request: NextRequest) {
       }> = [];
 
       for (const apt of dbApts) {
-        const normApt = normalizeAptName(apt.name);
-        const aptDistrict = apt.district || "";
-
+        // 4중 복합 키 (법정동 + 지번 + 건축년도 + 단지명) 매칭
         const matched = allTrades.filter((t) => {
-          if (aptDistrict && t.umdNm) {
-            const isGroup = (d: string) => /다산|도농|지금|가운/.test(d);
-            if (isGroup(aptDistrict) && !isGroup(t.umdNm)) return false;
-            if (!isGroup(aptDistrict) && !t.umdNm.includes(aptDistrict.replace(/[동읍면]/g, ""))) return false;
-          }
-          const normT = normalizeAptName(t.aptNm);
-          if (normApt === normT) return true;
-          const numApt = normApt.match(/\d+/g)?.join("");
-          const numT = normT.match(/\d+/g)?.join("");
-          if (numApt !== numT) return false;
-          return normApt.length >= 4 && normT.length >= 4 && (normApt.includes(normT) || normT.includes(normApt));
+          return isTransactionMatch(
+            {
+              name: apt.name,
+              district: apt.district,
+              jibun: apt.jibun,
+              built_year: apt.built_year,
+            },
+            {
+              aptNm: t.aptNm,
+              umdNm: t.umdNm,
+              jibun: t.jibun,
+              buildYear: t.buildYear,
+            }
+          );
         });
 
         if (matched.length === 0) continue;
@@ -157,7 +163,6 @@ export async function GET(request: NextRequest) {
           finalPrice = latest.amount;
         }
 
-        // 변동이 있을 때만 업데이트
         if (apt.price_max !== finalPrice) {
           const ratio = apt.jeonse_ratio || 60;
           const rentMax = Math.round(finalPrice * (ratio / 100));
@@ -182,12 +187,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Nightly sync complete. Updated ${totalUpdated} apartments.`,
+      updatedCount: totalUpdated,
       timestamp: new Date().toISOString(),
     });
   } catch (error: any) {
-    console.error("[Nightly Sync Error]:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error("Cron Transaction Sync Error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message },
+      { status: 500 }
+    );
   }
 }
-

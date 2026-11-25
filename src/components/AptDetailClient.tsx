@@ -603,7 +603,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       try {
         const apiRegion = apt.apiRegion || apt.region;
         const res = await fetch(
-          `/api/transactions?region=${encodeURIComponent(apiRegion)}&district=${encodeURIComponent(apt.district || "")}&aptName=${encodeURIComponent(apt.name)}&months=${fetchedMonths}`
+          `/api/transactions?region=${encodeURIComponent(apiRegion)}&district=${encodeURIComponent(apt.district || "")}&aptName=${encodeURIComponent(apt.name)}&months=${fetchedMonths}&id=${encodeURIComponent(apt.id || "")}&jibun=${encodeURIComponent(apt.jibun || "")}&builtYear=${apt.built_year || ""}`
         );
         if (res.ok) {
           const data = await res.json();

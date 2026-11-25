@@ -179,6 +179,75 @@ export function isAptNameMatch(
   return false;
 }
 
+// 지번 정규화: "0110-0001" -> "110-1", "110-0" -> "110", "산 14-2" -> "산14-2"
+export function normalizeJibun(raw: string): string {
+  if (!raw) return "";
+  let s = raw.trim().replace(/\s+/g, "");
+  const isSan = s.startsWith("산");
+  if (isSan) s = s.slice(1);
+
+  const parts = s.split("-");
+  const bon = parseInt(parts[0], 10);
+  if (isNaN(bon)) return raw.trim();
+
+  let bu = parts.length > 1 ? parseInt(parts[1], 10) : 0;
+  if (isNaN(bu)) bu = 0;
+
+  const res = bu > 0 ? `${bon}-${bu}` : `${bon}`;
+  return isSan ? `산${res}` : res;
+}
+
+/**
+ * 4중 복합 키 (법정동 + 지번 + 건축년도 + 단지명) 종합 실거래 매칭 함수
+ * 1순위: 지번 + 법정동 일치 (행정 표준 고유 식별)
+ * 2순위: 텍스트 및 서브브랜드 정밀 대조 폴백
+ */
+export function isTransactionMatch(
+  target: { name: string; region?: string; district?: string; umd_nm?: string; jibun?: string; built_year?: number | null },
+  candidate: { aptNm: string; umdNm: string; jibun?: string; buildYear?: number }
+): boolean {
+  if (!target || !candidate) return false;
+
+  const candUmd = candidate.umdNm || "";
+  const targetDist = target.umd_nm || target.district || "";
+
+  // 1. 법정동 일치 여부 확인
+  let isDongMatch = false;
+  if (!targetDist || !candUmd) {
+    isDongMatch = true;
+  } else {
+    const cleanDist = targetDist.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
+    const cleanUmd = candUmd.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
+    if (cleanDist.length >= 1 && cleanUmd.length >= 1) {
+      isDongMatch = candUmd.includes(cleanDist) || targetDist.includes(cleanUmd);
+    } else {
+      isDongMatch = true;
+    }
+  }
+
+  // 2. [1순위] 지번 기반 매칭 (Golden Standard)
+  const normTargetJibun = normalizeJibun(target.jibun || "");
+  const normCandJibun = normalizeJibun(candidate.jibun || "");
+
+  if (isDongMatch && normTargetJibun && normCandJibun && normTargetJibun === normCandJibun) {
+    // 지번과 동이 일치할 때, 건축년도 검증 (동일 지번 내 상이한 단지 구분)
+    const tYear = target.built_year || 0;
+    const cYear = candidate.buildYear || 0;
+    if (tYear > 0 && cYear > 0 && Math.abs(tYear - cYear) > 4) {
+      const tNorm = cleanAptNameForMatch(target.name);
+      const cNorm = cleanAptNameForMatch(candidate.aptNm);
+      if (tNorm.includes(cNorm) || cNorm.includes(tNorm)) {
+        return true;
+      }
+      return false;
+    }
+    return true;
+  }
+
+  // 3. [2순위] 지번 부재 또는 미일치 시 단지명 텍스트 기반 매칭 폴백
+  return isAptNameMatch(target.name, candidate.aptNm, target.region || "", targetDist, candUmd);
+}
+
 /**
  * 클라이언트 API 엔드포인트(/api/transactions)용 직접 조회 함수
  * - 프리셋 캐시 / 인메모리 캐시가 있으면 0ms 즉시 반환
@@ -356,8 +425,28 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
             const item = match[1];
             const itemAptName = item.match(/<aptNm>([^<]*)<\/aptNm>/)?.[1]?.trim() || "";
             const itemUmdNm = item.match(/<umdNm>([^<]*)<\/umdNm>/)?.[1]?.trim() || "";
+            const itemJibun = item.match(/<jibun>([^<]*)<\/jibun>/)?.[1]?.trim() || "";
+            const itemBuildYear = parseInt(item.match(/<buildYear>([^<]*)<\/buildYear>/)?.[1] || "0", 10);
 
-            if (!itemAptName || !isAptNameMatch(aptName, itemAptName, region, district, itemUmdNm)) {
+            // 4중 복합 키 (법정동 + 지번 + 건축년도 + 단지명) 판정
+            const isMatch = isTransactionMatch(
+              {
+                name: aptName,
+                region: apt.region || region,
+                district: apt.district || district,
+                umd_nm: apt.umd_nm,
+                jibun: apt.jibun,
+                built_year: apt.built_year,
+              },
+              {
+                aptNm: itemAptName,
+                umdNm: itemUmdNm,
+                jibun: itemJibun,
+                buildYear: itemBuildYear,
+              }
+            );
+
+            if (!itemAptName || !isMatch) {
               continue;
             }
 

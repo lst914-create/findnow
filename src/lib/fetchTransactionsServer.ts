@@ -187,13 +187,10 @@ export function isAptNameMatch(
 export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<{ trades: any[]; rents: any[] }> {
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
-  // 1. 프리셋 사전 캐시 데이터 확인 (0ms 즉시 반환)
-  // - 프리셋 캐시나 마스터 DB에 이미 데이터가 있거나 과거 데이터가 충분한 경우 0ms 즉각 반환하여 수십초 대기 원천 차단
+  // 1. PRESET_TRADES 실거래 데이터 확인 (국토부 실거래 기반 프리셋만 허용, 가상 데이터 제외)
   const preloaded = getPreloadedTransactions(apt);
-  if (preloaded.trades.length > 0) {
-    if (months <= 36 || preloaded.trades.length >= 10 || preloaded.isPreset) {
-      return { trades: preloaded.trades, rents: preloaded.rents };
-    }
+  if (preloaded.isPreset && preloaded.trades.length >= 10) {
+    return { trades: preloaded.trades, rents: preloaded.rents };
   }
 
   const region = apt.apiRegion || apt.region || "";
@@ -208,7 +205,7 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
     return { trades: cached.trades, rents: cached.rents };
   }
 
-  // 3. 직접 국토교통부 API 병렬 조회 (최대 120개월=10년치 풀 조회)
+  // 3. 국토교통부 API 직접 조회 (최대 120개월=10년치)
   const queryMonths = Math.min(months, 120);
   const result = await executeFetch(apt, queryMonths, cacheKey);
   return result;
@@ -216,17 +213,15 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
 
 /**
  * 서버 사이드에서 실거래 데이터를 0ms로 사전 조회하여 클라이언트에 즉시 전달
- * - 호갱노노/아실 방식: 페이지 전환 지연(5~7초 딜레이)을 100% 원천 차단하고 0초 즉시 화면 표출
+ * - 페이지 전환 딜레이를 최소화하면서 국토부 실거래 데이터만 표출
  */
 export async function getTransactionsForApartment(apt: any, months = 36): Promise<{ trades: any[]; rents: any[] }> {
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
-  // 1. 프리셋 사전 캐시 데이터 확인 (0ms 즉시 반환)
+  // 1. PRESET_TRADES 실거래 데이터 확인 (국토부 실거래 기반 프리셋만 허용, 10건 이상인 경우만)
   const preloaded = getPreloadedTransactions(apt);
-  if (preloaded.trades.length > 0) {
-    if (months <= 36 || preloaded.trades.length >= 10 || preloaded.isPreset) {
-      return { trades: preloaded.trades, rents: preloaded.rents };
-    }
+  if (preloaded.isPreset && preloaded.trades.length >= 10) {
+    return { trades: preloaded.trades, rents: preloaded.rents };
   }
 
   const region = apt.apiRegion || apt.region || "";
@@ -241,9 +236,8 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
     return { trades: cached.trades, rents: cached.rents };
   }
 
-  // 3. 캐시에 없는 신규 단지인 경우:
-  // ★ 페이지 전환 5~7초 멈춤 현상을 원천 방지하기 위해 SSR 렌더링을 블로킹하지 않고 0초 즉시 반환!
-  // 외부 공공데이터 API 동기화는 백그라운드 비동기로 위임하여 다음 방문 및 클라이언트 fetch 가속
+  // 3. 캐시에 없는 신규 단지: SSR 블로킹 없이 백그라운드 비동기 조회 위임 (0초 즉시 반환)
+  // 클라이언트에서 /api/transactions 직접 호출로 실거래 표출
   executeFetch(apt, months, cacheKey).catch(() => {});
 
   return { trades: [], rents: [] };

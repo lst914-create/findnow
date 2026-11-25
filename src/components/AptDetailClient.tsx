@@ -591,13 +591,13 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         if (cached.trades?.length > 0) setApiTrades(cached.trades);
         if (cached.rents?.length > 0) setApiRents(cached.rents);
       }
+      // 이미 충분한 과거 데이터가 있으면 재호출 스킵 (단, isPreset은 조기종료 기준에서 제외 — 가상 더미 데이터 없이 항상 국토부 실거래 호출)
+      const hasPastData = apiTrades.some((t: any) => t.dealYear && t.dealYear <= 2023);
+      if (hasPastData || apiTrades.length >= 25) {
+        setIsFetchingFullHistory(false);
+        return;
+      }
       if (fetchedMonths > 36) {
-        // 이미 3년 이전 과거 데이터(2023년 이전 체결 건)가 충분히 있거나 프리셋 캐시가 있다면 수십초 네트워크 재호출 원천 스킵 (0ms 즉시 반환)
-        const hasPastData = apiTrades.some((t: any) => t.dealYear && t.dealYear <= 2023);
-        if (hasPastData || apiTrades.length >= 25 || preloaded.isPreset) {
-          setIsFetchingFullHistory(false);
-          return;
-        }
         setIsFetchingFullHistory(true);
       }
       try {

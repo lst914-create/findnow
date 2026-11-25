@@ -384,25 +384,15 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     return preloaded.rents;
   });
 
-  // 캐시가 이미 존재하면 0초 즉시 표출(로딩 없음), 첫 방문/미캐시 단지만 실시간 API 동기화 스켈레톤 표출
-  const [isLoadingApi, setIsLoadingApi] = useState<boolean>(() => {
-    if (initialTrades && initialTrades.length > 0) return false;
-    if (typeof window !== "undefined") {
-      try {
-        const local = localStorage.getItem(`findnow_trades_${apt.id}`);
-        if (local && JSON.parse(local).length > 0) return false;
-      } catch { }
-    }
-    return preloaded.trades.length === 0;
-  });
+  // DB 직접 렌더링 — 실시간 API 호출 없음, 항상 즉시 표출
+  const [isLoadingApi, setIsLoadingApi] = useState<boolean>(false);
   const [isApiConnected, setIsApiConnected] = useState(true);
 
-  // 단지 변경 시 로컬 스토리지 또는 사전 캐시 데이터 즉시 동기화 (0ms 렌더링)
+  // 단지 변경 시 prop/캐시 데이터 즉시 동기화 (0ms 렌더링) — 실시간 API 호출 없음
   useEffect(() => {
     if (initialTrades && initialTrades.length > 0) {
       setApiTrades(initialTrades);
       if (initialRents && initialRents.length > 0) setApiRents(initialRents);
-      setIsLoadingApi(false);
       return;
     }
     try {
@@ -411,7 +401,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         const parsed = JSON.parse(localTrades);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setApiTrades(parsed);
-          setIsLoadingApi(false);
           return;
         }
       }
@@ -419,10 +408,8 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     if (preloaded.trades.length > 0) {
       setApiTrades(preloaded.trades);
       if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
-      setIsLoadingApi(false);
-    } else {
-      setIsLoadingApi(true); // 미캐시 단지는 실제 API 수신 완료될 때까지 로딩 스켈레톤 유지 (조기 빈 화면 방지)
     }
+    // 데이터 없어도 isLoadingApi는 항상 false — 스켈레톤 UI 표출 안 함
   }, [apt.id, preloaded, initialTrades, initialRents]);
 
   // 국토교통부 공동주택 기본/상세 정보 (K-apt) 실시간 데이터 상태
@@ -575,7 +562,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   const [selectedArea, setSelectedArea] = useState<string>("전체");
   // 조회 기간 상태: DB 상의 10년 전체 거래(120개월)를 기본 로딩하여 하단 실거래 목록에 과거 전체 내역 표출
   const [fetchedMonths] = useState<number>(120);
-  const [isFetchingFullHistory, setIsFetchingFullHistory] = useState<boolean>(false);
+  const [isFetchingFullHistory] = useState<boolean>(false);
 
   useEffect(() => {
     setSelectedArea("전체");
@@ -583,73 +570,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
   useEffect(() => {
     let isMounted = true;
-    async function fetchRealData() {
-      // 0초 초기 로딩에는 캐시를 즉시 보여주되, 국토부 최신 API를 호출하여 새 거래가 있으면 실시간 자동 갱신
-      const cacheKey = `${apt.id}_${apt.name}_${fetchedMonths}`;
-      if (apiTransactionsCache.has(cacheKey)) {
-        const cached = apiTransactionsCache.get(cacheKey)!;
-        if (cached.trades?.length > 0) setApiTrades(cached.trades);
-        if (cached.rents?.length > 0) setApiRents(cached.rents);
-      }
-      // 이미 충분한 과거 데이터가 있으면 재호출 스킵 (단, isPreset은 조기종료 기준에서 제외 — 가상 더미 데이터 없이 항상 국토부 실거래 호출)
-      const hasPastData = apiTrades.some((t: any) => t.dealYear && t.dealYear <= 2023);
-      if (hasPastData || apiTrades.length >= 25) {
-        setIsFetchingFullHistory(false);
-        return;
-      }
-      if (fetchedMonths > 36) {
-        setIsFetchingFullHistory(true);
-      }
-      try {
-        const apiRegion = apt.apiRegion || apt.region;
-        const res = await fetch(
-          `/api/transactions?region=${encodeURIComponent(apiRegion)}&district=${encodeURIComponent(apt.district || "")}&aptName=${encodeURIComponent(apt.name)}&months=${fetchedMonths}&id=${encodeURIComponent(apt.id || "")}&jibun=${encodeURIComponent(apt.jibun || "")}&builtYear=${apt.built_year || ""}`
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) {
-            const finalTrades = data.trades && data.trades.length > 0 ? data.trades : preloaded.trades;
-            const finalRents = data.rents && data.rents.length > 0 ? data.rents : preloaded.rents;
-            apiTransactionsCache.set(cacheKey, { trades: finalTrades, rents: finalRents });
-            if (data.trades && data.trades.length > 0) {
-              setApiTrades((prev) => {
-                // 이미 동일한 최신 거래 데이터가 표출되어 있다면 불필요한 차트/화면 재렌더링 방지
-                if (prev && prev.length === data.trades.length) {
-                  const p0 = prev[0];
-                  const d0 = data.trades[0];
-                  if (
-                    p0 && d0 &&
-                    p0.dealYear === d0.dealYear &&
-                    p0.dealMonth === d0.dealMonth &&
-                    p0.dealDay === d0.dealDay &&
-                    p0.dealAmount === d0.dealAmount
-                  ) {
-                    return prev;
-                  }
-                }
-                return data.trades;
-              });
-              try {
-                localStorage.setItem(`findnow_trades_${apt.id}`, JSON.stringify(data.trades));
-              } catch { }
-            }
-            if (data.rents && data.rents.length > 0) {
-              setApiRents(data.rents);
-              try {
-                localStorage.setItem(`findnow_rents_${apt.id}`, JSON.stringify(data.rents));
-              } catch { }
-            }
-          }
-        }
-      } catch (e) {
-        // Silent catch: 사용자 화면에 에러나 딜레이를 유발하지 않음
-      } finally {
-        if (isMounted) {
-          setIsLoadingApi(false);
-          setIsFetchingFullHistory(false);
-        }
-      }
-    }
 
     async function fetchKaptInfo() {
       // apt.id 예: kapt-A10019911 또는 A로 시작하는 K-apt 코드
@@ -673,12 +593,11 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       }
     }
 
-    fetchRealData();
     fetchKaptInfo();
     return () => {
       isMounted = false;
     };
-  }, [apt.id, apt.apiRegion, apt.region, apt.district, apt.name, fetchedMonths]);
+  }, [apt.id]);
 
   // 단지의 공식 등록 평형 전용면적 목록 (apt.area_distributions 기준)
   const officialAreaDistributions = useMemo(() => {
@@ -1470,18 +1389,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                       </button>
                     ))}
                   </div>
-                  {isFetchingFullHistory && (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-blue-600 bg-blue-50 border border-blue-200/60 px-2 py-0.5 rounded-md animate-pulse">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping" />
-                      10년 전체 실거래 연동 중...
-                    </span>
-                  )}
-                  {isLoadingApi && !isFetchingFullHistory && (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-md animate-pulse">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
-                      국토교통부 실시간 동기화 중...
-                    </span>
-                  )}
+
                 </div>
               </div>
 
@@ -1508,13 +1416,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
                 </div>
               )}
 
-              {isLoadingApi && chartData.length === 0 ? (
-                <div className="h-[210px] flex flex-col items-center justify-center rounded-2xl bg-slate-50 border border-slate-100 animate-pulse text-center px-4">
-                  <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2" />
-                  <p className="text-xs font-bold text-slate-700">국토교통부 실거래 데이터(최근 3년) 동기화 중...</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">공식 신고된 원본 계약 내역을 안전하게 불러오고 있습니다.</p>
-                </div>
-              ) : chartData.length >= 2 ? (
+              {chartData.length >= 2 ? (
                 <div className="relative">
                   <ResponsiveContainer width="100%" height={230}>
                     <ComposedChart data={chartData} margin={{ top: 22, right: 14, left: 2, bottom: 0 }}>
@@ -1685,43 +1587,12 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-bold text-slate-700 whitespace-nowrap">📋 실거래 신고 내역</h3>
-                {isLoadingApi && (
-                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-indigo-600 bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 rounded-md animate-pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-ping" />
-                    국토교통부 실시간 동기화 중...
-                  </span>
-                )}
               </div>
 
-              {isLoadingApi && activeTxs.length === 0 ? (
-                <div className="rounded-2xl border border-slate-100 overflow-hidden bg-white shadow-xs">
-                  <div className="bg-slate-50 px-4 py-2.5 text-xs text-slate-400 font-medium flex justify-between">
-                    <span>계약일</span>
-                    <span>평형</span>
-                    <span>층</span>
-                    <span>거래금액</span>
-                  </div>
-                  <div className="divide-y divide-slate-100 animate-pulse">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="px-4 py-3 flex items-center justify-between">
-                        <div className="h-4 bg-slate-200 rounded w-16" />
-                        <div className="h-4 bg-slate-200 rounded w-12" />
-                        <div className="h-4 bg-slate-200 rounded w-8" />
-                        <div className="h-4 bg-slate-200 rounded w-20" />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="py-2.5 bg-slate-50/70 text-center text-[11px] text-slate-500 font-medium border-t border-slate-100 flex items-center justify-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
-                    국토교통부 실거래 원본 계약 내역을 확인하는 중입니다...
-                  </div>
-                </div>
-              ) : activeTxs.length === 0 ? (
+              {activeTxs.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-200 p-8 text-center bg-slate-50/50">
                   <p className="text-sm font-semibold text-slate-600">
-                    {isLoadingApi
-                      ? "국토교통부 계약 내역을 확인하고 있습니다..."
-                      : `최근 국토교통부에 신고된 ${tradeType} 계약 내역이 없습니다.`}
+                    최근 국토교통부에 신고된 {tradeType} 계약 내역이 없습니다.
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
                     국토교통부 실거래가 공개시스템의 실제 거래 신고 기준 원본 데이터만 제공합니다.

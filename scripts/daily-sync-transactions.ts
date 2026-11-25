@@ -51,41 +51,51 @@ function cleanUmd(umd: string): string {
 }
 
 async function fetchTradesForLawd(lawdCd: string, dealYmd: string) {
-  const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${API_KEY}&numOfRows=1000&pageNo=1&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}`;
+  const aptUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${API_KEY}&numOfRows=1000&pageNo=1&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}`;
+  const rhUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade?serviceKey=${API_KEY}&numOfRows=1000&pageNo=1&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}`;
+
   try {
-    const res = await fetch(url);
-    if (!res.ok) return [];
-    const xml = await res.text();
-    const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
-    const results = [];
-    for (const item of itemMatches) {
-      const get = (tag: string) => {
-        const m = item.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));
-        return m ? m[1].trim() : '';
-      };
-      const cancel = get('cdealType');
-      if (cancel && cancel !== '' && cancel !== '0') continue;
+    const [aptRes, rhRes] = await Promise.all([
+      fetch(aptUrl).catch(() => null),
+      fetch(rhUrl).catch(() => null),
+    ]);
 
-      const aptNm = get('aptNm');
-      const jibun = get('jibun');
-      const umdNm = get('umdNm');
-      const dealAmountStr = get('dealAmount').replace(/,/g, '');
-      const dealAmount = parseInt(dealAmountStr, 10);
-      const excluUseAr = parseFloat(get('excluUseAr')) || 84;
-      const floor = parseInt(get('floor'), 10) || 1;
-      const buildYear = parseInt(get('buildYear'), 10) || 0;
+    const xmls: string[] = [];
+    if (aptRes && aptRes.ok) xmls.push(await aptRes.text());
+    if (rhRes && rhRes.ok) xmls.push(await rhRes.text());
 
-      if (dealAmount > 0) {
-        results.push({
-          aptNm,
-          jibun: normalizeJibun(jibun),
-          umdNm,
-          cleanUmd: cleanUmd(umdNm),
-          dealAmount,
-          excluUseAr,
-          floor,
-          buildYear,
-        });
+    const results: any[] = [];
+    for (const xml of xmls) {
+      const itemMatches = xml.match(/<item>[\s\S]*?<\/item>/g) || [];
+      for (const item of itemMatches) {
+        const get = (tag: string) => {
+          const m = item.match(new RegExp(`<${tag}>([^<]*)</${tag}>`));
+          return m ? m[1].trim() : '';
+        };
+        const cancel = get('cdealType');
+        if (cancel && cancel !== '' && cancel !== '0') continue;
+
+        const aptNm = get('aptNm') || get('mhouseNm');
+        const jibun = get('jibun');
+        const umdNm = get('umdNm');
+        const dealAmountStr = get('dealAmount').replace(/,/g, '');
+        const dealAmount = parseInt(dealAmountStr, 10);
+        const excluUseAr = parseFloat(get('excluUseAr')) || 84;
+        const floor = parseInt(get('floor'), 10) || 1;
+        const buildYear = parseInt(get('buildYear'), 10) || 0;
+
+        if (dealAmount > 0 && aptNm) {
+          results.push({
+            aptNm,
+            jibun: normalizeJibun(jibun),
+            umdNm,
+            cleanUmd: cleanUmd(umdNm),
+            dealAmount,
+            excluUseAr,
+            floor,
+            buildYear,
+          });
+        }
       }
     }
     return results;

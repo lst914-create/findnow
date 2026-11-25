@@ -395,9 +395,13 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
         const isRecent = monthIndex < 36; // 최근 3년 이내
 
         const tradeUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
-        const fetchList: Promise<{ text: string; type: "trade" | "silv" | "rent" }>[] = [
+        const fetchList: Promise<{ text: string; type: "trade" | "silv" | "rent" | "rh" }>[] = [
           fetchWithRetry(tradeUrl).then((text) => ({ text, type: "trade" as const })),
         ];
+
+        // 테라스하우스/연립형 단지(별내효성해링턴코트 등)를 위한 연립/다세대 실거래가 병렬 조회
+        const rhUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade?serviceKey=${encodedKey}&LAWD_CD=${lawdEntry.code}&DEAL_YMD=${dealYmd}&numOfRows=1000`;
+        fetchList.push(fetchWithRetry(rhUrl).then((text) => ({ text, type: "rh" as const })));
 
         // 분양권/입주권은 신축(2020년 이후)이면서 최근 36개월일 때만 조회 (과거 10년 트래픽 낭비 원천 차단)
         if (isRecent && isNewApt) {
@@ -423,7 +427,11 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
 
           while ((match = itemRegex.exec(xml)) !== null) {
             const item = match[1];
-            const itemAptName = item.match(/<aptNm>([^<]*)<\/aptNm>/)?.[1]?.trim() || "";
+            const itemAptName = (
+              item.match(/<aptNm>([^<]*)<\/aptNm>/)?.[1] ||
+              item.match(/<mhouseNm>([^<]*)<\/mhouseNm>/)?.[1] ||
+              ""
+            ).trim();
             const itemUmdNm = item.match(/<umdNm>([^<]*)<\/umdNm>/)?.[1]?.trim() || "";
             const itemJibun = item.match(/<jibun>([^<]*)<\/jibun>/)?.[1]?.trim() || "";
             const itemBuildYear = parseInt(item.match(/<buildYear>([^<]*)<\/buildYear>/)?.[1] || "0", 10);
@@ -457,7 +465,7 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
             const dealDay = parseInt(item.match(/<dealDay>([^<]*)<\/dealDay>/)?.[1] || "1", 10);
             const buildYear = parseInt(item.match(/<buildYear>([^<]*)<\/buildYear>/)?.[1] || "0", 10);
 
-            if (resp.type === "trade" || resp.type === "silv") {
+            if (resp.type === "trade" || resp.type === "silv" || resp.type === "rh") {
               const amountStr = item.match(/<dealAmount>([^<]*)<\/dealAmount>/)?.[1]?.replace(/,/g, "").trim() || "";
               const dealAmount = parseInt(amountStr, 10);
               if (dealAmount > 0 && excluUseAr > 0) {

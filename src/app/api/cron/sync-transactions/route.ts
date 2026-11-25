@@ -76,33 +76,43 @@ export async function GET(request: NextRequest) {
 
       for (const ymd of targetMonths) {
         try {
-          const url = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${apiKey}&LAWD_CD=${lawd.code}&DEAL_YMD=${ymd}&numOfRows=1000`;
-          const res = await fetch(url, { next: { revalidate: 0 } });
-          if (!res.ok) continue;
-          const text = await res.text();
-          const matches = text.match(/<item>[\s\S]*?<\/item>/g) || [];
+          const aptUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade?serviceKey=${apiKey}&LAWD_CD=${lawd.code}&DEAL_YMD=${ymd}&numOfRows=1000`;
+          const rhUrl = `https://apis.data.go.kr/1613000/RTMSDataSvcRHTrade/getRTMSDataSvcRHTrade?serviceKey=${apiKey}&LAWD_CD=${lawd.code}&DEAL_YMD=${ymd}&numOfRows=1000`;
 
-          for (const m of matches) {
-            const aptNm = (m.match(/<aptNm>(.*?)<\/aptNm>/) || [])[1]?.trim() || "";
-            const umdNm = (m.match(/<umdNm>(.*?)<\/umdNm>/) || [])[1]?.trim() || "";
-            const jibun = (m.match(/<jibun>(.*?)<\/jibun>/) || [])[1]?.trim() || "";
-            const buildYear = parseInt((m.match(/<buildYear>(.*?)<\/buildYear>/) || [])[1], 10) || 0;
-            const amountStr = ((m.match(/<dealAmount>(.*?)<\/dealAmount>/) || [])[1] || "").trim().replace(/,/g, "");
-            const dealYear = parseInt((m.match(/<dealYear>(.*?)<\/dealYear>/) || [])[1], 10);
-            const dealMonth = parseInt((m.match(/<dealMonth>(.*?)<\/dealMonth>/) || [])[1], 10);
-            const dealDay = parseInt((m.match(/<dealDay>(.*?)<\/dealDay>/) || [])[1], 10) || 1;
-            const floor = parseInt((m.match(/<floor>(.*?)<\/floor>/) || [])[1], 10) || 1;
+          const [aptRes, rhRes] = await Promise.all([
+            fetch(aptUrl, { next: { revalidate: 0 } }).catch(() => null),
+            fetch(rhUrl, { next: { revalidate: 0 } }).catch(() => null),
+          ]);
 
-            if (floor > 1 && aptNm && amountStr) {
-              allTrades.push({
-                aptNm,
-                umdNm,
-                jibun: normalizeJibun(jibun),
-                buildYear,
-                amount: parseInt(amountStr, 10),
-                dealTime: new Date(dealYear, dealMonth - 1, dealDay).getTime(),
-                floor,
-              });
+          const xmls: string[] = [];
+          if (aptRes && aptRes.ok) xmls.push(await aptRes.text());
+          if (rhRes && rhRes.ok) xmls.push(await rhRes.text());
+
+          for (const text of xmls) {
+            const matches = text.match(/<item>[\s\S]*?<\/item>/g) || [];
+
+            for (const m of matches) {
+              const aptNm = (m.match(/<aptNm>(.*?)<\/aptNm>/) || m.match(/<mhouseNm>(.*?)<\/mhouseNm>/) || [])[1]?.trim() || "";
+              const umdNm = (m.match(/<umdNm>(.*?)<\/umdNm>/) || [])[1]?.trim() || "";
+              const jibun = (m.match(/<jibun>(.*?)<\/jibun>/) || [])[1]?.trim() || "";
+              const buildYear = parseInt((m.match(/<buildYear>(.*?)<\/buildYear>/) || [])[1], 10) || 0;
+              const amountStr = ((m.match(/<dealAmount>(.*?)<\/dealAmount>/) || [])[1] || "").trim().replace(/,/g, "");
+              const dealYear = parseInt((m.match(/<dealYear>(.*?)<\/dealYear>/) || [])[1], 10);
+              const dealMonth = parseInt((m.match(/<dealMonth>(.*?)<\/dealMonth>/) || [])[1], 10);
+              const dealDay = parseInt((m.match(/<dealDay>(.*?)<\/dealDay>/) || [])[1], 10) || 1;
+              const floor = parseInt((m.match(/<floor>(.*?)<\/floor>/) || [])[1], 10) || 1;
+
+              if (floor > 1 && aptNm && amountStr) {
+                allTrades.push({
+                  aptNm,
+                  umdNm,
+                  jibun: normalizeJibun(jibun),
+                  buildYear,
+                  amount: parseInt(amountStr, 10),
+                  dealTime: new Date(dealYear, dealMonth - 1, dealDay).getTime(),
+                  floor,
+                });
+              }
             }
           }
         } catch (e) {

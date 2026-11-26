@@ -182,6 +182,20 @@ async function syncLawdCode(lawdCode: string, encodedKey: string, months = 36) {
     `[${regionLabel} (${lawdCode})] 수집 완료: 매매 ${allTrades.length}건, 전월세 ${allRents.length}건 -> ${apts.length}개 단지 매칭 중...`
   );
 
+  // 단지별 매칭 최적화: 법정동(umd_nm) 단위 그룹 인덱싱으로 306 x 75,000건 O(N*M) 루프 병목 제거
+  const tradesByUmd = new Map<string, any[]>();
+  for (const t of allTrades) {
+    const k = (t.umdNm || "").trim();
+    if (!tradesByUmd.has(k)) tradesByUmd.set(k, []);
+    tradesByUmd.get(k)!.push(t);
+  }
+  const rentsByUmd = new Map<string, any[]>();
+  for (const r of allRents) {
+    const k = (r.umdNm || "").trim();
+    if (!rentsByUmd.has(k)) rentsByUmd.set(k, []);
+    rentsByUmd.get(k)!.push(r);
+  }
+
   // 단지별 매칭 및 저장
   const matchedPayloads: { aptId: string; name: string; trades: any[]; rents: any[] }[] = [];
 
@@ -195,7 +209,29 @@ async function syncLawdCode(lawdCode: string, encodedKey: string, months = 36) {
       built_year: apt.built_year,
     };
 
-    const aptTrades = allTrades
+    const targetDist = (apt.umd_nm || apt.district || "").replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, "");
+    
+    // 법정동이 일치하거나 유사한 거래만 후보군으로 압축 (75,000건 -> 수백건 수준)
+    let candidateTrades: any[] = [];
+    let candidateRents: any[] = [];
+
+    if (targetDist) {
+      for (const [umd, list] of tradesByUmd.entries()) {
+        if (umd.includes(targetDist) || targetDist.includes(umd.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, ""))) {
+          candidateTrades.push(...list);
+        }
+      }
+      for (const [umd, list] of rentsByUmd.entries()) {
+        if (umd.includes(targetDist) || targetDist.includes(umd.replace(/[\s0-9]/g, "").replace(/(동|읍|면|리)$/, ""))) {
+          candidateRents.push(...list);
+        }
+      }
+    } else {
+      candidateTrades = allTrades;
+      candidateRents = allRents;
+    }
+
+    const aptTrades = candidateTrades
       .filter((t) =>
         isTransactionMatch(target, {
           aptNm: t.aptNm,
@@ -218,7 +254,7 @@ async function syncLawdCode(lawdCode: string, encodedKey: string, months = 36) {
       }))
       .sort((a, b) => b.dealYear - a.dealYear || b.dealMonth - a.dealMonth || b.dealDay - a.dealDay);
 
-    const aptRents = allRents
+    const aptRents = candidateRents
       .filter((r) =>
         isTransactionMatch(target, {
           aptNm: r.aptNm,

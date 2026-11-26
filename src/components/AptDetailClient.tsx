@@ -349,19 +349,23 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       aptName: apt.name,
       region: apt.region,
       district: apt.district,
-      priceAtSave: apt.price_max || apt.price_min || undefined,
+      priceAtSave: (apt as any).avgPrice || apt.price_max || apt.price_min || undefined,
     });
     setWatched(added);
   }
 
 
   // [호갱노노·아실 동일 구현] 영구 캐시(localStorage) 기반 0초 즉시 렌더링 + 백그라운드 무자각 동기화
+  // 캐시 버전 v2: 이상치 필터링 로직 추가로 인한 오염 캐시 자동 무효화
+  const CACHE_VERSION = "v2";
+  const tradeCacheKey = `findnow_trades_${apt.id}_${CACHE_VERSION}`;
+  const rentCacheKey = `findnow_rents_${apt.id}_${CACHE_VERSION}`;
   const preloaded = useMemo(() => getPreloadedTransactions(apt), [apt]);
   const [apiTrades, setApiTrades] = useState<any[]>(() => {
     if (initialTrades && initialTrades.length > 0) return initialTrades;
     if (typeof window !== "undefined") {
       try {
-        const local = localStorage.getItem(`findnow_trades_${apt.id}`);
+        const local = localStorage.getItem(tradeCacheKey);
         if (local) {
           const parsed = JSON.parse(local);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -374,7 +378,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     if (initialRents && initialRents.length > 0) return initialRents;
     if (typeof window !== "undefined") {
       try {
-        const local = localStorage.getItem(`findnow_rents_${apt.id}`);
+        const local = localStorage.getItem(rentCacheKey);
         if (local) {
           const parsed = JSON.parse(local);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -388,29 +392,70 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   const [isLoadingApi, setIsLoadingApi] = useState<boolean>(false);
   const [isApiConnected, setIsApiConnected] = useState(true);
 
-  // 단지 변경 시 prop/캐시 데이터 즉시 동기화 (0ms 렌더링) — 실시간 API 호출 없음
+  // 단지 변경 시 prop/캐시 데이터 즉시 동기화 (0ms 렌더링) + 미보유 시 무자각 백그라운드 수신
   useEffect(() => {
+    let hasTrades = false;
+
     if (initialTrades && initialTrades.length > 0) {
       setApiTrades(initialTrades);
       if (initialRents && initialRents.length > 0) setApiRents(initialRents);
-      return;
-    }
-    try {
-      const localTrades = localStorage.getItem(`findnow_trades_${apt.id}`);
-      if (localTrades) {
-        const parsed = JSON.parse(localTrades);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setApiTrades(parsed);
-          return;
+      hasTrades = true;
+    } else {
+      try {
+        const localTrades = localStorage.getItem(tradeCacheKey);
+        if (localTrades) {
+          const parsed = JSON.parse(localTrades);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setApiTrades(parsed);
+            hasTrades = true;
+          }
         }
+      } catch { }
+
+      if (!hasTrades && preloaded.trades.length > 0) {
+        setApiTrades(preloaded.trades);
+        if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
+        hasTrades = true;
       }
-    } catch { }
-    if (preloaded.trades.length > 0) {
-      setApiTrades(preloaded.trades);
-      if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
     }
-    // 데이터 없어도 isLoadingApi는 항상 false — 스켈레톤 UI 표출 안 함
-  }, [apt.id, preloaded, initialTrades, initialRents]);
+
+    // [무자각 백그라운드 자동 수신] SSR 및 로컬 캐시에 실거래 내역이 0건인 단지만 백그라운드 fetch
+    // (로딩 스피너/스켈레톤 없이 조용히 데이터를 가져와 자연스럽게 차트 및 실거래 목록을 갱신)
+    if (!hasTrades && apt.name) {
+      let isMounted = true;
+      const params = new URLSearchParams({
+        aptId: apt.id || "",
+        aptName: apt.name || "",
+        region: apt.region || apt.apiRegion || "",
+        district: apt.district || "",
+        months: "36",
+      });
+
+      fetch(`/api/transactions?${params.toString()}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (isMounted && data) {
+            if (Array.isArray(data.trades) && data.trades.length > 0) {
+              setApiTrades(data.trades);
+              try {
+                localStorage.setItem(tradeCacheKey, JSON.stringify(data.trades));
+              } catch { }
+            }
+            if (Array.isArray(data.rents) && data.rents.length > 0) {
+              setApiRents(data.rents);
+              try {
+                localStorage.setItem(rentCacheKey, JSON.stringify(data.rents));
+              } catch { }
+            }
+          }
+        })
+        .catch(() => { });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [apt.id, apt.name, apt.region, apt.apiRegion, apt.district, preloaded, initialTrades, initialRents, tradeCacheKey, rentCacheKey]);
 
   // 국토교통부 공동주택 기본/상세 정보 (K-apt) 실시간 데이터 상태
   const [liveKapt, setLiveKapt] = useState<any | null>(null);
@@ -953,13 +998,20 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
   }, [chartData, tradeType, filteredApiTrades.length, filteredApiRents.length, apt.household_count]);
 
   // 1층 제외 & 비정상 저가 특수거래 제외 & 전월세는 순수 전세(월세=0)만 필터한 실제 체결 거래 목록
+  // DB avgPrice 기준 3배 초과/30% 미만 거래는 오매칭(혼입) 이상치로 제거
   const validPeriodTxs = useMemo(() => {
+    const dbAvgPrice = (apt as any).avgPrice || apt.price_max || apt.price_min || 0;
     const nonFirstFloor = activeTxs.filter((t: any) => {
       if (!t.rawPrice || t.rawPrice <= 0) return false;
       const floorRaw = t.floorNum ?? t.floor;
       const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
       if (!isNaN(floorNum) && floorNum <= 1) return false;
       if (tradeType === "전월세" && t.monthlyRent && t.monthlyRent > 0) return false;
+      // DB 시세 대비 3배 초과 또는 30% 미만: 오매칭 이상치 제거
+      if (dbAvgPrice > 0) {
+        if (t.rawPrice > dbAvgPrice * 3) return false;
+        if (t.rawPrice < dbAvgPrice * 0.3) return false;
+      }
       return true;
     });
 
@@ -974,7 +1026,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
       }
       return true;
     });
-  }, [activeTxs, tradeType]);
+  }, [activeTxs, tradeType, apt]);
 
   // [단일 출처 원칙 100% 동기화] 마커, 팝업카드, 상세페이지 상단 시세가 완전 동일한 대표 가격 산출 함수 사용
   const priceStatsSummary = useMemo(() => {
@@ -1017,8 +1069,8 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
     if (tradeType === "매매" && priceStatsSummary.priceNum > 0) {
       return priceStatsSummary.priceNum;
     }
-    return apt.price_max || apt.price_min || 0;
-  }, [priceStatsSummary, tradeType, apt.price_min, apt.price_max]);
+    return (apt as any).avgPrice || apt.price_max || apt.price_min || 0;
+  }, [priceStatsSummary, tradeType, (apt as any).avgPrice, apt.price_min, apt.price_max]);
 
   // 실거래 매매가 밴드 (선택된 평형 기준 최근 실거래가 최소~최대 범위)
   const realSaleRange = useMemo(() => {
@@ -1795,8 +1847,8 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
               <p className="text-xs text-slate-400 mb-5">국토교통부 실거래가 기준 · 직선거리 순</p>
               <div className="space-y-3">
                 {nearbyApts.map(({ id, a, dist }) => {
-                  // 가격: price_max가 만원 단위 (예: 85000 = 8.5억)
-                  const priceManwon = a.price_max || a.price_min || 0;
+                  // 가격: 단지 대표 시세(avgPrice)를 최우선으로 일관되게 표출
+                  const priceManwon = (a as any).avgPrice || a.price_max || a.price_min || 0;
                   const rentManwon = a.rent_max || a.rent_min || 0;
                   const parkingStr = a.parkingRatio
                     ? `${a.parkingRatio.toFixed(1)}대/세대`

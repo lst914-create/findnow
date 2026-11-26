@@ -49,13 +49,19 @@ export function calculateRepresentativePrice(apt: any, trades: any[] = []): Repr
     };
   }
 
-  // 1. 유효 거래 필터링: 1층 제외 & 0원 거래 제외
+  // 1. 유효 거래 필터링: 1층 제외 & 0원 거래 제외 & DB avgPrice 기준 이상치 제거
+  const dbAvgPrice = (apt as any)?.avgPrice || apt?.price_max || apt?.price_min || 0;
   const nonFirstFloor = trades.filter((t: any) => {
     const amount = t.dealAmount ?? t.rawPrice;
     if (!amount || amount <= 0) return false;
     const floorRaw = t.floorNum ?? t.floor;
     const floorNum = typeof floorRaw === "number" ? floorRaw : parseInt(String(floorRaw).replace("층", "").trim(), 10);
     if (!isNaN(floorNum) && floorNum <= 1) return false; // 1층은 대표 시세 제외
+    // DB 시세 대비 3배 초과 또는 30% 미만인 거래는 오매칭(혼입) 이상치로 제거
+    if (dbAvgPrice > 0) {
+      if (amount > dbAvgPrice * 3) return false;
+      if (amount < dbAvgPrice * 0.3) return false;
+    }
     return true;
   });
 

@@ -2,6 +2,7 @@
 import { LAWD_CODES, findLawdCode } from "./publicDataApi";
 import { normalizeAptName } from "./normalizeAptName";
 import { getPreloadedTransactions } from "./transactionsCache";
+import { getCachedTransactionsFromStore, saveTransactionsToStore } from "./transactionStore";
 
 // 서버 메모리 캐시 (24시간 보존: 밤 12시 갱신 주기와 일치)
 interface ServerCacheEntry {
@@ -274,9 +275,29 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
     return { trades: cached.trades, rents: cached.rents };
   }
 
-  // 3. 국토교통부 API 직접 조회 (최대 120개월=10년치)
+  // 3. Supabase Storage 사전 수집 캐시 조회 (30~80ms 즉시 반환)
   const queryMonths = Math.min(months, 120);
+  if (apt.id) {
+    const stored = await getCachedTransactionsFromStore(apt.id);
+    if (stored && (stored.payload.trades.length > 0 || stored.payload.rents.length > 0)) {
+      const storedMonths = stored.payload.months || 36;
+      if (storedMonths >= queryMonths && !stored.isStale) {
+        serverTransactionsCache.set(cacheKey, {
+          trades: stored.payload.trades,
+          rents: stored.payload.rents,
+          timestamp: nowTime,
+        });
+        return { trades: stored.payload.trades, rents: stored.payload.rents };
+      }
+      // 24시간 지났거나 더 긴 기간 요청 시에도 일단 기존 캐시가 있으면 아래에서 최신화 시도, 실패 시 폴백용으로 보관
+    }
+  }
+
+  // 4. 국토교통부 API 직접 조회 (최대 120개월=10년치) + 조회 결과 자동 캐싱
   const result = await executeFetch(apt, queryMonths, cacheKey);
+  if (apt.id && (result.trades.length > 0 || result.rents.length > 0)) {
+    await saveTransactionsToStore(apt.id, result.trades, result.rents, queryMonths);
+  }
   return result;
 }
 
@@ -305,11 +326,36 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
     return { trades: cached.trades, rents: cached.rents };
   }
 
-  // 3. 캐시에 없는 신규 단지: SSR 블로킹 없이 백그라운드 비동기 조회 위임 (0초 즉시 반환)
-  // 클라이언트에서 /api/transactions 직접 호출로 실거래 표출
-  executeFetch(apt, months, cacheKey).catch(() => {});
+  // 3. Supabase Storage 사전 수집 캐시 조회 (30~80ms 즉시 반환 — 아실/호갱노노 수준 SSR 즉각 표출)
+  if (apt.id) {
+    const stored = await getCachedTransactionsFromStore(apt.id);
+    if (stored && (stored.payload.trades.length > 0 || stored.payload.rents.length > 0)) {
+      serverTransactionsCache.set(cacheKey, {
+        trades: stored.payload.trades,
+        rents: stored.payload.rents,
+        timestamp: nowTime,
+      });
+      return { trades: stored.payload.trades, rents: stored.payload.rents };
+    }
+  }
 
-  return { trades: [], rents: [] };
+  // 4. 캐시에 없는 신규 단지: 최대 1.8초 동안 국토부 실거래 수집 대기 (완료 시 SSR HTML에 포함)
+  // 1.8초 초과 시에는 빈 배열로 즉시 반환하고 백그라운드 수집 계속 수행 (클라이언트에서 수신)
+  try {
+    const fetchPromise = executeFetch(apt, months, cacheKey).then(async (res) => {
+      if (apt.id && (res.trades.length > 0 || res.rents.length > 0)) {
+        await saveTransactionsToStore(apt.id, res.trades, res.rents, months);
+      }
+      return res;
+    });
+    const timeoutPromise = new Promise<{ trades: any[]; rents: any[] }>((resolve) =>
+      setTimeout(() => resolve({ trades: [], rents: [] }), 1800)
+    );
+    const result = await Promise.race([fetchPromise, timeoutPromise]);
+    return result;
+  } catch {
+    return { trades: [], rents: [] };
+  }
 }
 
 // 공공데이터 API 실제 조회 및 캐시 저장 공통 함수
@@ -343,7 +389,7 @@ async function executeFetch(apt: any, months: number, cacheKey: string): Promise
     const now = new Date();
     const baseYear = now.getFullYear();
     const baseMonth = now.getMonth();
-    const builtYear = apt.built_year ? Math.max(2015, apt.built_year) : 0;
+    const builtYear = apt.built_year ? Math.max(1995, apt.built_year) : 0;
 
     for (let i = 0; i < months; i++) {
       const d = new Date(baseYear, baseMonth - i, 1);

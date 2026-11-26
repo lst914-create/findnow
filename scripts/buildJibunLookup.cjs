@@ -291,17 +291,34 @@ async function main() {
     const [sggCd, umdNm, jibun] = bestJibunKey.split('|');
     // bjdCode: sggCd(5자리) + umdNm 조합 (법정동 코드 10자리는 별도 테이블 없이 sggCd로 대체)
 
-    // 3. 마스터 DB 매칭
+    // 3. 마스터 DB 매칭 (오염 방지: sggCd 및 법정동/지역 일치 검증 필수)
     const masterIndices = masterNormMap.get(normName) || [];
     if (masterIndices.length === 0) {
       noMatchCount++;
       continue;
     }
 
+    // [치명적 버그 방지 1] 지역/시군구 코드 및 법정동이 일치하는 단지만 엄격 필터링
+    const regionMatchedIndices = masterIndices.filter(i => {
+      const apt = masterData[i];
+      // 1) sgg_cd가 이미 있으면 동일해야 함
+      if (apt.sgg_cd && apt.sgg_cd !== sggCd) return false;
+      // 2) district 또는 region에 umdNm이 포함되거나 umdNm에 district가 포함되어야 함
+      const distMatch = (apt.district && (apt.district.includes(umdNm) || umdNm.includes(apt.district)));
+      const regMatch = (apt.region && apt.region.includes(umdNm));
+      return distMatch || regMatch;
+    });
+
+    if (regionMatchedIndices.length === 0) {
+      // 지역이 다른 동명이인 단지는 절대 덮어쓰지 않고 스킵
+      noMatchCount++;
+      continue;
+    }
+
     // 여러 단지가 같은 normName → buildYear로 필터
-    let targetIdx = masterIndices[0];
-    if (masterIndices.length > 1 && bestBuildYear) {
-      const byYearMatch = masterIndices.find(i => {
+    let targetIdx = regionMatchedIndices[0];
+    if (regionMatchedIndices.length > 1 && bestBuildYear) {
+      const byYearMatch = regionMatchedIndices.find(i => {
         const apt = masterData[i];
         return apt.built_year && String(apt.built_year) === bestBuildYear;
       });

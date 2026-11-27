@@ -316,16 +316,44 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
   if (apt.id) {
     const stored = await getCachedTransactionsFromStore(apt.id);
     if (stored && (stored.payload.trades.length > 0 || stored.payload.rents.length > 0)) {
-      serverTransactionsCache.set(cacheKey, {
-        trades: stored.payload.trades,
-        rents: stored.payload.rents,
-        timestamp: nowTime,
-      });
-      return { trades: stored.payload.trades, rents: stored.payload.rents };
+      const storedMonths = stored.payload.months || 36;
+      if (storedMonths >= months && !stored.isStale) {
+        // 신선한 캐시: 즉시 반환
+        serverTransactionsCache.set(cacheKey, {
+          trades: stored.payload.trades,
+          rents: stored.payload.rents,
+          timestamp: nowTime,
+        });
+        return { trades: stored.payload.trades, rents: stored.payload.rents };
+      }
+      // 24시간 이상 된 stale 캐시: 국토부 API 재조회 시도
+      // 1.8초 내 성공 시 최신 데이터 반환 / 타임아웃 시 stale 데이터라도 반환 (공백보다 낫다)
+      try {
+        const freshPromise = executeFetch(apt, months, cacheKey).then(async (res) => {
+          if (apt.id && (res.trades.length > 0 || res.rents.length > 0)) {
+            await saveTransactionsToStore(apt.id, res.trades, res.rents, months);
+          }
+          return res;
+        });
+        const staleTimeoutPromise = new Promise<{ trades: any[]; rents: any[] }>((resolve) =>
+          setTimeout(() => resolve({ trades: stored.payload.trades, rents: stored.payload.rents }), 1800)
+        );
+        const result = await Promise.race([freshPromise, staleTimeoutPromise]);
+        serverTransactionsCache.set(cacheKey, { trades: result.trades, rents: result.rents, timestamp: nowTime });
+        return result;
+      } catch {
+        // 오류 시 stale 데이터 fallback
+        serverTransactionsCache.set(cacheKey, {
+          trades: stored.payload.trades,
+          rents: stored.payload.rents,
+          timestamp: nowTime,
+        });
+        return { trades: stored.payload.trades, rents: stored.payload.rents };
+      }
     }
   }
 
-  // 3. 캐시에 없는 신규 단지: 최대 1.8초 동안 국토부 실거래 수집 대기 (완료 시 SSR HTML에 포함)
+  // 3. 캐시 미존재 단지: 최대 1.8초 동안 국토부 실거래 수집 대기 (완료 시 SSR HTML에 포함)
   // 1.8초 초과 시에는 빈 배열로 즉시 반환하고 백그라운드 수집 계속 수행 (클라이언트에서 수신)
   try {
     const fetchPromise = executeFetch(apt, months, cacheKey).then(async (res) => {

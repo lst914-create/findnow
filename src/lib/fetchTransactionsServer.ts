@@ -326,30 +326,22 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
         });
         return { trades: stored.payload.trades, rents: stored.payload.rents };
       }
-      // 24시간 이상 된 stale 캐시: 국토부 API 재조회 시도
-      // 1.8초 내 성공 시 최신 데이터 반환 / 타임아웃 시 stale 데이터라도 반환 (공백보다 낫다)
-      try {
-        const freshPromise = executeFetch(apt, months, cacheKey).then(async (res) => {
-          if (apt.id && (res.trades.length > 0 || res.rents.length > 0)) {
-            await saveTransactionsToStore(apt.id, res.trades, res.rents, months);
-          }
-          return res;
-        });
-        const staleTimeoutPromise = new Promise<{ trades: any[]; rents: any[] }>((resolve) =>
-          setTimeout(() => resolve({ trades: stored.payload.trades, rents: stored.payload.rents }), 1800)
-        );
-        const result = await Promise.race([freshPromise, staleTimeoutPromise]);
-        serverTransactionsCache.set(cacheKey, { trades: result.trades, rents: result.rents, timestamp: nowTime });
-        return result;
-      } catch {
-        // 오류 시 stale 데이터 fallback
-        serverTransactionsCache.set(cacheKey, {
-          trades: stored.payload.trades,
-          rents: stored.payload.rents,
-          timestamp: nowTime,
-        });
-        return { trades: stored.payload.trades, rents: stored.payload.rents };
-      }
+      // 24시간 이상 된 stale 캐시:
+      // → 기존 데이터 즉시 반환 (로딩 지연 없음) + 백그라운드 갱신 (fire & forget)
+      // → 클라이언트 사이드 /api/transactions 가 최신 데이터 후속 조회하여 화면 갱신
+      executeFetch(apt, months, cacheKey).then(async (res) => {
+        if (apt.id && (res.trades.length > 0 || res.rents.length > 0)) {
+          await saveTransactionsToStore(apt.id, res.trades, res.rents, months);
+          serverTransactionsCache.set(cacheKey, { trades: res.trades, rents: res.rents, timestamp: Date.now() });
+        }
+      }).catch(() => {});
+      // 서버 메모리 캐시는 짧게(5분) 세팅 → 5분 후 다음 SSR 요청도 재조회
+      serverTransactionsCache.set(cacheKey, {
+        trades: stored.payload.trades,
+        rents: stored.payload.rents,
+        timestamp: nowTime - CACHE_TTL_MS + 300000,
+      });
+      return { trades: stored.payload.trades, rents: stored.payload.rents };
     }
   }
 

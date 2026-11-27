@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { LAWD_CODES, findLawdCode } from "./publicDataApi";
 import { normalizeAptName } from "./normalizeAptName";
-import { getPreloadedTransactions } from "./transactionsCache";
 import { getCachedTransactionsFromStore, saveTransactionsToStore } from "./transactionStore";
 
 // 서버 메모리 캐시 (24시간 보존: 밤 12시 갱신 주기와 일치)
@@ -257,17 +256,11 @@ export function isTransactionMatch(
 export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<{ trades: any[]; rents: any[] }> {
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
-  // 1. PRESET_TRADES 실거래 데이터 확인 (국토부 실거래 기반 프리셋만 허용, 가상 데이터 제외)
-  const preloaded = getPreloadedTransactions(apt);
-  if (preloaded.isPreset && preloaded.trades.length >= 10) {
-    return { trades: preloaded.trades, rents: preloaded.rents };
-  }
-
   const region = apt.apiRegion || apt.region || "";
   const district = apt.district || "";
   const aptName = apt.name || "";
 
-  // 2. 서버 인메모리 캐시 확인 (0ms 즉시 반환)
+  // 1. 서버 인메모리 캐시 확인 (0ms 즉시 반환)
   const cacheKey = `${apt.id || aptName}_${aptName.trim().toLowerCase()}_${district.trim().toLowerCase()}_${months}`;
   const cached = serverTransactionsCache.get(cacheKey);
   const nowTime = Date.now();
@@ -275,7 +268,7 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
     return { trades: cached.trades, rents: cached.rents };
   }
 
-  // 3. Supabase Storage 사전 수집 캐시 조회 (30~80ms 즉시 반환)
+  // 2. Supabase Storage 사전 수집 캐시 조회 (30~80ms 즉시 반환)
   const queryMonths = Math.min(months, 120);
   if (apt.id) {
     const stored = await getCachedTransactionsFromStore(apt.id);
@@ -289,11 +282,10 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
         });
         return { trades: stored.payload.trades, rents: stored.payload.rents };
       }
-      // 24시간 지났거나 더 긴 기간 요청 시에도 일단 기존 캐시가 있으면 아래에서 최신화 시도, 실패 시 폴백용으로 보관
     }
   }
 
-  // 4. 국토교통부 API 직접 조회 (최대 120개월=10년치) + 조회 결과 자동 캐싱
+  // 3. 국토교통부 API 직접 조회 (최대 120개월=10년치) + 조회 결과 자동 캐싱
   const result = await executeFetch(apt, queryMonths, cacheKey);
   if (apt.id && (result.trades.length > 0 || result.rents.length > 0)) {
     await saveTransactionsToStore(apt.id, result.trades, result.rents, queryMonths);
@@ -308,17 +300,11 @@ export async function fetchTransactionsDirectly(apt: any, months = 36): Promise<
 export async function getTransactionsForApartment(apt: any, months = 36): Promise<{ trades: any[]; rents: any[] }> {
   if (!apt || !apt.name) return { trades: [], rents: [] };
 
-  // 1. PRESET_TRADES 실거래 데이터 확인 (국토부 실거래 기반 프리셋만 허용, 10건 이상인 경우만)
-  const preloaded = getPreloadedTransactions(apt);
-  if (preloaded.isPreset && preloaded.trades.length >= 10) {
-    return { trades: preloaded.trades, rents: preloaded.rents };
-  }
-
   const region = apt.apiRegion || apt.region || "";
   const district = apt.district || "";
   const aptName = apt.name || "";
 
-  // 2. 서버 인메모리 캐시 확인 (0ms 즉시 반환)
+  // 1. 서버 인메모리 캐시 확인 (0ms 즉시 반환)
   const cacheKey = `${apt.id || aptName}_${aptName.trim().toLowerCase()}_${district.trim().toLowerCase()}_${months}`;
   const cached = serverTransactionsCache.get(cacheKey);
   const nowTime = Date.now();
@@ -326,7 +312,7 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
     return { trades: cached.trades, rents: cached.rents };
   }
 
-  // 3. Supabase Storage 사전 수집 캐시 조회 (30~80ms 즉시 반환 — 아실/호갱노노 수준 SSR 즉각 표출)
+  // 2. Supabase Storage 사전 수집 캐시 조회 (30~80ms 즉시 반환 — 아실/호갱노노 수준 SSR 즉각 표출)
   if (apt.id) {
     const stored = await getCachedTransactionsFromStore(apt.id);
     if (stored && (stored.payload.trades.length > 0 || stored.payload.rents.length > 0)) {
@@ -339,7 +325,7 @@ export async function getTransactionsForApartment(apt: any, months = 36): Promis
     }
   }
 
-  // 4. 캐시에 없는 신규 단지: 최대 1.8초 동안 국토부 실거래 수집 대기 (완료 시 SSR HTML에 포함)
+  // 3. 캐시에 없는 신규 단지: 최대 1.8초 동안 국토부 실거래 수집 대기 (완료 시 SSR HTML에 포함)
   // 1.8초 초과 시에는 빈 배열로 즉시 반환하고 백그라운드 수집 계속 수행 (클라이언트에서 수신)
   try {
     const fetchPromise = executeFetch(apt, months, cacheKey).then(async (res) => {

@@ -36,7 +36,6 @@ const AptDetailMap = dynamic(() => import("@/components/AptDetailMap"), {
   ),
 });
 
-import { getPreloadedTransactions } from "@/lib/transactionsCache";
 import { calculateRepresentativePrice, formatPriceToKorean } from "@/lib/representativePrice";
 
 interface DetailProps {
@@ -356,11 +355,10 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
 
 
   // [호갱노노·아실 동일 구현] 영구 캐시(localStorage) 기반 0초 즉시 렌더링 + 백그라운드 무자각 동기화
-  // 캐시 버전 v2: 이상치 필터링 로직 추가로 인한 오염 캐시 자동 무효화
-  const CACHE_VERSION = "v2";
+  // 캐시 버전 v3: 하드코딩 프리셋 제거 및 순수 공공데이터/스토리지 연동
+  const CACHE_VERSION = "v3";
   const tradeCacheKey = `findnow_trades_${apt.id}_${CACHE_VERSION}`;
   const rentCacheKey = `findnow_rents_${apt.id}_${CACHE_VERSION}`;
-  const preloaded = useMemo(() => getPreloadedTransactions(apt), [apt]);
   const [apiTrades, setApiTrades] = useState<any[]>(() => {
     if (initialTrades && initialTrades.length > 0) return initialTrades;
     if (typeof window !== "undefined") {
@@ -372,7 +370,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         }
       } catch { }
     }
-    return preloaded.trades;
+    return [];
   });
   const [apiRents, setApiRents] = useState<any[]>(() => {
     if (initialRents && initialRents.length > 0) return initialRents;
@@ -385,7 +383,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         }
       } catch { }
     }
-    return preloaded.rents;
+    return [];
   });
 
   // DB 직접 렌더링 — 실시간 API 호출 없음, 항상 즉시 표출
@@ -411,12 +409,6 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
           }
         }
       } catch { }
-
-      if (!hasTrades && preloaded.trades.length > 0) {
-        setApiTrades(preloaded.trades);
-        if (preloaded.rents.length > 0) setApiRents(preloaded.rents);
-        hasTrades = true;
-      }
     }
 
     // [무자각 백그라운드 자동 수신] SSR 및 로컬 캐시에 실거래 내역이 0건인 단지만 백그라운드 fetch
@@ -455,7 +447,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
         isMounted = false;
       };
     }
-  }, [apt.id, apt.name, apt.region, apt.apiRegion, apt.district, preloaded, initialTrades, initialRents, tradeCacheKey, rentCacheKey]);
+  }, [apt.id, apt.name, apt.region, apt.apiRegion, apt.district, initialTrades, initialRents, tradeCacheKey, rentCacheKey]);
 
   // 국토교통부 공동주택 기본/상세 정보 (K-apt) 실시간 데이터 상태
   const [liveKapt, setLiveKapt] = useState<any | null>(null);
@@ -2940,7 +2932,7 @@ export default function AptDetailClient({ apt: initialApt, initialTrades = [], i
           apt={apt}
           infraSchools={infraData?.schools}
           infraData={infraData}
-          trades={apiTrades && apiTrades.length > 0 ? apiTrades : preloaded.trades}
+          trades={apiTrades || []}
         />
 
         {/* ===== 단지별 커뮤니티 & 실시간 토론창구 (입지 분석 밑) ===== */}

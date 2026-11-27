@@ -5,7 +5,6 @@ import Link from "next/link";
 import { APARTMENTS_DATA, Apartment } from "@/lib/apartments";
 import { loadKakaoMap } from "@/lib/kakaoMapLoader";
 import { normalizeAptName } from "@/lib/normalizeAptName";
-import { getPreloadedTransactions } from "@/lib/transactionsCache";
 import { calculateRepresentativePrice } from "@/lib/representativePrice";
 
 function formatPrice(manwon: number): string {
@@ -79,13 +78,9 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
   const isRentalOnly = (apt as any).isRentalOnly === true;
 
   // [단일 출처 원칙 100% 동기화] 마커, 팝업카드, 상세페이지가 완전 동일한 대표 가격 산출 함수 사용
-  const preloaded = getPreloadedTransactions(apt);
-  const rep = calculateRepresentativePrice(apt, preloaded.trades);
+  const rep = calculateRepresentativePrice(apt, []);
 
   let resolvedRent = apt.rent_max || apt.rent_min || 0;
-  if (preloaded.rents.length > 0 && preloaded.rents[0].depositAmount > 0) {
-    resolvedRent = preloaded.rents[0].depositAmount;
-  }
 
   const priceNum = rep.priceNum;
   const avgPriceStr = rep.markerStr;

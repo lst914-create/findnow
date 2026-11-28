@@ -74,6 +74,9 @@ const KNOWN_REDEV_MAP: Record<string, { totalUnits: number; saleUnits: number }>
   "매교역팰루시드": { totalUnits: 2178, saleUnits: 154 },
   "남부터미널역청년주택": { totalUnits: 35, saleUnits: 35 },
   "남부터미널역청년주택아파트": { totalUnits: 35, saleUnits: 35 },
+  "구리역하이니티리버파크": { totalUnits: 3050, saleUnits: 1530 },
+  "수택e구역": { totalUnits: 3050, saleUnits: 1530 },
+  "구리수택e구역재개발": { totalUnits: 3050, saleUnits: 1530 },
 };
 
 function getAccurateUnits(name: string, rawTotal: number, rawSale?: number): { totalUnits: number; saleUnits: number } {
@@ -150,6 +153,13 @@ export async function GET(req: NextRequest) {
       (n) => !targetSido || n.region.includes(targetSido) || n.address.includes(targetSido)
     );
 
+    // 본청약(APT) 공고를 우선 처리하여 무순위/줍줍(잔여세대) 공고와의 중복 시 본청약이 우선 채택되도록 정렬
+    candidateNotices.sort((a, b) => {
+      const aIsApt = a.type === "APT" ? 1 : 0;
+      const bIsApt = b.type === "APT" ? 1 : 0;
+      return bIsApt - aIsApt;
+    });
+
     for (const notice of candidateNotices) {
       const moveIn = parseExpectedMoveIn(notice.moveInMonth);
       if (moveIn < periodStart || moveIn > periodEnd) continue;
@@ -164,9 +174,37 @@ export async function GET(req: NextRequest) {
       if (coord) {
         const distM = haversineM(baseLat, baseLng, coord.lat, coord.lng);
         if (distM <= maxRadiusM) {
-          seenIds.add(notice.id);
           const supplyType: SupplyType = notice.rentType?.includes("임대") ? "임대" : "분양";
           const { totalUnits, saleUnits } = getAccurateUnits(notice.name, notice.totalUnits || 0, (notice as any).generalSupplyUnits);
+
+          // 동일 단지(이름 정규화 동일, 또는 동일 지번 주소 및 초근접 100m 이내) 중복 검사
+          const cleanName = notice.name.replace(/[\s\-_(),.·[\]{}<>]/g, "").toLowerCase();
+          const cleanAddr = notice.address.replace(/[\s\-_(),.·[\]{}<>]/g, "").toLowerCase();
+
+          const existingIndex = units.findIndex((u) => {
+            const uCleanName = u.name.replace(/[\s\-_(),.·[\]{}<>]/g, "").toLowerCase();
+            const uCleanAddr = u.address.replace(/[\s\-_(),.·[\]{}<>]/g, "").toLowerCase();
+            const isSameName = uCleanName === cleanName || (cleanName.length >= 4 && (uCleanName.includes(cleanName) || cleanName.includes(uCleanName)));
+            const isSameAddr = uCleanAddr.slice(0, 15) === cleanAddr.slice(0, 15) && Math.abs(u.distanceM - Math.round(distM)) < 150;
+            return isSameName || isSameAddr;
+          });
+
+          if (existingIndex >= 0) {
+            // 이미 동일 단지가 등록되어 있는 경우: 본청약이거나 세대수가 더 큰 공고로 통합 (무순위 줍줍의 중복 카운트 방지)
+            if (notice.type === "APT" && units[existingIndex].totalUnits < totalUnits) {
+              units[existingIndex] = {
+                ...units[existingIndex],
+                name: notice.name,
+                totalUnits,
+                saleUnits,
+                expectedMoveIn: moveIn,
+                developer: notice.company || notice.developer || units[existingIndex].developer,
+              };
+            }
+            continue;
+          }
+
+          seenIds.add(notice.id);
           units.push({
             id: `applyhome-${notice.id}`,
             name: notice.name,
@@ -278,9 +316,18 @@ export async function GET(req: NextRequest) {
         zone.status === "관리처분인가"
       ) {
         const normZ = normalizeAptName(zone.name);
+        const zoneCoreKeyword = zone.name.replace(/주택재개발|재개발|주택재건축|재건축|정비사업|정비구역|구역/g, "").replace(/\s+/g, "").toLowerCase();
         const alreadyAdded = units.some((u) => {
           const normU = normalizeAptName(u.name);
-          return normU === normZ || (normU.length >= 4 && normZ.includes(normU)) || (normZ.length >= 4 && normU.includes(normZ));
+          const uAddr = (u.address || "").replace(/\s+/g, "").toLowerCase();
+          const zAddr = (zone.address || "").replace(/\s+/g, "").toLowerCase();
+          // 1. 이름 정규화 일치
+          const isNameMatch = normU === normZ || (normU.length >= 4 && normZ.includes(normU)) || (normZ.length >= 4 && normU.includes(normZ));
+          // 2. 분양단지 공고 주소/단지명에 정비구역 핵심어(예: 수택e, 인창c 등) 포함 여부
+          const isKeywordMatch = zoneCoreKeyword.length >= 3 && (uAddr.includes(zoneCoreKeyword) || normU.includes(zoneCoreKeyword));
+          // 3. 지번 및 위치 초근접 (150m 이내) 동일 사업지 여부
+          const isDistMatch = Math.abs(u.distanceM - Math.round(distM)) < 150 && (zAddr.slice(0, 10) === uAddr.slice(0, 10) || isKeywordMatch);
+          return isNameMatch || isKeywordMatch || isDistMatch;
         });
         if (!alreadyAdded) {
           const { totalUnits, saleUnits } = getAccurateUnits(zone.name, zone.totalUnits || 0, zone.generalUnits);

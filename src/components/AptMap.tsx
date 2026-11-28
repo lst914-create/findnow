@@ -386,6 +386,22 @@ export default function AptMap({
   // 조건 필터링 함수
   const filterMarkers = (aptList: AptMarker[]) => {
     return aptList.filter((apt) => {
+      // 0. 비아파트(오피스텔 단독/상가아파트) 및 테스트/더미 단지 원천 배제
+      const aptName = apt.name || "";
+      if (
+        aptName.includes("오피스텔") ||
+        aptName.includes("상가아파트") ||
+        aptName.includes("테스") ||
+        aptName.includes("테슽") ||
+        aptName.includes("더미") ||
+        aptName.includes("sample")
+      ) {
+        // 단, '더미캘란/더미켈란' 같은 정상 실존 명칭은 예외 처리
+        if (!aptName.includes("더미캘란") && !aptName.includes("더미켈란")) {
+          return false;
+        }
+      }
+
       // 1. 평형
       if (filters.pyeong > 0) {
         if (filters.pyeong === 20 && (apt.pyeong < 20 || apt.pyeong >= 30)) return false;

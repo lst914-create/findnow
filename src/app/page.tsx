@@ -1207,11 +1207,13 @@ export default function Home() {
                             <span>📐 {apt.area_pyeong}평</span>
                           </div>
                         </div>
-                        {/* 핵심 특징 배지 (우상단) */}
-                        <div className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold bg-black/40 backdrop-blur-sm border border-white/20 text-white rounded-full px-2.5 py-0.5">
-                          <span>{feat.icon}</span>
-                          <span>{feat.badge || feat.label}</span>
-                        </div>
+                        {/* 핵심 특징 배지 (우상단) - 진짜 특징이 있는 단지만 엄선 표출 */}
+                        {feat && (
+                          <div className="absolute top-3 right-3 inline-flex items-center gap-1 text-[10px] font-bold bg-black/40 backdrop-blur-sm border border-white/20 text-white rounded-full px-2.5 py-0.5">
+                            <span>{feat.icon}</span>
+                            <span>{feat.badge || feat.label}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -1275,7 +1277,13 @@ export default function Home() {
                         <div className="flex justify-between items-center text-xs text-gray-600">
                           <span className="text-gray-400">주차 / 규모</span>
                           <span className="font-semibold text-slate-800">
-                            {apt.parkingRatio ? `세대당 ${apt.parkingRatio}대` : (apt.parking || "주차등록")}
+                            {(() => {
+                              const ratio = apt.parkingRatio || (apt as any).parking_ratio || (apt.parking_total && apt.household_count ? Number((apt.parking_total / apt.household_count).toFixed(2)) : null);
+                              if (ratio) {
+                                return `세대당 ${ratio}대${apt.parking_total ? ` (총 ${apt.parking_total.toLocaleString()}대)` : ""}`;
+                              }
+                              return apt.parking_total ? `총 ${apt.parking_total.toLocaleString()}대` : "주차정보 없음";
+                            })()}
                             {apt.dong_count ? ` · ${apt.dong_count}개동` : ""}
                           </span>
                         </div>

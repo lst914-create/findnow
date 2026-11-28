@@ -124,7 +124,7 @@ function normalizeApartment(raw: Record<string, unknown>): Apartment {
     gapPrice: (raw.gapPrice as number) || undefined,
     rentalBizRatio: (raw.rentalBizRatio as number) || undefined,
     monthlyYield: (raw.monthlyYield as number) || undefined,
-    parkingRatio: (raw.parkingRatio as number) || undefined,
+    parkingRatio: (raw.parkingRatio as number) || (raw.parking_ratio as number) || undefined,
     hallType: (raw.hallType as string) || undefined,
     heatingType: (raw.heatingType as string) || undefined,
     hangang_dist: (raw.hangang_dist as string) || undefined,
@@ -162,19 +162,27 @@ export interface AptHighlightFeature {
   theme: "blue" | "emerald" | "indigo" | "purple" | "rose" | "amber";
 }
 
-export function getApartmentHighlightFeature(apt: Apartment): AptHighlightFeature {
-  // 1. 한강 인접/조망 (한강 도보 거리 또는 영구 한강조망 또는 한강 태그)
-  if (apt.hangang_dist || apt.is_hangang_view || apt.tags?.some((t) => /한강|리버|강변|수변/.test(t))) {
+export function getApartmentHighlightFeature(apt: Apartment): AptHighlightFeature | null {
+  // 1. 영구 한강조망 또는 한강 초밀접 (도보 5분 이내)
+  if (apt.is_hangang_view) {
     return {
       icon: "🌊",
-      label: `한강 ${apt.hangang_dist || "도보 5~8분"}`,
-      badge: apt.is_hangang_view ? "영구 한강조망" : "한강 프리미엄",
+      label: "영구 한강조망 프리미엄",
+      badge: "영구 한강조망",
+      theme: "blue",
+    };
+  }
+  if (apt.hangang_minutes && apt.hangang_minutes <= 5) {
+    return {
+      icon: "🌊",
+      label: `한강변 도보 ${apt.hangang_minutes}분`,
+      badge: "한강 수변생활권",
       theme: "blue",
     };
   }
 
   // 2. 하이엔드 랜드마크 단지
-  if (apt.tags?.some((t) => /고가랜드마크|하이엔드|랜드마크/.test(t))) {
+  if (apt.tags?.some((t) => /고가랜드마크|하이엔드/.test(t))) {
     const gu = apt.region.split(" ")[1] || apt.district;
     return {
       icon: "💎",
@@ -184,81 +192,48 @@ export function getApartmentHighlightFeature(apt: Apartment): AptHighlightFeatur
     };
   }
 
-  // 3. 초역세권 / 역세권 (역 이름 있거나 교통점수 90점 이상)
-  if (apt.station) {
-    const mins = apt.walk_minutes || 5;
-    const isUltra = mins <= 3;
+  // 3. 초역세권 (도보 3분 이내로 전철역과 직접 인접한 단지만)
+  if (apt.walk_minutes && apt.walk_minutes <= 3 && apt.station) {
     return {
       icon: "🚇",
-      label: `${apt.station} ${apt.station_dist || `도보 ${mins}분`}`,
-      badge: isUltra ? "초역세권 (도보 3분)" : "역세권 프리미엄",
-      theme: "indigo",
-    };
-  } else if ((apt.traffic_score ?? 0) >= 90) {
-    return {
-      icon: "🚇",
-      label: `${apt.district} 쾌속 대중교통 인프라`,
-      badge: `교통 최우수 (${apt.traffic_score}점)`,
+      label: `${apt.station} 도보 ${apt.walk_minutes}분`,
+      badge: `초역세권 (${apt.walk_minutes}분)`,
       theme: "indigo",
     };
   }
 
-  // 4. 초품아 / 명문 학군 특화
-  if (apt.tags?.some((t) => /초품아|학군/.test(t)) || (apt.schools && apt.schools.length > 0) || (apt.school_score ?? 0) >= 88) {
-    const schoolName = apt.schools?.[0] || "초등학교";
+  // 4. 초등학교를 품은 아파트 (태그에 '초품아'가 공인된 단지만)
+  if (apt.tags?.includes("초품아")) {
+    const schoolName = apt.school_name || apt.schools?.[0] || "초등학교";
     return {
       icon: "🏫",
-      label: `${schoolName} 안심통학권`,
-      badge: apt.tags?.includes("초품아") ? "초품아 단지" : `명품학군 (${apt.school_score}점)`,
+      label: `${schoolName} 품은 단지`,
+      badge: "초품아 인증",
       theme: "emerald",
     };
   }
 
-  // 5. 대단지 (1,000세대 이상)
-  if ((apt.household_count ?? 0) >= 1000) {
+  // 5. 1,500세대 이상 메가 대단지 (압도적 규모)
+  if ((apt.household_count ?? 0) >= 1500) {
     return {
       icon: "🏗️",
-      label: `${(apt.household_count ?? 0).toLocaleString()}세대 대단지 인프라`,
-      badge: "대단지 프리미엄",
+      label: `${(apt.household_count ?? 0).toLocaleString()}세대 메가 대단지`,
+      badge: `${(apt.household_count ?? 0).toLocaleString()}세대 대단지`,
       theme: "purple",
     };
   }
 
-  // 6. 신축 아파트 (5년 이내 준공)
-  if ((apt.built_year ?? 0) >= 2021) {
+  // 6. 입주 2년 이내의 진짜 신축
+  const age = apt.built_year ? 2026 - apt.built_year : 99;
+  if (age <= 2 && age >= 0) {
     return {
       icon: "✨",
-      label: `${apt.built_year}년 준공 최신축 단지`,
-      badge: `${2026 - (apt.built_year ?? 2026)}년차 신축`,
+      label: `${apt.built_year}년 준공 신축 단지`,
+      badge: age === 0 ? "올해 신축 입주" : `${age}년차 신축`,
       theme: "amber",
     };
   }
 
-  // 7. 재건축/미래가치 유망 단지 (30년 이상 구축)
-  if ((apt.built_year ?? 9999) <= 1996 || apt.tags?.some((t) => /재건축|재개발/.test(t))) {
-    return {
-      icon: "🔨",
-      label: `재건축 추진 및 미래 투자 가치`,
-      badge: "정비사업 유망",
-      theme: "rose",
-    };
-  }
-
-  // 8. 숲세권 / 쾌적한 자연환경
-  if ((apt.nature_score ?? 0) >= 85 || apt.tags?.some((t) => /공원|숲|자연/.test(t))) {
-    return {
-      icon: "🌳",
-      label: `도심 속 쾌적한 숲세권·공원 인프라`,
-      badge: "친환경 에코",
-      theme: "emerald",
-    };
-  }
-
-  // 9. 기본 안심 생활 인프라
-  return {
-    icon: "🌟",
-    label: `${apt.district} 중심 핵심 생활 인프라`,
-    badge: "생활권 우수",
-    theme: "indigo",
-  };
+  // 그 외 일반 단지는 억지 특징을 부여하지 않고 미표시 (깔끔한 UI 유지)
+  return null;
 }

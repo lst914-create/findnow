@@ -46,6 +46,9 @@ export interface AptMarker {
   rentalBizRatio?: number;// 임대사업율 (%)
   monthlyYield?: number; // 월세수익률 (%)
   parkingRatio?: number; // 세대당 주차대수
+  parking_ratio?: number; // 세대당 주차대수 (스네이크 케이스 호환)
+  parking_total?: number; // 총 주차대수
+  dong_count?: number;    // 총 동수
   hallType?: string;     // 현관구조
   heatingType?: string;  // 난방방식
 }
@@ -119,11 +122,16 @@ export const APT_MARKERS: AptMarker[] = APARTMENTS_DATA.map((apt, idx) => {
     gapPrice: gapPrice,
     rentalBizRatio: apt.rentalBizRatio,
     monthlyYield: apt.monthlyYield,
-    parkingRatio: apt.parkingRatio,
+    parkingRatio: apt.parkingRatio || (apt as any).parking_ratio || (apt.parking_total && apt.household_count ? Number((apt.parking_total / apt.household_count).toFixed(2)) : undefined),
+    parking_ratio: (apt as any).parking_ratio || apt.parkingRatio,
+    parking_total: apt.parking_total,
+    dong_count: apt.dong_count,
     hallType: apt.hallType,
     heatingType: apt.heatingType,
   };
 });
+
+const APT_BY_ID = new Map<string, Apartment>(APARTMENTS_DATA.map((a) => [a.id, a]));
 
 interface AptMapProps {
   highlightId?: string;
@@ -784,28 +792,51 @@ export default function AptMap({
 
       // 상위 컴포넌트 목록 동기화
       if (onVisibleApartmentsChange) {
-        const matchedApts: Apartment[] = inBounds.map((a) => ({
-          id: a.id,
-          name: a.name,
-          region: a.rawRegion || "수도권",
-          district: a.district || "",
-          price_min: a.priceNum,
-          price_max: a.priceNum,
-          rent_min: a.rentNum,
-          rent_max: a.rentNum,
-          area_sqm: a.areaSqm ?? getStandardExclusiveAreaSqm(a.pyeong),
-          area_pyeong: a.pyeong,
-          built_year: a.builtYear ?? 2005,
-          household_count: a.householdCount ?? 100,
-          school_score: a.schoolScore ?? 80,
-          traffic_score: a.trafficScore ?? 80,
-          nature_score: 85,
-          tags: a.isRealPrice ? ["실거래인증"] : [],
-          image_url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
-          lat: a.lat,
-          lng: a.lng,
-          description: `${a.region}에 위치한 ${a.name}입니다.`,
-        }));
+        const matchedApts: Apartment[] = inBounds.map((a) => {
+          const origin = APT_BY_ID.get(a.id);
+          if (origin) {
+            return {
+              ...origin,
+              price_min: a.priceNum || origin.price_min,
+              price_max: a.priceNum || origin.price_max,
+              rent_min: a.rentNum ?? origin.rent_min,
+              rent_max: a.rentNum ?? origin.rent_max,
+              avgPrice: a.priceNum || origin.avgPrice,
+              isRealPrice: a.isRealPrice ?? origin.isRealPrice,
+              is_real_price: a.isRealPrice ?? origin.is_real_price,
+              parkingRatio: a.parkingRatio ?? origin.parkingRatio,
+              parking_ratio: (a.parking_ratio ?? (origin as any).parking_ratio ?? a.parkingRatio) as any,
+              parking_total: a.parking_total ?? origin.parking_total,
+              dong_count: a.dong_count ?? origin.dong_count,
+            };
+          }
+          return {
+            id: a.id,
+            name: a.name,
+            region: a.rawRegion || "수도권",
+            district: a.district || "",
+            price_min: a.priceNum,
+            price_max: a.priceNum,
+            rent_min: a.rentNum,
+            rent_max: a.rentNum,
+            area_sqm: a.areaSqm ?? getStandardExclusiveAreaSqm(a.pyeong),
+            area_pyeong: a.pyeong,
+            built_year: a.builtYear ?? 2005,
+            household_count: a.householdCount ?? 100,
+            school_score: a.schoolScore ?? 80,
+            traffic_score: a.trafficScore ?? 80,
+            nature_score: 85,
+            tags: a.isRealPrice ? ["실거래인증"] : [],
+            image_url: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80",
+            lat: a.lat,
+            lng: a.lng,
+            description: `${a.region}에 위치한 ${a.name}입니다.`,
+            parkingRatio: a.parkingRatio,
+            parking_ratio: a.parking_ratio as any,
+            parking_total: a.parking_total,
+            dong_count: a.dong_count,
+          };
+        });
         onVisibleApartmentsChange(matchedApts, regName);
       }
 

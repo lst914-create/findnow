@@ -64,7 +64,7 @@ export function RedevelopmentSimProReportModal({
   };
 
   const content = (
-    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col">
+    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col break-keep">
       {/* 배경 장식 발광체 */}
       <div className="absolute -top-32 -right-32 w-80 h-80 bg-purple-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -76,14 +76,14 @@ export function RedevelopmentSimProReportModal({
             <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #04
             </span>
-            <span className="text-[11px] text-purple-400 font-bold bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] text-purple-400 font-bold bg-purple-950/60 border border-purple-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
               정비사업 감정평가 및 비례율 역산 엔진
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 재건축·정비사업 분담금 및 비례율 시뮬레이션
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 break-keep">
             신축 희망 평형별 예상 분담금(환급금), 공사비 시나리오별 비례율 및 권리가액 정밀 역산
           </p>
         </div>
@@ -100,7 +100,7 @@ export function RedevelopmentSimProReportModal({
       </div>
 
       {/* 2. 스크롤 본문 섹션 */}
-      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto">
+      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto break-keep">
         {/* [A] 인터랙티브 시뮬레이터 조작 바 (신축 희망 평형 & 평당 공사비 선택) */}
         <div className="bg-slate-900/90 rounded-2xl p-4 sm:p-5 border border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
           {/* 희망 평형 */}
@@ -169,7 +169,7 @@ export function RedevelopmentSimProReportModal({
                 사업성 {result.feasibilityGrade}
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs text-slate-300 leading-relaxed max-w-xl break-keep">
               기존 전용 약 {currentPyeong}평 소유 기준, 신축 {targetPyeong}평 신청 시 추정 금액입니다. (공사비 평당 {constructionCost.toLocaleString()}만원 적용)
             </p>
           </div>
@@ -208,12 +208,12 @@ export function RedevelopmentSimProReportModal({
                   시가 78% 추정
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">종전자산 감정평가액</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">종전자산 감정평가액</h4>
               <div className="text-xl font-black text-blue-400 mt-1">
                 {fmtWon(result.estimatedAppraisalValue)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               현재 실거래가({fmtWon(defaultAssetValue)}) 기준 권리 감정가 역산
             </p>
           </div>
@@ -227,12 +227,12 @@ export function RedevelopmentSimProReportModal({
                   최종 권리가액
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">조합원 최종 권리가액</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">조합원 최종 권리가액</h4>
               <div className="text-xl font-black text-purple-400 mt-1">
                 {fmtWon(result.estimatedRightValue)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               비례율 {result.estimatedProportionRatio}% 적용
             </p>
           </div>
@@ -246,12 +246,12 @@ export function RedevelopmentSimProReportModal({
                   일반분양 85% 우대
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">조합원 분양가</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">조합원 분양가</h4>
               <div className="text-xl font-black text-emerald-400 mt-1">
                 {fmtWon(result.targetMemberSalePrice)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               일반분양가(평당 {result.appliedGeneralSalePrice.toLocaleString()}만) 대비 15% 조합원 혜택
             </p>
           </div>
@@ -259,7 +259,7 @@ export function RedevelopmentSimProReportModal({
 
         {/* [D] 신축 희망 평형별(25평 vs 34평 vs 43평) 분담금 & 안전마진 비교표 */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
             <span>📐 신축 희망 평형별 예상 분담금 및 안전마진 견적표</span>
           </h4>
 
@@ -274,10 +274,10 @@ export function RedevelopmentSimProReportModal({
                 </colgroup>
                 <thead>
                   <tr className="bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
-                    <th className="py-2.5 px-3.5 font-bold">신축 신청 평형</th>
-                    <th className="py-2.5 px-3 font-bold text-right">조합원 분양가</th>
-                    <th className="py-2.5 px-3 font-bold text-right">예상 분담금(환급금)</th>
-                    <th className="py-2.5 px-3.5 font-bold text-right">준공 후 예상 마진</th>
+                    <th className="py-2.5 px-3.5 font-bold whitespace-nowrap">신축 신청 평형</th>
+                    <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">조합원 분양가</th>
+                    <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">예상 분담금(환급금)</th>
+                    <th className="py-2.5 px-3.5 font-bold text-right whitespace-nowrap">준공 후 예상 마진</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -317,7 +317,7 @@ export function RedevelopmentSimProReportModal({
         {/* [E] 공사비 시나리오별 비례율 및 분담금 민감도 분석 매트릭스 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>🏗️ 평당 공사비 변동에 따른 비례율 & 분담금 민감도 매트릭스</span>
             </h4>
             <span className="text-[11px] text-slate-500">신축 {targetPyeong}평 기준</span>
@@ -356,7 +356,7 @@ export function RedevelopmentSimProReportModal({
         {/* [F] PRO 전용 애널리스트 정비사업 총평 리포트 */}
         <div className="relative">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>💡 수석 정비사업 전문 애널리스트 사업성 총평</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-400/30">
@@ -388,7 +388,7 @@ export function RedevelopmentSimProReportModal({
                 <div className="text-base font-extrabold text-white mb-1">
                   ⚡ 정비사업 분담금 및 비례율 리포트 전체 무료 열람
                 </div>
-                <p className="text-xs text-slate-300 mb-4">
+                <p className="text-xs text-slate-300 mb-4 break-keep">
                   오픈 베타 기간 동안 평형별 예상 분담금 견적과 공사비 민감도 시뮬레이션을 무료로 확인하세요.
                 </p>
                 <button
@@ -422,7 +422,7 @@ export function RedevelopmentSimProReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto break-keep">
       <div className="my-auto w-full max-w-4xl animate-in fade-in zoom-in-95 duration-200">
         {content}
       </div>

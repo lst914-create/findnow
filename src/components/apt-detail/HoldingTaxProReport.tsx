@@ -47,7 +47,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
   }, [defaultPrice, apt.area_sqm, houseCount, holdingYears, isAdjustedArea]);
 
   const content = (
-    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col">
+    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col break-keep">
       {/* 배경 장식 발광체 */}
       <div className="absolute -top-32 -right-32 w-80 h-80 bg-emerald-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -59,14 +59,14 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
             <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #07
             </span>
-            <span className="text-[11px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
               2025 개정 세법 및 종부세 시뮬레이터
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 취득·보유·양도세 통합 시뮬레이션
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 break-keep">
             공시가격 현실화율 및 1주택/다주택자 조건에 따른 연도별 보유세와 양도소득세 정밀 산출
           </p>
         </div>
@@ -83,7 +83,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
       </div>
 
       {/* 2. 스크롤 본문 섹션 */}
-      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto">
+      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto break-keep">
         {/* [A] 인터랙티브 조건 조작 바 (주택 수 & 보유 기간 선택) */}
         <div className="bg-slate-900/90 rounded-2xl p-4 sm:p-5 border border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
           {/* 주택 수 선택 */}
@@ -148,12 +148,12 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
                   실효세율 {simulation.acquisitionTax.effectiveRate}%
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">예상 취득세 합계</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">예상 취득세 합계</h4>
               <div className="text-2xl font-black text-blue-400 mt-1">
                 {fmtWon(simulation.acquisitionTax.total)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               본세 {fmtWon(simulation.acquisitionTax.baseTax)} + 교육세 {fmtWon(simulation.acquisitionTax.localEducationTax)}
               {simulation.acquisitionTax.ruralSpecialTax > 0 ? ` + 농특세 ${fmtWon(simulation.acquisitionTax.ruralSpecialTax)}` : ""}
             </p>
@@ -172,12 +172,12 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
                   {simulation.holdingTax.isCompTaxTarget ? "종부세 과세 대상" : "종부세 비과세"}
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">연간 보유세 (재산+종부)</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">연간 보유세 (재산+종부)</h4>
               <div className="text-2xl font-black text-emerald-400 mt-1">
                 {fmtWon(simulation.holdingTax.annualTotal)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               재산세 {fmtWon(simulation.holdingTax.propertyTax)} + 종부세 {fmtWon(simulation.holdingTax.comprehensiveTax)}
             </p>
           </div>
@@ -193,14 +193,14 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
                     : "비과세"}
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">예상 양도소득세</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">예상 양도소득세</h4>
               <div className="text-2xl font-black text-indigo-400 mt-1">
                 {simulation.capitalGainsTax.taxAmount === 0
                   ? "0원 (1주택 비과세)"
                   : fmtWon(simulation.capitalGainsTax.taxAmount)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               {simulation.capitalGainsTax.details}
             </p>
           </div>
@@ -212,7 +212,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
             <span className="text-xs font-bold text-white flex items-center gap-1.5">
               <span>⚖️ 부부 공동명의(5:5) vs 단독명의 절세 효과 비교</span>
             </span>
-            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 whitespace-nowrap">
               {simulation.jointComparison.recommendation}
             </span>
           </div>
@@ -248,7 +248,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
 
         {/* [D] 주택 수별(1주택 vs 2주택 vs 3주택) 생애 총세금 비교 매트릭스 */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
             <span>📊 보유 주택 수별(1주택 vs 2주택 vs 3주택) 세부담 매트릭스</span>
           </h4>
 
@@ -263,10 +263,10 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
                 </colgroup>
                 <thead>
                   <tr className="bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
-                    <th className="py-2.5 px-3.5 font-bold">주택 수 구분</th>
-                    <th className="py-2.5 px-3 font-bold text-right">취득세 (세율)</th>
-                    <th className="py-2.5 px-3 font-bold text-right">연간 보유세</th>
-                    <th className="py-2.5 px-3.5 font-bold text-right">양도소득세</th>
+                    <th className="py-2.5 px-3.5 font-bold whitespace-nowrap">주택 수 구분</th>
+                    <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">취득세 (세율)</th>
+                    <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">연간 보유세</th>
+                    <th className="py-2.5 px-3.5 font-bold text-right whitespace-nowrap">양도소득세</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -304,7 +304,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
         {/* [E] 보유 기간별(2년, 5년, 10년) 장특공제율 & 양도소득세 감면 시뮬레이션 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>⏳ 보유 기간별 장기보유특별공제 & 양도소득세 감면 혜택</span>
             </h4>
             <span className="text-[11px] text-slate-500">1주택 12억 초과분 과세 기준</span>
@@ -319,7 +319,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
                 <div>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="font-bold text-slate-300">{sch.years}년 보유·거주</span>
-                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 whitespace-nowrap">
                       장특공제 {sch.specialDeductionRate}%
                     </span>
                   </div>
@@ -338,7 +338,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
         {/* [F] PRO 전용 수석 부동산 세무위원 절세 전략 리포트 */}
         <div className="relative">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>💡 수석 부동산 세무 전문위원 실전 절세 솔루션</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
@@ -366,7 +366,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
                 <div className="text-base font-extrabold text-white mb-1">
                   ⚡ 세무 상세 리포트 및 절세 전략 전체 무료 열람
                 </div>
-                <p className="text-xs text-slate-300 mb-4">
+                <p className="text-xs text-slate-300 mb-4 break-keep">
                   오픈 베타 기간 동안 부부 공동명의 절세액과 보유 기간별 양도세 감면 시뮬레이션을 무료로 확인하세요.
                 </p>
                 <button
@@ -400,7 +400,7 @@ export function HoldingTaxProReportModal({ apt, onClose, isInline = false }: Pro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto break-keep">
       <div className="my-auto w-full max-w-4xl animate-in fade-in zoom-in-95 duration-200">
         {content}
       </div>

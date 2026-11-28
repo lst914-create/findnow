@@ -56,7 +56,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
   const currentScenario = result.interestScenarios[selectedScenarioIndex];
 
   const content = (
-    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative font-sans">
+    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative font-sans break-keep">
       {/* 배경 장식 발광체 */}
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -75,7 +75,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
           <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight break-keep">
             {apt.name} 적정 가치평가 & 실전 매수 호가 리포트
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1.5 max-w-2xl leading-relaxed break-keep">
             전세 내재가치 역산 모형, 권역 대장주 평당 갭 추적, 금리 민감도 시나리오 및 매수 협상 가격 가이드라인
           </p>
         </div>
@@ -101,11 +101,11 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
               <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${style.badge}`}>
                 투자 매력도 {result.verdictScore}점
               </span>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-black/40 text-slate-300 border border-white/10">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-black/40 text-slate-300 border border-white/10 whitespace-nowrap">
                 내재가치 괴리율 {result.bubbleRatio > 0 ? `+${result.bubbleRatio}% (거품)` : `${result.bubbleRatio}% (저평가)`}
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-xl break-keep">
               {style.desc}
             </p>
           </div>
@@ -123,14 +123,14 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
         <div className="bg-slate-900/90 rounded-2xl p-5 sm:p-6 border border-slate-800">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 break-keep">
                 3단 매수 가치 밴드 (Price Valuation Range)
               </h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-[11px] text-slate-500 mt-0.5 break-keep">
                 전세가 역산 본질가치({fmtWon(result.intrinsicValue)}) 기준 급매·적정·상한선 산출
               </p>
             </div>
-            <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+            <span className="text-xs font-bold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20 whitespace-nowrap">
               현재가 위치: {result.currentPrice <= result.bargainPrice ? "🟢 급매 바닥권" : result.currentPrice >= result.ceilingPrice ? "🔴 고평가 상한권" : "🟡 적정 밸류 구간"}
             </span>
           </div>
@@ -145,7 +145,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
                   {fmtWon(result.bargainPrice)} 이하
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800">
+              <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800 break-keep">
                 내재가치 88% 수준. 매도인 급박 사정으로 출회되는 안전마진 확보 가격
               </p>
             </div>
@@ -159,7 +159,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
                   {fmtWon(result.fairPrice)}
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800">
+              <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800 break-keep">
                 전세 실수요 기반의 본질가치. 거품이 전혀 끼지 않은 표준 체결선
               </p>
             </div>
@@ -173,7 +173,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
                   {fmtWon(result.ceilingPrice)} 이상
                 </div>
               </div>
-              <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800">
+              <p className="text-[11px] text-slate-400 mt-2.5 pt-2 border-t border-slate-800 break-keep">
                 내재가치 112% 초과. 추가 상승 동력이 약화되어 추격 매수 금지 구간
               </p>
             </div>
@@ -183,7 +183,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
         {/* 3. 권역 대장주(랜드마크) 1:1 평당 갭 비율 분석 */}
         <div className="bg-slate-900/70 rounded-2xl p-5 border border-slate-800">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>🏛️ 동일 생활권 대장주 1:1 갭 추적 (Peer Benchmark)</span>
             </h4>
             <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded ${
@@ -217,7 +217,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
 
             <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 flex flex-col justify-center">
               <div className="text-[11px] font-bold text-slate-300 mb-1">💡 애널리스트 갭 분석 소견</div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-[11px] text-slate-400 leading-relaxed break-keep">
                 {result.landmark.comment}
               </p>
             </div>
@@ -228,10 +228,10 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
         <div className="bg-slate-900/70 rounded-2xl p-5 border border-slate-800">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div>
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 break-keep">
                 📈 금리 시나리오별 적정 매수가 민감도 분석
               </h4>
-              <p className="text-[11px] text-slate-500 mt-0.5">
+              <p className="text-[11px] text-slate-500 mt-0.5 break-keep">
                 기준금리 변동에 따른 자산가치 수축/확장 범위 시뮬레이션
               </p>
             </div>
@@ -257,7 +257,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
           <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800/80 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <div className="font-bold text-white text-sm mb-1">{currentScenario.label}</div>
-              <p className="text-slate-400 text-[11px]">{currentScenario.comment}</p>
+              <p className="text-slate-400 text-[11px] break-keep">{currentScenario.comment}</p>
             </div>
             <div className="text-right self-stretch sm:self-auto bg-black/40 px-3.5 py-2 rounded-lg border border-white/5">
               <div className="text-[10px] text-slate-500">시나리오 적정가</div>
@@ -274,7 +274,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
         {/* 5. 실전 매수 협상 가이드라인 (PRO 전용 액션 플랜 - 잠금해제 UX) */}
         <div className="relative">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>🎯 매수자 실전 협상 가이드라인 (Tactical Action Plan)</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30">
@@ -352,7 +352,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
                 <div className="text-base font-extrabold text-white mb-1">
                   🎯 실전 협상 가이드라인 & 목표 매수가 무료 열람
                 </div>
-                <p className="text-xs text-slate-300 mb-4">
+                <p className="text-xs text-slate-300 mb-4 break-keep">
                   오픈 베타 기간 동안 현장 네고 팁, 목표 매수가 및 산출 수식 전 과정을 무료로 공개합니다.
                 </p>
                 <button
@@ -386,7 +386,7 @@ export function FairValueProReportModal({ apt, onClose, isInline = false }: Prop
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm overflow-y-auto break-keep">
       <div className="my-auto w-full max-w-4xl animate-in fade-in zoom-in-95 duration-200">
         {content}
       </div>

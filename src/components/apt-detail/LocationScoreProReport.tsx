@@ -67,7 +67,7 @@ export function LocationScoreProReportModal({
   }, [result]);
 
   const content = (
-    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col">
+    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col break-keep">
       {/* 배경 장식 발광체 */}
       <div className="absolute -top-32 -right-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-emerald-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -79,14 +79,14 @@ export function LocationScoreProReportModal({
             <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #01
             </span>
-            <span className="text-[11px] text-blue-400 font-bold bg-blue-950/60 border border-blue-500/30 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] text-blue-400 font-bold bg-blue-950/60 border border-blue-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
               기관 투자용 입지 정밀 평가 모델
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 입지 종합 점수표 & 심층 밸류에이션
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 break-keep">
             교통(30%) · 학군(25%) · 상권(20%) · 쾌적성(15%) · 미래호재(10%) 5대 축 실측 분석
           </p>
         </div>
@@ -103,7 +103,7 @@ export function LocationScoreProReportModal({
       </div>
 
       {/* 2. 스크롤 본문 섹션 */}
-      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto">
+      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto break-keep">
         {/* [A] 종합 등급 및 듀얼 인덱스 배너 */}
         <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-slate-900/80 border border-blue-500/30 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5">
           <div className="space-y-2 flex-1">
@@ -116,7 +116,7 @@ export function LocationScoreProReportModal({
                 종합 {result.totalScore}점
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs text-slate-300 leading-relaxed max-w-xl break-keep">
               실측 인프라 거리(m)와 3대 업무지구 통근 시간, 관할 학군 명문도 및 대형 병원 접근성을 정량화한 공인 입지 성적표입니다.
             </p>
           </div>
@@ -152,10 +152,10 @@ export function LocationScoreProReportModal({
               <span className="font-bold text-slate-300">📊 5대 핵심 입지 밸런스</span>
               <div className="flex items-center gap-3 text-[10px]">
                 <span className="flex items-center gap-1 text-blue-400">
-                  <span className="w-2 h-2 rounded-full bg-blue-500" /> 해당 단지
+                  <span className="w-2 h-2 rounded-full bg-blue-500 whitespace-nowrap" /> 해당 단지
                 </span>
                 <span className="flex items-center gap-1 text-slate-400">
-                  <span className="w-2 h-2 rounded-full bg-slate-500" /> 생활권 평균
+                  <span className="w-2 h-2 rounded-full bg-slate-500 whitespace-nowrap" /> 생활권 평균
                 </span>
               </div>
             </div>
@@ -230,7 +230,7 @@ export function LocationScoreProReportModal({
         {/* [C] 3대 핵심 업무지구 (GBD · YBD · CBD) 직주근접 통근력 분석 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>🚇 3대 도심 업무지구 직주근접 통근 시간 (Door to Door)</span>
             </h4>
             <span className="text-[11px] text-slate-500 font-medium">대중교통 도보 및 환승 포함 환산</span>
@@ -245,7 +245,7 @@ export function LocationScoreProReportModal({
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="font-extrabold text-sm text-white">{commute.destination}</span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 whitespace-nowrap">
                       {commute.grade}
                     </span>
                   </div>
@@ -341,7 +341,7 @@ export function LocationScoreProReportModal({
 
         {/* [E] 입지 SWOT 정밀 분석 (Strengths, Weaknesses, Opportunities, Threats) */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
             <span>⚖️ {apt.name} 입지 SWOT 정밀 투자 진단</span>
           </h4>
 
@@ -415,7 +415,7 @@ export function LocationScoreProReportModal({
         {/* [F] PRO 전용 AI 종합 브리핑 리포트 */}
         <div className="relative">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>💡 수석 애널리스트 입지 총평 & 최종 매수 가이드</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/30">
@@ -443,7 +443,7 @@ export function LocationScoreProReportModal({
                 <div className="text-base font-extrabold text-white mb-1">
                   ⚡ PRO 심층 분석 리포트 전체 무료 열람
                 </div>
-                <p className="text-xs text-slate-300 mb-4">
+                <p className="text-xs text-slate-300 mb-4 break-keep">
                   오픈 베타 기간 동안 5대 핵심 입지 지표 산출 근거와 수석 애널리스트 총평을 무료로 즉시 확인하실 수 있습니다.
                 </p>
                 <button
@@ -477,7 +477,7 @@ export function LocationScoreProReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto break-keep">
       <div className="my-auto w-full max-w-4xl animate-in fade-in zoom-in-95 duration-200">
         {content}
       </div>

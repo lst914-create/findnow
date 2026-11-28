@@ -45,7 +45,7 @@ export function SchoolDistrictProReportModal({
   };
 
   const content = (
-    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col">
+    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col break-keep">
       {/* 배경 장식 발광체 */}
       <div className="absolute -top-32 -right-32 w-80 h-80 bg-teal-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -58,11 +58,11 @@ export function SchoolDistrictProReportModal({
               PRO REPORT #05
             </span>
             {result.isChoPumAh ? (
-              <span className="text-[11px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] text-emerald-400 font-bold bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
                 🏫 초품아 인증 (단지 직통)
               </span>
             ) : (
-              <span className="text-[11px] text-teal-400 font-bold bg-teal-950/60 border border-teal-500/30 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] text-teal-400 font-bold bg-teal-950/60 border border-teal-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
                 안심 도보 통학권
               </span>
             )}
@@ -70,7 +70,7 @@ export function SchoolDistrictProReportModal({
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 학군 배정 및 학업성취도·진학 실적 리포트
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 break-keep">
             배정 초·중·고교 실거리 도보권, 국가수준 학업성취도 밴드, 특목고 진학력 및 배후 명문 학원가 인프라
           </p>
         </div>
@@ -87,7 +87,7 @@ export function SchoolDistrictProReportModal({
       </div>
 
       {/* 2. 스크롤 본문 섹션 */}
-      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto">
+      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto break-keep">
         {/* [A] 종합 학군 평가 및 3단 메트릭 배너 */}
         <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-teal-950/40 via-blue-950/30 to-slate-900/80 border border-teal-500/30 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5">
           <div className="space-y-2 flex-1">
@@ -99,11 +99,11 @@ export function SchoolDistrictProReportModal({
               <span className={`text-xs font-black px-3 py-1 rounded-full border shadow-sm ${getGradeBadge(result.districtGrade)}`}>
                 종합 {result.districtScore}점
               </span>
-              <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+              <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 whitespace-nowrap">
                 상위 {result.academicPercentile}% 밴드
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs text-slate-300 leading-relaxed max-w-xl break-keep">
               {result.isChoPumAh
                 ? `초품아 단지로 초등 저학년 자녀의 안심 통학이 보장되며, ${result.academyHub.name} 접근성이 뛰어나 전세 수요가 매우 탄탄합니다.`
                 : `도보권 내 초·중·고 교육시설이 안전하게 배치되어 있으며, ${result.academyHub.name}와의 연계 면학 분위기가 우수합니다.`}
@@ -136,7 +136,7 @@ export function SchoolDistrictProReportModal({
         {/* [B] 초·중·고 3단계 학군 파이프라인 카드 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>🏫 초·중·고 3단계 연계 학군 파이프라인</span>
             </h4>
             <span className="text-[11px] text-slate-500">카카오 로컬 인프라 실측 기준</span>
@@ -209,7 +209,7 @@ export function SchoolDistrictProReportModal({
 
         {/* [D] 학교별 상세 비교 테이블 */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
             <span>📋 통학권 학교별 정밀 스펙 비교 테이블</span>
           </h4>
 
@@ -224,10 +224,10 @@ export function SchoolDistrictProReportModal({
                 </colgroup>
                 <thead>
                   <tr className="bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
-                    <th className="py-2.5 px-3.5 font-bold">학교명 / 구분</th>
-                    <th className="py-2.5 px-3 font-bold text-center">도보 거리</th>
-                    <th className="py-2.5 px-3 font-bold text-center">성취도 / 특목고</th>
-                    <th className="py-2.5 px-3.5 font-bold text-right">학군 특징</th>
+                    <th className="py-2.5 px-3.5 font-bold whitespace-nowrap">학교명 / 구분</th>
+                    <th className="py-2.5 px-3 font-bold text-center whitespace-nowrap">도보 거리</th>
+                    <th className="py-2.5 px-3 font-bold text-center whitespace-nowrap">성취도 / 특목고</th>
+                    <th className="py-2.5 px-3.5 font-bold text-right whitespace-nowrap">학군 특징</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -267,7 +267,7 @@ export function SchoolDistrictProReportModal({
           <div className="font-extrabold text-emerald-400 flex items-center gap-1.5">
             <span>🛡️ 학군 수요 기반 전세가 하방 방어력 분석</span>
           </div>
-          <p className="text-slate-300 leading-relaxed text-[11px]">
+          <p className="text-slate-300 leading-relaxed text-[11px] break-keep">
             우수 학군을 보유한 단지는 비수기에도 자녀 교육 목적의 전세 유입 수요가 상시 존재합니다.
             특히 **겨울방학(12~2월) 학군 배정 이사철**에는 전세 매물이 빠르게 소진되어 일반 주거지 대비 **역전세 방어율이 약 25~30% 우수**합니다.
           </p>
@@ -276,7 +276,7 @@ export function SchoolDistrictProReportModal({
         {/* [F] PRO 전용 수석 애널리스트 학군 총평 리포트 */}
         <div className="relative">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>💡 수석 교육·부동산 전문 애널리스트 학군 총평</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-500/20 text-teal-300 border border-teal-400/30">
@@ -304,7 +304,7 @@ export function SchoolDistrictProReportModal({
                 <div className="text-base font-extrabold text-white mb-1">
                   ⚡ 학군 및 진학 실적 리포트 전체 무료 열람
                 </div>
-                <p className="text-xs text-slate-300 mb-4">
+                <p className="text-xs text-slate-300 mb-4 break-keep">
                   오픈 베타 기간 동안 배정 학교별 학업성취도 통계와 학원가 연계 리포트를 무료로 확인하세요.
                 </p>
                 <button
@@ -338,7 +338,7 @@ export function SchoolDistrictProReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto break-keep">
       <div className="my-auto w-full max-w-4xl animate-in fade-in zoom-in-95 duration-200">
         {content}
       </div>

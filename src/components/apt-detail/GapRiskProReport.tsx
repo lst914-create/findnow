@@ -84,7 +84,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
   }, [result]);
 
   const content = (
-    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col">
+    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col break-keep">
       {/* 배경 장식 발광체 */}
       <div className="absolute -top-32 -right-32 w-80 h-80 bg-amber-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -96,14 +96,14 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
             <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #06
             </span>
-            <span className="text-[11px] text-amber-400 font-bold bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] text-amber-400 font-bold bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
               HUG 보증보험 & 역전세 스트레스 진단
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 갭투자 가성비 및 역전세 방어력 진단
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 break-keep">
             실거래 전세가율 5개년 밴드, 취득세 포함 실투자금, HUG 보증한도 안전 쿠션, 하락장 스트레스 테스트
           </p>
         </div>
@@ -120,7 +120,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
       </div>
 
       {/* 2. 스크롤 본문 섹션 */}
-      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto">
+      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto break-keep">
         {/* [A] 종합 위험도 및 투자 판단 액션 배너 */}
         <div className={`p-5 sm:p-6 rounded-2xl bg-gradient-to-r ${gradeStyle.bg} border flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5`}>
           <div className="space-y-2 flex-1">
@@ -132,11 +132,11 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
               <span className={`text-xs font-black px-3 py-1 rounded-full border shadow-sm ${gradeStyle.badgeBg}`}>
                 전세가율 {result.jeonseRatio}%
               </span>
-              <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+              <span className="text-xs font-extrabold px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 whitespace-nowrap">
                 {result.actionVerdict}
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs text-slate-300 leading-relaxed max-w-xl break-keep">
               {gradeStyle.desc}
             </p>
           </div>
@@ -175,12 +175,12 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
                   순수 갭
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">순수 갭투자 금액</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">순수 갭투자 금액</h4>
               <div className="text-xl font-black text-blue-400 mt-1">
                 {fmtWon(result.pureGap)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               매매 {fmtWon(result.currentPrice)} / 전세 {fmtWon(result.currentRent)}
             </p>
           </div>
@@ -194,12 +194,12 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
                   실투자 총액
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">총 실현금 필요액</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">총 실현금 필요액</h4>
               <div className="text-xl font-black text-amber-400 mt-1">
                 {fmtWon(result.totalInvestmentNeeded)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               취득세({fmtWon(result.acquisitionTax)}) + 중개보수({fmtWon(result.brokerFee)}) 반영
             </p>
           </div>
@@ -215,12 +215,12 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
                   {result.isHugGuaranteed ? "HUG 보증 안심" : "보증가입 주의"}
                 </span>
               </div>
-              <h4 className="font-black text-sm text-slate-200">HUG 보증한도 상한선</h4>
+              <h4 className="font-black text-sm text-slate-200 break-keep">HUG 보증한도 상한선</h4>
               <div className="text-xl font-black text-emerald-400 mt-1">
                 {fmtWon(result.hugSafetyLimit)}
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed">
+            <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-800/80 leading-relaxed break-keep">
               안전 쿠션: +{fmtWon(result.hugCushionManwon)} (보증보험 100% 가입 가능선)
             </p>
           </div>
@@ -270,7 +270,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
         {/* [D] 하락장 3단계 스트레스 테스트 매트릭스 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>⚠️ 역전세 하락장 3단계 스트레스 테스트 (집주인 준비금 진단)</span>
             </h4>
             <span className="text-[11px] text-slate-500">2년 뒤 전세 만기 시나리오</span>
@@ -306,7 +306,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
 
         {/* [E] 평형대별(25평 vs 34평) 갭투자 가성비 비교표 */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
             <span>📐 평형대별 갭투자 가성비 및 실투자금 비교표</span>
           </h4>
 
@@ -321,10 +321,10 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
                 </colgroup>
                 <thead>
                   <tr className="bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
-                    <th className="py-2.5 px-3.5 font-bold">평형 구분</th>
-                    <th className="py-2.5 px-3 font-bold text-right">매매가 / 전세가</th>
-                    <th className="py-2.5 px-3 font-bold text-right">순수 갭 / 전세가율</th>
-                    <th className="py-2.5 px-3.5 font-bold text-right">총 실투자 필요금</th>
+                    <th className="py-2.5 px-3.5 font-bold whitespace-nowrap">평형 구분</th>
+                    <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">매매가 / 전세가</th>
+                    <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">순수 갭 / 전세가율</th>
+                    <th className="py-2.5 px-3.5 font-bold text-right whitespace-nowrap">총 실투자 필요금</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -356,7 +356,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
         {/* [F] PRO 전용 애널리스트 갭투자 출구 전략(Exit Strategy) 리포트 */}
         <div className="relative">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>💡 수석 애널리스트 갭투자 출구 전략(Exit Strategy) 총평</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">
@@ -384,7 +384,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
                 <div className="text-base font-extrabold text-white mb-1">
                   ⚡ 갭투자 리스크 & 출구 전략 전체 무료 열람
                 </div>
-                <p className="text-xs text-slate-300 mb-4">
+                <p className="text-xs text-slate-300 mb-4 break-keep">
                   오픈 베타 기간 동안 하락장 스트레스 테스트와 전세가율 5개년 밴드 리포트를 무료로 확인하세요.
                 </p>
                 <button
@@ -418,7 +418,7 @@ export function GapRiskProReportModal({ apt, onClose, isInline = false }: Props)
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto break-keep">
       <div className="my-auto w-full max-w-4xl animate-in fade-in zoom-in-95 duration-200">
         {content}
       </div>

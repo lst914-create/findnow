@@ -96,7 +96,7 @@ export function HistoricalPriceProReportModal({
   }, [result]);
 
   const content = (
-    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col">
+    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col break-keep">
       {/* 배경 장식 발광체 */}
       <div className="absolute -top-32 -right-32 w-80 h-80 bg-rose-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -108,14 +108,14 @@ export function HistoricalPriceProReportModal({
             <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-orange-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #02
             </span>
-            <span className="text-[11px] text-rose-400 font-bold bg-rose-950/60 border border-rose-500/30 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] text-rose-400 font-bold bg-rose-950/60 border border-rose-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
               국토교통부 20개년 전수 분석
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 20년 실거래 전고점 및 가격 사이클 분석
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 break-keep">
             2006년 실거래가 의무화 이후 역대 최고가(ATH) ↔ 2022 바닥점 ↔ 현재 회복률 정밀 진단
           </p>
         </div>
@@ -132,7 +132,7 @@ export function HistoricalPriceProReportModal({
       </div>
 
       {/* 2. 스크롤 본문 섹션 */}
-      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto">
+      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto break-keep">
         {/* [A] 종합 시세 국면 및 투자 타이밍 액션 배너 */}
         <div className={`p-5 sm:p-6 rounded-2xl bg-gradient-to-r ${trendStyle.bg} border flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5`}>
           <div className="space-y-2 flex-1">
@@ -144,11 +144,11 @@ export function HistoricalPriceProReportModal({
               <span className={`text-xs font-black px-3 py-1 rounded-full border shadow-sm ${trendStyle.badgeBg}`}>
                 전고점의 {result.recoveryRateFromPeak}% 회복
               </span>
-              <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-600/30 text-blue-300 border border-blue-400/40">
+              <span className="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-600/30 text-blue-300 border border-blue-400/40 whitespace-nowrap">
                 {result.timingAction}
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs text-slate-300 leading-relaxed max-w-xl break-keep">
               {trendStyle.desc} 국토교통부 {result.totalTransactionsCount > 0 ? `${result.totalTransactionsCount}건의 실거래` : "공식 실거래가"} 기록을 집계 분석했습니다.
             </p>
           </div>
@@ -179,7 +179,7 @@ export function HistoricalPriceProReportModal({
         {/* [B] 3대 핵심 시세 사이클 궤적 카드 (Cycle Journey) */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>📍 3대 핵심 시세 사이클 궤적 (역대 고점 ↔ 바닥 ↔ 현재가)</span>
             </h4>
             <span className="text-[11px] text-slate-500 font-medium">국토교통부 실체결 기준</span>
@@ -191,7 +191,7 @@ export function HistoricalPriceProReportModal({
               <div>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-slate-400 font-bold">{result.allTimeHighDate}</span>
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-400/30 whitespace-nowrap">
                     역대 최고가 (ATH)
                   </span>
                 </div>
@@ -209,7 +209,7 @@ export function HistoricalPriceProReportModal({
               <div>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-slate-400 font-bold">{result.bottomDate2022}</span>
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/30 whitespace-nowrap">
                     2022 금리 저점
                   </span>
                 </div>
@@ -227,7 +227,7 @@ export function HistoricalPriceProReportModal({
               <div>
                 <div className="flex items-center justify-between text-xs mb-1">
                   <span className="text-slate-400 font-bold">최근 실거래</span>
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 whitespace-nowrap">
                     현재 기준 시세
                   </span>
                 </div>
@@ -302,7 +302,7 @@ export function HistoricalPriceProReportModal({
 
         {/* [D] 평형대별 전고점 대비 회복률 및 갭 정밀 분석표 */}
         <div className="space-y-3">
-          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
             <span>📐 평형대별 전고점 대비 회복률 및 잔여 상승 갭</span>
           </h4>
 
@@ -317,10 +317,10 @@ export function HistoricalPriceProReportModal({
                 </colgroup>
                 <thead>
                   <tr className="bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
-                    <th className="py-2.5 px-3.5 font-bold">평형 구분</th>
-                    <th className="py-2.5 px-3 font-bold text-right">역대 전고점 (ATH)</th>
-                    <th className="py-2.5 px-3 font-bold text-right">현재 실거래 시세</th>
-                    <th className="py-2.5 px-3.5 font-bold text-right">회복률 / 잔여 갭</th>
+                    <th className="py-2.5 px-3.5 font-bold whitespace-nowrap">평형 구분</th>
+                    <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">역대 전고점 (ATH)</th>
+                    <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">현재 실거래 시세</th>
+                    <th className="py-2.5 px-3.5 font-bold text-right whitespace-nowrap">회복률 / 잔여 갭</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
@@ -362,7 +362,7 @@ export function HistoricalPriceProReportModal({
             <div className="text-xl font-black text-blue-400">
               {fmtWon(result.supportPrice)}
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-400 leading-relaxed break-keep">
               2022~2023년 침체기 다수의 실수요 손바뀜이 확인된 구간으로, 추가 급락을 방어하는 단단한 바닥선입니다.
             </p>
           </div>
@@ -377,7 +377,7 @@ export function HistoricalPriceProReportModal({
             <div className="text-xl font-black text-rose-400">
               {fmtWon(result.resistancePrice)}
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-400 leading-relaxed break-keep">
               과거 유동성 랠리 최고점 구간으로, 이 매물대를 돌파할 경우 본격적인 신고가 랠리 2차 파동이 전개됩니다.
             </p>
           </div>
@@ -386,7 +386,7 @@ export function HistoricalPriceProReportModal({
         {/* [F] PRO 전용 애널리스트 20년 사이클 총평 리포트 */}
         <div className="relative">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>💡 수석 애널리스트 20년 사이클 총평 & 매수 전략</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-400/30">
@@ -414,7 +414,7 @@ export function HistoricalPriceProReportModal({
                 <div className="text-base font-extrabold text-white mb-1">
                   ⚡ 20년 실거래 전고점 및 갭 분석 전체 무료 열람
                 </div>
-                <p className="text-xs text-slate-300 mb-4">
+                <p className="text-xs text-slate-300 mb-4 break-keep">
                   오픈 베타 기간 동안 20개년 원본 거래 이력 기반 전고점 회복률과 매수 타이밍 전략을 무료로 확인하세요.
                 </p>
                 <button
@@ -448,7 +448,7 @@ export function HistoricalPriceProReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto break-keep">
       <div className="my-auto w-full max-w-4xl animate-in fade-in zoom-in-95 duration-200">
         {content}
       </div>

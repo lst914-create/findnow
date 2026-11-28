@@ -179,7 +179,7 @@ export function SupplyVolumeProReportModal({
   }, [periods]);
 
   const content = (
-    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col">
+    <div className="bg-slate-950 text-white rounded-3xl border border-slate-800 shadow-2xl overflow-hidden max-w-4xl w-full mx-auto relative max-h-[90vh] flex flex-col break-keep">
       {/* 배경 장식 발광체 */}
       <div className="absolute -top-32 -right-32 w-80 h-80 bg-cyan-600/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-80 h-80 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
@@ -191,14 +191,14 @@ export function SupplyVolumeProReportModal({
             <span className="inline-block text-[10px] font-black tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-sm whitespace-nowrap">
               PRO REPORT #03
             </span>
-            <span className="text-[11px] text-cyan-400 font-bold bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">
+            <span className="text-[11px] text-cyan-400 font-bold bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full whitespace-nowrap">
               청약홈 & 인허가 공급 충격 실측
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight break-keep">
             {apt.name} 반경 1·3·5km 입주 예정 물량 분석
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 break-keep">
             향후 3개년 청약홈·지자체 사업승인 기반 신규 입주 단지 및 전세 충격 시뮬레이션
           </p>
         </div>
@@ -215,7 +215,7 @@ export function SupplyVolumeProReportModal({
       </div>
 
       {/* 2. 스크롤 본문 섹션 */}
-      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto">
+      <div className="p-6 sm:p-7 space-y-6 relative z-10 overflow-y-auto break-keep">
         {/* [A] 반경 1km·3km·5km 동심원 비교 요약 카드 */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
@@ -253,7 +253,7 @@ export function SupplyVolumeProReportModal({
               <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="font-bold text-slate-300">{item.label}</span>
                 {radius === item.r && (
-                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500 text-white">
+                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500 text-white whitespace-nowrap">
                     선택됨
                   </span>
                 )}
@@ -261,7 +261,7 @@ export function SupplyVolumeProReportModal({
               <div className="text-2xl font-black text-cyan-400 mt-1">
                 {loading ? "..." : `${item.units.toLocaleString()} 세대`}
               </div>
-              <p className="text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-800/80">
+              <p className="text-[11px] text-slate-400 mt-2 pt-2 border-t border-slate-800/80 break-keep">
                 {item.desc}
               </p>
             </div>
@@ -280,7 +280,7 @@ export function SupplyVolumeProReportModal({
                 반경 {radiusKm}km 기준
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed max-w-xl">
+            <p className="text-xs text-slate-300 leading-relaxed max-w-xl break-keep">
               {pressure.desc}
             </p>
           </div>
@@ -339,7 +339,7 @@ export function SupplyVolumeProReportModal({
         {/* [D] 입주 예정 단지 전수 명세 테이블 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>📋 반경 {radiusKm}km 이내 입주 예정 단지 전수 리스트 ({units.length}개 단지)</span>
             </h4>
           </div>
@@ -356,10 +356,10 @@ export function SupplyVolumeProReportModal({
                   </colgroup>
                   <thead>
                     <tr className="bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
-                      <th className="py-2.5 px-3.5 font-bold">단지명 / 공급유형</th>
-                      <th className="py-2.5 px-3 font-bold text-right">총 세대수</th>
-                      <th className="py-2.5 px-3 font-bold text-center">입주 예정 시기</th>
-                      <th className="py-2.5 px-3.5 font-bold text-right">직선 거리</th>
+                      <th className="py-2.5 px-3.5 font-bold whitespace-nowrap">단지명 / 공급유형</th>
+                      <th className="py-2.5 px-3 font-bold text-right whitespace-nowrap">총 세대수</th>
+                      <th className="py-2.5 px-3 font-bold text-center whitespace-nowrap">입주 예정 시기</th>
+                      <th className="py-2.5 px-3.5 font-bold text-right whitespace-nowrap">직선 거리</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/80">
@@ -433,7 +433,7 @@ export function SupplyVolumeProReportModal({
         {/* [F] PRO 전용 공급 충격 총평 리포트 */}
         <div className="relative">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5 break-keep">
               <span>💡 수석 애널리스트 입주 물량 총평 & 전세가 향방 전망</span>
               {!unlocked && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/30">
@@ -467,7 +467,7 @@ export function SupplyVolumeProReportModal({
                 <div className="text-base font-extrabold text-white mb-1">
                   ⚡ 3개년 공급 충격 및 입주 리스트 전체 무료 열람
                 </div>
-                <p className="text-xs text-slate-300 mb-4">
+                <p className="text-xs text-slate-300 mb-4 break-keep">
                   오픈 베타 기간 동안 반경별 입주 예정 단지 명세와 전세 충격 시뮬레이션을 무료로 확인하세요.
                 </p>
                 <button
@@ -501,7 +501,7 @@ export function SupplyVolumeProReportModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto break-keep">
       <div className="my-auto w-full max-w-4xl animate-in fade-in zoom-in-95 duration-200">
         {content}
       </div>

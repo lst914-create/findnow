@@ -74,10 +74,10 @@ export function ProReportPreviewSection({
                 </span>
                 <span className="text-xs text-slate-400">데이터 기반 정밀 분석</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-white mt-2">
+              <h3 className="text-xl sm:text-2xl font-black text-white mt-2 break-keep">
                 {aptName} 심층 가치 분석
               </h3>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
+              <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl break-keep leading-relaxed">
                 입지 점수 산출 근거, 20년 거래 이력, 정비사업 분담금, 세금 시뮬레이션 및 적정 매수가 판정까지 종합적으로 분석합니다.
               </p>
             </div>
@@ -101,7 +101,7 @@ export function ProReportPreviewSection({
                 <div
                   key={sec.id}
                   onClick={() => handleCardClick(sec.id)}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer break-keep ${
                     isTarget01
                       ? "bg-gradient-to-b from-blue-950/50 to-slate-800/90 border-blue-500/50 hover:border-blue-400 shadow-md ring-1 ring-blue-500/20"
                       : isTarget02
@@ -167,10 +167,10 @@ export function ProReportPreviewSection({
                       </span>
                     )}
                   </div>
-                  <h4 className="font-bold text-sm text-white flex items-center justify-between">
+                  <h4 className="font-bold text-sm text-white flex items-center justify-between break-keep leading-snug">
                     <span>{sec.title}</span>
                   </h4>
-                  <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed break-keep">
                     {sec.description}
                   </p>
                 </div>
